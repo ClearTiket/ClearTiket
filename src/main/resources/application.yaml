@@ -4,6 +4,22 @@ server:
 spring:
   application:
     name: ClearTicket
+  config:
+    import: optional:file:./config.yaml
+  datasource:
+    url: jdbc:postgresql://localhost:5432/clearticket
+    username: ${db.username}
+    password: ${db.password}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      connection-timeout: 30000
+  jpa:
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
