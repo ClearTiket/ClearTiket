@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클리어티켓 - 로그인</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<th:block th:replace="~{fragments/header :: header}"></th:block>
+<main>
+    <div class="auth-page fade-in">
+        <a th:href="@{/mypage}" class="auth-logo">
+            <img th:src="@{/images/logo.png}" alt="클리어티켓" style="height:48px;"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <span style="display:none;font-size:28px;font-weight:800;color:#4B6EF5;align-items:center;">클리어티켓</span>
+        </a>
+
+        <div class="auth-card">
+            <form th:action="@{/login}" method="post">
+                <button type="submit" name="fillDummy" value="1" class="btn-dummy">
+                    테스트 계정으로 채우기 &nbsp;<span style="color:#aaa;font-size:12px;">ID: hong123 / PW: Test1234!</span>
+                </button>
+
+                <div class="form-group">
+                    <label class="form-label">아이디</label>
+                    <input type="text" name="id" class="form-input"
+                           placeholder="아이디를 입력하세요"
+                           th:value="${prefillId} ?: ''">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">비밀번호</label>
+                    <input type="password" name="password"
+                           th:classappend="${error != null} ? 'error'"
+                           class="form-input"
+                           placeholder="비밀번호를 입력하세요"
+                           th:value="${prefillPw} ?: ''">
+                    <p class="error-msg" th:if="${error != null}" th:text="${error}"></p>
+                </div>
+
+                <div style="display:flex;gap:16px;justify-content:center;margin:12px 0 20px;font-size:13px;">
+                    <a th:href="@{/find-id}" style="color:#4B6EF5;text-decoration:none;">아이디 찾기</a>
+                    <span style="color:#E2E4F0;">|</span>
+                    <a th:href="@{/find-password}" style="color:#4B6EF5;text-decoration:none;">비밀번호 찾기</a>
+                    <span style="color:#E2E4F0;">|</span>
+                    <a th:href="@{/register}" style="color:#4B6EF5;text-decoration:none;">회원가입</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">로그인</button>
+            </form>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/footer :: footer}"></th:block>
+</body>
+</html>

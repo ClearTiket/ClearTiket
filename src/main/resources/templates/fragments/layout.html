@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:replace="~{::title}">클리어티켓</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <th:block th:replace="~{::extraStyle}"></th:block>
+</head>
+<body>
+
+<th:block th:fragment="fullPage(hideHeader, hideFooter, content)">
+    <th:block th:unless="${hideHeader}">
+        <th:block th:replace="~{fragments/header :: header}"></th:block>
+    </th:block>
+
+    <main>
+        <th:block th:replace="~{::content}"></th:block>
+    </main>
+
+    <th:block th:unless="${hideFooter}">
+        <th:block th:replace="~{fragments/footer :: footer}"></th:block>
+    </th:block>
+</th:block>
+
+</body>
+</html>

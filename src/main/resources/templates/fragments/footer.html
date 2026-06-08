@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<body>
+<footer class="site-footer" th:fragment="footer">
+    <div class="footer-inner">
+        <div class="footer-links">
+            <a href="#">서비스 소개</a>
+            <span class="footer-sep">|</span>
+            <a href="#">개인정보 처리방침</a>
+            <span class="footer-sep">|</span>
+            <a href="#">이용약관</a>
+        </div>
+        <div class="footer-body">
+            <div class="footer-info">
+                <p>사업자 정보: 000 000 000</p>
+                <p>주소: 000 000 000</p>
+                <p>문의: 000@000000</p>
+            </div>
+            <div class="footer-logo">
+                <img th:src="@{/images/logo.png}" alt="클리어티켓"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
+                     style="height:32px;opacity:.85;">
+                <span style="display:none;font-size:16px;font-weight:800;color:#4B6EF5;">클리어티켓</span>
+            </div>
+        </div>
+    </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클리어티켓 - 취향 설문</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<main>
+    <div class="survey-page fade-in">
+        <a href="#" class="survey-logo">
+            <img th:src="@{/images/logo.png}" alt="클리어티켓" style="height:44px;"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <span style="display:none;font-size:24px;font-weight:800;color:#4B6EF5;align-items:center;">클리어티켓</span>
+        </a>
+
+        <div class="survey-greeting">
+            <p class="name">홍길동님</p>
+            <p class="sub">30초만 투자하시면 취향에 맞는 인생공연을 찾아드릴게요</p>
+        </div>
+
+        <div class="survey-card">
+            <!-- Q1 장르 -->
+            <div class="q-block" id="q1-block">
+                <p class="q-label">Q1. 가장 선호하는 공연 장르는 무엇인가요? <span class="limit">(최대 2개 선택)</span></p>
+                <div class="chip-group" id="q1-group">
+                    <button type="button" class="chip" onclick="selectChip(this,'q1',2)">뮤지컬</button>
+                    <button type="button" class="chip" onclick="selectChip(this,'q1',2)">콘서트</button>
+                    <button type="button" class="chip" onclick="selectChip(this,'q1',2)">클래식</button>
+                </div>
+            </div>
+
+            <div class="q-divider"></div>
+
+            <!-- Q2 분위기 -->
+            <div class="q-block" id="q2-block">
+                <p class="q-label">Q2. 공연을 볼 때 어떤 분위기를 원하시나요? <span class="limit">(최대 2개 선택)</span></p>
+                <div class="tag-group" id="q2-group">
+                    <button type="button" class="tag" onclick="selectChip(this,'q2',2)">#눈물폭발</button>
+                    <button type="button" class="tag" onclick="selectChip(this,'q2',2)">#유머충전</button>
+                    <button type="button" class="tag" onclick="selectChip(this,'q2',2)">#감동클라이맥스풀릭</button>
+                    <button type="button" class="tag" onclick="selectChip(this,'q2',2)">#스트레스해소</button>
+                    <button type="button" class="tag" onclick="selectChip(this,'q2',2)">#설렘충전2</button>
+                    <button type="button" class="tag" onclick="selectChip(this,'q2',2)">#배품빠지는</button>
+                    <button type="button" class="tag" onclick="selectChip(this,'q2',2)">#화려한볼거리</button>
+                    <button type="button" class="tag" onclick="selectChip(this,'q2',2)">#잔잔한위로</button>
+                    <button type="button" class="tag" onclick="selectChip(this,'q2',2)">#생각이많아지는</button>
+                </div>
+            </div>
+
+            <div class="q-divider"></div>
+
+            <!-- Q3 동행 -->
+            <div class="q-block" id="q3-block">
+                <p class="q-label">Q3. 주로 누구와 함께 공연을 관람하시나요? <span class="limit">(1개 선택)</span></p>
+                <div class="survey-q2-companion-group" id="q3-group">
+                    <button type="button" class="companion-btn" onclick="selectChip(this,'q3',1)">혼자서</button>
+                    <button type="button" class="companion-btn" onclick="selectChip(this,'q3',1)">연인과 함께</button>
+                    <button type="button" class="companion-btn" onclick="selectChip(this,'q3',1)">부모님과 함께</button>
+                    <button type="button" class="companion-btn" onclick="selectChip(this,'q3',1)">친구와 함께</button>
+                    <button type="button" class="companion-btn" onclick="selectChip(this,'q3',1)">아이와 함께</button>
+                </div>
+            </div>
+
+            <div class="skip-row">
+                <button class="skip-link" type="button" onclick="location.href='/login'">다음에 할게요 Skip</button>
+            </div>
+        </div>
+
+        <div class="survey-cta">
+            <button class="btn-cta" id="cta-btn" type="button" onclick="goResult()">나에게 맞는 공연 보러 가기</button>
+        </div>
+    </div>
+</main>
+
+<script>
+    const state = {q1: [], q2: [], q3: []};
+    function selectChip(btn, group, max) {
+        const isSelected = btn.classList.contains('selected');
+        if (isSelected) {
+            btn.classList.remove('selected');
+            state[group] = state[group].filter(b => b !== btn);
+        } else {
+            if (state[group].length >= max) { state[group].shift().classList.remove('selected'); }
+            btn.classList.add('selected');
+            state[group].push(btn);
+        }
+        updateCta();
+    }
+    function updateCta() {
+        const ready = state.q3.length >= 1;
+        const cta = document.getElementById('cta-btn');
+        cta.classList.toggle('ready', ready);
+    }
+    function goResult() {
+        location.href = '/mypage';
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<body>
+<header class="site-header" th:fragment="header">
+    <div class="header-top">
+        <a th:href="@{/mypage}" class="logo">
+            <img th:src="@{/images/logo.png}" alt="클리어티켓"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                 style="height:38px;">
+            <span style="display:none;font-size:20px;font-weight:800;color:#4B6EF5;align-items:center;">클리어티켓</span>
+        </a>
+        <div class="search-wrap">
+            <input type="text" placeholder="공연, 아티스트 검색">
+            <button class="search-btn" aria-label="검색">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+            </button>
+        </div>
+        <div class="header-actions">
+            <th:block th:if="${session.loginUser != null}">
+                <span style="font-size:13px;color:#555577;" th:text="${session.loginUser.name} + '님'">홍길동님</span>
+                <span class="sep">|</span>
+                <a th:href="@{/logout}">로그아웃</a>
+            </th:block>
+            <th:block th:unless="${session.loginUser != null}">
+                <a th:href="@{/login}">로그인</a>
+                <span class="sep">|</span>
+                <a th:href="@{/register}">회원가입</a>
+            </th:block>
+        </div>
+    </div>
+
+    <nav class="site-nav">
+        <div class="nav-inner">
+            <div class="nav-left">
+                <a href="#" th:classappend="${navActive == 'concert'} ? 'active'" class="nav-link">콘서트</a>
+                <a href="#" th:classappend="${navActive == 'musical'} ? 'active'" class="nav-link">뮤지컬</a>
+                <a href="#" th:classappend="${navActive == 'classic'} ? 'active'" class="nav-link">클래식</a>
+            </div>
+            <div class="nav-right">
+                <a href="#" th:classappend="${navActive == 'ranking'} ? 'active'" class="nav-link">랭킹</a>
+                <a href="#" th:classappend="${navActive == 'region'} ? 'active'" class="nav-link">지역</a>
+                <a href="#" th:classappend="${navActive == 'venue'} ? 'active'" class="nav-link">공연장</a>
+            </div>
+        </div>
+    </nav>
+</header>
+</body>
+</html>
