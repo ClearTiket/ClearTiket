@@ -1,0 +1,50 @@
+# dto_entity_vo.txt
+                      Entity              DTO                   VO
+DB 연결           DB테이블 매핑         데이터전달               값 표현
+DB기준불변성      수정하지 말 것      수정하지 말 것    상황에 따라 수정하기
+equals기준           ID(PK)                없음               값 전체
+사용 용도        DB 저장 / 조회용   레이어 간 전달용    값 표현용, 값 표현의 경우 불변
+
+레이어 : mapper repository controller service 와 같은 계층
+
+흐름
+소비자
+↕             DTO
+Controller
+↕        DTO 또는 상황에 따라 VO 사용
+Service
+↕   Entity 로 만들어진 객체 주고 받고
+Repository
+↕
+DB(회사 정보가 들어있는 서버)
+
+
+
+회원가입 예제
+
+회원가입 접속 후 폼 작성
+   ↓
+회원가입요청DTO    사용자 입력 java 전달 받음
+   ↓
+Controller → Service 확인
+   ↓
+Email VO         ← 이메일 유효성 검증
+Password VO      ← 비밀번호 암호화
+   ↓
+User Entity      ← DB에 저장할 형태로 변환
+   ↓
+DB 저장
+   ↓
+회원가입응답DTO  ← 결과 응답 (비밀번호 제외)
+   ↓
+사용자
+
+
+
+
+
+
+
+
+
+
