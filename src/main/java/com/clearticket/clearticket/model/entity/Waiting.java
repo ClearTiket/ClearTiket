@@ -15,7 +15,6 @@ public class Waiting {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "waiting_id")
     private Long waitingId;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -16,7 +16,6 @@ public class Reservation {
     // Primary Key
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "reservation_id")
     private Long reservationId;
 
     // 외래키(FK)

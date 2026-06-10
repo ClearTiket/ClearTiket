@@ -13,7 +13,7 @@ public class Tag {
 
     // Primary Key
     @Id
-    Integer tag_id;
+    Integer tagId;
 
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)

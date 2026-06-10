@@ -17,7 +17,7 @@ public class Payment {
     // Primary Key
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Long payment_id;
+    Long paymentId;
 
     // Foriegn key
     @ManyToOne(fetch = FetchType.LAZY)

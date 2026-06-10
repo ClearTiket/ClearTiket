@@ -13,7 +13,6 @@ public class BookingSeat {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "booking_seat_id")
     private Long bookingSeatId; // DB의 booking_seat_id와 매핑
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -25,7 +24,7 @@ public class BookingSeat {
     private Schedule schedule; // DB의 schedule_id와 매핑 (공연 일정 ID)
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", length = 20)
+    @Column(length = 20)
     private BookingStatus status; // DB의 status와 매핑 (예: "SELECTED", "PENDING")
 
 }

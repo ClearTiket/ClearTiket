@@ -13,7 +13,6 @@ public class ReservationSeat {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "res_seat_id")
     private Long resSeatId; // DB의 res_seat_id와 매핑
 
     @ManyToOne(fetch = FetchType.LAZY)

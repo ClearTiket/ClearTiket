@@ -32,10 +32,10 @@ public class Venue {
     @Column(length = 255)
     String address;
 
-    @Column(nullable = false, columnDefinition = "DEFAULT 0")
+    @Column(nullable = false)
     double lat;
 
-    @Column(nullable = false, columnDefinition = "DEFAULT 0")
+    @Column(nullable = false)
     double lon;
 
     @Column(length = 13)

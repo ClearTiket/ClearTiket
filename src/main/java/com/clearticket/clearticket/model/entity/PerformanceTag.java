@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class PerformanceTags {
+public class PerformanceTag {
 
     // Primary Key
     @Id

@@ -15,7 +15,6 @@ public class Review {
     // 1. 리뷰 ID (Primary Key)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "review_id")
     private Long reviewId;
 
     @ManyToOne(fetch = FetchType.LAZY)
