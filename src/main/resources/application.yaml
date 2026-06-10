@@ -28,7 +28,7 @@ spring:
   sql:
     init:
       data-locations: classpath:sql/data.sql
-      mode: always
+      mode: never #always에서 never로 변경 data.sql 실행하지 않음 
 #  autoconfigure:
 #    exclude:
 #      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
