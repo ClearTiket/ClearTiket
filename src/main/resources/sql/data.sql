@@ -17,4 +17,5 @@ INSERT INTO tags (tag_id, tag_name, display_name, tag_category) VALUES
     (302, 'couple', '연인과 함께', 'WITH'),
     (303, 'parents', '부모님과 함께 ', 'WITH'),
     (304, 'friends', '친구와 함께', 'WITH'),
-    (305, 'kids', '아이와 함께', 'WITH');
+    (305, 'kids', '아이와 함께', 'WITH')
+ON CONFLICT (tag_id) DO NOTHING;

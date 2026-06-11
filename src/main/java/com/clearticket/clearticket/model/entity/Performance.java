@@ -37,6 +37,9 @@ public class Performance {
     @Column(nullable = false, length = 50)
     String region;
 
+    @Column(length = 50)
+    String enterpriseName;
+
     @Column(nullable = false)
     LocalDate startDate;
 
