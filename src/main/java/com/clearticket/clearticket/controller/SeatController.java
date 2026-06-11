@@ -2,6 +2,7 @@ package com.clearticket.clearticket.controller;
 
 import com.clearticket.clearticket.model.dto.seat.BookSeatResponse;
 import com.clearticket.clearticket.model.dto.seat.SeatResponse;
+import com.clearticket.clearticket.service.SeatService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
