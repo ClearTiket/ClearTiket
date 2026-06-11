@@ -16,6 +16,10 @@ public class Seat {
     Long seatId;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "performance_id")
+    Performance performance;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "venue_id")
     Venue venue;
 

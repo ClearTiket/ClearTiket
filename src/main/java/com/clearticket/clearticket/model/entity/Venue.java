@@ -26,9 +26,6 @@ public class Venue {
     @Column(nullable = false, length = 100)
     String name;
 
-    @Column(length = 50)
-    String enterpriseName;
-
     @Column(length = 255)
     String address;
 
