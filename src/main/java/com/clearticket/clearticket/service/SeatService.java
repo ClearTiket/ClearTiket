@@ -21,15 +21,19 @@ public class SeatService {
 
     private final SeatRepository seatRepository;
     private final BookingSeatsRepository bookingSeatsRepository;
-    private final UserRepository userRepository; // ⭕ 완벽 매칭!
+    private final UserRepository userRepository;
 
     // 1. 특정 공연의 모든 좌석 상태를 조회하는 로직
     @Transactional(readOnly = true)
     public List<SeatResponse> getSeatsByPerformance(Long performanceId) {
         List<Seat> allSeats = seatRepository.findByPerformancePerformanceId(performanceId);
 
+        // 기준 시간 계산: 지금으로부터 정확히 5분 전 시간!
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+
         return allSeats.stream().map(seat -> {
-            boolean isBooked = bookingSeatsRepository.existsBySeatSeatId(seat.getSeatId());
+            // 5분이 지난 데이터는 선점 안 된 걸로 쳐서 다른 사람에게 "AVAILABLE(예매 가능)"으로 보여줍니다!
+            boolean isBooked = bookingSeatsRepository.existsBySeatSeatIdAndCreatedAtAfter(seat.getSeatId(), fiveMinutesAgo);
             String status = isBooked ? "BOOKED" : "AVAILABLE";
             return new SeatResponse(seat, status);
         }).collect(Collectors.toList());
@@ -38,8 +42,9 @@ public class SeatService {
     // 2. 좌석을 임시 선점(찜)하는 로직
     @Transactional
     public void bookSeat(Long seatId, Long userId) {
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
         // 이미 다른 사람이 찜했는지 검사
-        if (bookingSeatsRepository.existsBySeatSeatId(seatId)) {
+        if (bookingSeatsRepository.existsBySeatSeatIdAndCreatedAtAfter(seatId, fiveMinutesAgo)) {
             throw new IllegalStateException("이미 선점된 좌석입니다! 다른 좌석을 선택해 주세요.");
         }
 

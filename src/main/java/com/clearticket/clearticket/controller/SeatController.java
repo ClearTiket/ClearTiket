@@ -25,12 +25,16 @@ public class SeatController {
 
     // 💡 2. 좌석 임시 선점 API (POST http://localhost:8080/api/seats/book)
     @PostMapping("/book")
-    public ResponseEntity<String> bookSeat(@RequestBody BookSeatResponse request) {
+    public ResponseEntity<String> bookSeat(@RequestParam Long seatId, @RequestParam Long userId) {
         try {
-            seatService.bookSeat(request.getSeatId(), request.getUserId());
-            return ResponseEntity.ok("좌석 선점에 성공했습니다. 5분 내로 결제를 완료해 주세요!");
+            seatService.bookSeat(seatId, userId);
+            return ResponseEntity.ok("좌석이 임시 선점되었습니다! 5분 내로 결제를 완료해 주세요.");
         } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(e.getMessage()); // 이미 선점된 경우 400 에러와 메시지 반환
+            // 이미 선점된 좌석일 때 예외 처리
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            // 좌석이나 회원이 없을 때 예외 처리
+            return ResponseEntity.status(404).body(e.getMessage());
         }
     }
 }
