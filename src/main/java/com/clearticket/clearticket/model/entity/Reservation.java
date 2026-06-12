@@ -8,9 +8,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "reservations")
 @Getter
-//@Builder
-//@AllArgsConstructor
-//@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Setter
 @NoArgsConstructor
 public class Reservation {

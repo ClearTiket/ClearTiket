@@ -14,4 +14,6 @@ public class ReservationRequestDto {
     private Long userId;
     private List<Long> seatIds;
     private Long couponId;
+    private int totalPrice;
+    private String ticketType;
 }

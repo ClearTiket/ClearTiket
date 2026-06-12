@@ -3,6 +3,7 @@ package com.clearticket.clearticket.service;
 import com.clearticket.clearticket.model.dto.ReservationRequestDto;
 import com.clearticket.clearticket.model.dto.ReservationResponseDto;
 //import com.clearticket.clearticket.model.entity.Performance;
+import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.entity.Reservation;
 import com.clearticket.clearticket.model.entity.ReservationStatus;
 import com.clearticket.clearticket.model.entity.Schedule;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,28 +29,10 @@ public class ReservationService {
      */
     @Transactional
     public ReservationResponseDto createReservation(ReservationRequestDto reservationRequestDto) {
-
-//        Reservation reservation = Reservation.builder()
-//                .status(ReservationStatus.WAITING)
-//                .build();
-//
-//        Reservation savedReservation =
-//                reservationRepository.save(reservation);
-//
-//        // 주석 : 추후 하드코딩 수정
-//        return ReservationResponseDto.builder()
-//                .reservationId(savedReservation.getReservationId())
-//                .performanceName("BLUE HOUR : 청춘이 빛나는 우리들의 시간") // savedReservation.getPerformance().getTitle()
-//                .venue("KSPO DOME") // savedReservation.getPerformance().getVenue().getName())
-//                .totalPrice(158000) // reservationRequestDto.getTotalPrice()
-//                .status(savedReservation.getStatus().name())
-//                .build();
-
-        // 빌더 대신 기본 생성자 + set으로 값 채우기
         Reservation reservation = new Reservation();
         reservation.setStatus(ReservationStatus.WAITING);
-        reservation.setTotalPrice(158000); // TODO: reservationRequestDto 기반으로 실제 가격 계산
-        reservation.setTicketType("MOBILE"); // TODO: 요청값으로 교체
+        reservation.setTotalPrice(reservationRequestDto.getTotalPrice());
+        reservation.setTicketType(reservationRequestDto.getTicketType());
         reservation.setShippingFee(0);
         reservation.setReservationNumber("RSV-" + System.currentTimeMillis());
 
@@ -65,23 +49,6 @@ public class ReservationService {
      */
     @Transactional(readOnly = true)
     public ReservationResponseDto getReservationById(Long reservationId) {
-
-//        Reservation reservation = reservationRepository.findById(reservationId)
-//                .orElseThrow(() -> new IllegalArgumentException(
-//                        "해당 예약 내역이 존재하지 않습니다. ID: " + reservationId));
-//
-//        Performance performance = reservation.getPerformance();
-//
-//        return ReservationResponseDto.builder()
-//                .reservationId(reservation.getReservationId())
-//                .performanceName(performance.getTitle())
-//                .performanceDate(performance.getStartDate().atStartOfDay())
-//                .venue(String.valueOf(performance.getVenue()))
-//                .totalPrice(reservation.getTotalPrice())
-//                .status(reservation.getStatus().name())
-//                .build();
-
-        // orElseThrow 대신 if문으로 직접 처리
         Optional<Reservation> optionalReservation = reservationRepository.findById(reservationId);
 
         if (optionalReservation.isEmpty()) {
@@ -100,17 +67,6 @@ public class ReservationService {
      */
     @Transactional(readOnly = true)
     public List<ReservationResponseDto> getAllReservations() {
-
-//        return reservationRepository.findAll()
-//                .stream()
-//                .map(reservation -> ReservationResponseDto.builder()
-//                        .reservationId(reservation.getReservationId())
-//                        .totalPrice(reservation.getTotalPrice())
-//                        .status(reservation.getStatus().name())
-//                        .build())
-//                .toList();
-
-        // stream/map 대신 for문으로 직접 반복
         List<Reservation> reservations = reservationRepository.findAll();
         List<ReservationResponseDto> result = new ArrayList<>();
 
@@ -127,14 +83,6 @@ public class ReservationService {
      * @param reservationId 취소하고자 하는 예약 고유 ID
      * @throws IllegalArgumentException 존재하지 않는 예약 ID가 들어왔을 경우 예외 발생
      */
-//    @Transactional
-//    public void deleteReservationById(Long reservationId) {
-//
-//        Reservation reservation = reservationRepository.findById(reservationId)
-//                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예약입니다."));
-//
-//        reservation.changeStatus(ReservationStatus.CANCELED);
-//    }
     @Transactional
     public void cancelReservationById(Long reservationId) {
 
@@ -150,16 +98,29 @@ public class ReservationService {
 
 
     /**
-     * Entity -> ResponseDto 변환 (중복 코드 제거용 헬퍼 메서드)
-     * AllArgsConstructor를 이용해서 set을 여러 번 안 쓰고 한 줄로 생성
+     * 엔티티(Entity) 데이터를 응답 DTO(ResponseDto)로 변환하는 중복 코드 제거용 헬퍼 메서드
+     * @param reservation 변환할 예약 엔티티 객체
+     * @return 변환이 완료된 예약 정보 응답 DTO 객체
      */
     private ReservationResponseDto toResponseDto(Reservation reservation) {
-
         Schedule schedule = reservation.getSchedule();
+        Performance performance = (schedule != null) ? schedule.getPerformance() : null;
 
-        String performanceName = null;
-        LocalDateTimePlaceholder: // (참고용 라벨, 실제 코드 아님 - 아래 실제 코드 참고)
-        // 실제로는 이렇게 작성
-        return null; // 아래 실제 메서드로 대체됨
+        LocalDateTime perfDateTime = null;
+        if (schedule != null && schedule.getShowDate() != null && schedule.getShowTime() != null) {
+            perfDateTime = LocalDateTime.of(schedule.getShowDate(), schedule.getShowTime());
+        }
+
+        return new ReservationResponseDto(
+                reservation.getReservationId(),
+                performance != null ? performance.getTitle() : "공연 정보 없음",
+                perfDateTime,
+                performance != null && performance.getVenue() != null ? performance.getVenue().getName() : "장소 정보 없음",
+                null,
+                reservation.getTotalPrice(),
+                reservation.getStatus() != null ? reservation.getStatus().name() : null
+        );
     }
+
+
 }
