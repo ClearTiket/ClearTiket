@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <body>
 <header class="site-header" th:fragment="header">
@@ -22,12 +21,15 @@
             </button>
         </div>
         <div class="header-actions">
-            <th:block th:if="${session.loginUser != null}">
-                <span style="font-size:13px;color:#555577;" th:text="${session.loginUser.name} + '님'">홍길동님</span>
+            <th:block th:if="${loginUser != null}">
+                <!-- 이름 클릭 → 마이페이지 이동 -->
+                <a th:href="@{/mypage}"
+                   style="font-size:13px;color:#4B6EF5;font-weight:600;text-decoration:none;"
+                   th:text="${loginUser.name} + '님'">홍길동님</a>
                 <span class="sep">|</span>
                 <a th:href="@{/logout}">로그아웃</a>
             </th:block>
-            <th:block th:unless="${session.loginUser != null}">
+            <th:block th:unless="${loginUser != null}">
                 <a th:href="@{/login}">로그인</a>
                 <span class="sep">|</span>
                 <a th:href="@{/register}">회원가입</a>

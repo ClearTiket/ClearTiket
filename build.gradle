@@ -24,6 +24,12 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+
+    // ── 이메일 발송 (JavaMailSender) ──────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+    // ── 유효성 검증 ────────────────────────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
     testImplementation 'org.springframework.security:spring-security-test'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'

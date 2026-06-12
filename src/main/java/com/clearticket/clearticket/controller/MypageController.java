@@ -7,6 +7,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/mypage")
 public class MypageController {
@@ -57,12 +59,23 @@ public class MypageController {
     @GetMapping("/address")
     public String address(HttpSession session, Model model) {
         if (!checkLogin(session, model)) return "redirect:/login";
+        // TODO: 실제 주소 목록 조회 로직으로 교체 필요
+        model.addAttribute("addressList", List.of());
         return "mypage/address";
     }
 
     @GetMapping("/survey")
     public String survey(HttpSession session, Model model) {
         if (!checkLogin(session, model)) return "redirect:/login";
+        UserSession loginUser = getLoginUser(session);
+        model.addAttribute("currentUser", loginUser);
+        model.addAttribute("genreList",
+                List.of("뮤지컬", "콘서트", "연극", "오페라", "발레", "클래식", "팝페라", "기타"));
+        model.addAttribute("moodList",
+                List.of("#눈물폭발", "#유머충전", "#감동클라이맥스", "#스트레스해소",
+                        "#설렘충전", "#화려한볼거리", "#잔잔한위로", "#생각이많아지는"));
+        model.addAttribute("companionList",
+                List.of("혼자서", "연인과 함께", "친구와 함께", "가족과 함께", "아이와 함께"));
         return "mypage/survey";
     }
 
