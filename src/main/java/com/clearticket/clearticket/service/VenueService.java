@@ -87,16 +87,18 @@ public class VenueService {
         allReviews.add(new ReviewItem(3L, "뮤지컬덕후","시야 방해 없고 무대가 한눈에 보여요!", 4, "2026-06-13"));
 
         // 샘플 데이터라 수동으로 최신글순 정렬
-        List<ReviewItem> sortedReview = new ArrayList<>();
-        sortedReview.add(allReviews.get(2));
-        sortedReview.add(allReviews.get(1));
-        sortedReview.add(allReviews.get(0));
+        List<ReviewItem> sortedReviews = new ArrayList<>();
+        sortedReviews.add(allReviews.get(2));
+        sortedReviews.add(allReviews.get(1));
+        sortedReviews.add(allReviews.get(0));
 
         int totalSum = 0;
-        for (ReviewItem review :  sortedReview) {
+        for (ReviewItem review :  sortedReviews) {
             totalSum += review.getRating();
         }
 
-        double avgRating = 
+        double avgRating = sortedReviews.isEmpty() ? 0.0 : (double) totalSum / sortedReviews.size();
+
+        return new ReviewListResponse(avgRating, sortedReviews.size(), sortedReviews);
     }
 }
