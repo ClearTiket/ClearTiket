@@ -1,8 +1,5 @@
 package com.clearticket.clearticket.controller;
-import com.clearticket.clearticket.model.dto.performance.AvailableDateResponse;
-import com.clearticket.clearticket.model.dto.performance.CastingResponse;
-import com.clearticket.clearticket.model.dto.performance.ScheduleResponse;
-import com.clearticket.clearticket.model.dto.performance.VenueInfoResponse;
+import com.clearticket.clearticket.model.dto.performance.*;
 import com.clearticket.clearticket.service.VenueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -49,5 +46,14 @@ public class VenueController { // 변수명과 도메인은 우리 표준인 Ven
 
         List<CastingResponse> castingList = VenueService.getCastingInfoByKopisId(mt10id);
         return ResponseEntity.ok(castingList);
+    }
+
+    @GetMapping("/{mt10id}/reviews") // 💡 GET /hall/<mt10id>/reviews 주소 매핑!
+    public ResponseEntity<ReviewListResponse> getVenueReviews(
+            @PathVariable("mt10id") String mt10id,
+            @RequestParam(value = "page", defaultValue = "1") int page) { // 💡 기본 1페이지 장전!
+
+        ReviewListResponse reviews = VenueService.getReviewsByVenueKopisId(mt10id, page);
+        return ResponseEntity.ok(reviews);
     }
 }
