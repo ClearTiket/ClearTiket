@@ -29,13 +29,16 @@ public class Venue {
     @Column(length = 255)
     String address;
 
+    @Column(length = 50)
+    String region;
+
     @Column(nullable = false)
     double lat;
 
     @Column(nullable = false)
     double lon;
 
-    @Column(length = 13)
+    @Column(length = 14)
     String telnum;
 
     @Column(length = 255)
