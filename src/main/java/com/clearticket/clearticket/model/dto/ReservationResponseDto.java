@@ -8,7 +8,7 @@ import java.util.List;
 @Getter
 @Setter
 @ToString
-@Builder
+//@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReservationResponseDto {
