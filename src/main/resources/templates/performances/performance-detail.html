@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>클리어티켓 - 공연장 상세 선택</title>
+    <style>
+        /* 📅 간단하고 직관적인 달력 스타일링 */
+        .calendar-container { max-width: 500px; margin: 20px auto; font-family: sans-serif; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .calendar-header { font-weight: bold; background-color: #f3f4f6; padding: 10px 0; }
+        .day { padding: 15px 0; border: 1px solid #e5e7eb; border-radius: 4px; cursor: pointer; }
+        .available { background-color: #ecfdf5; color: #059669; font-weight: bold; border: 1px solid #10b981; }
+        .available:hover { background-color: #d1fae5; }
+        .unavailable { background-color: #f9fafb; color: #d1d5db; cursor: not-allowed; }
+
+        /* ⏱️ 회차(스케줄) 선택 영역 */
+        .schedule-container { max-width: 500px; margin: 30px auto; text-align: center; font-family: sans-serif; }
+        .schedule-btn { padding: 10px 20px; margin: 5px; border: 1px solid #3b82f6; background-color: #eff6ff; color: #1d4ed8; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .schedule-btn:hover { background-color: #dbeafe; }
+
+        /* 🏛️ [신규] 1교시: 공연장 상세 정보 섹션 스타일 */
+        .info-container { max-width: 500px; margin: 30px auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #fff; font-family: sans-serif; }
+        .info-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; color: #1f2937; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; }
+        .info-item { margin: 8px 0; color: #4b5563; font-size: 0.95rem; }
+        .info-label { font-weight: bold; color: #111827; display: inline-block; width: 90px; }
+
+        /* 🎭 [신규] 2교시: 출연진(배우) 이름 배지 스타일 */
+        .casting-container { max-width: 500px; margin: 30px auto; font-family: sans-serif; }
+        .casting-flex { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
+        .actor-badge { padding: 8px 16px; background-color: #f3f4f6; color: #374151; font-weight: bold; border-radius: 20px; border: 1px solid #d1d5db; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="info-container">
+    <div class="info-title">🏛️ 공연장 상세 정보</div>
+    <div id="venue-info-box">
+        <p style="color: #9ca3af;">공연장 정보를 불러오는 중입니다...</p>
+    </div>
+</div>
+
+<div class="calendar-container">
+    <h2> 관람 날짜 선택</h2>
+    <input type="hidden" id="venueKopisId" th:value="${venueKopisId}">
+
+    <div class="calendar-grid">
+        <div class="calendar-header">일</div><div class="calendar-header">월</div><div class="calendar-header">화</div>
+        <div class="calendar-header">수</div><div class="calendar-header">목</div><div class="calendar-header">금</div>
+        <div class="calendar-header">토</div>
+        <div id="calendar-days" style="display: contents;"></div>
+    </div>
+</div>
+
+<div class="schedule-container">
+    <h3> 관람 회차 선택</h3>
+    <div id="schedule-list">
+        <p style="color: #9ca3af;">날짜를 선택하시면 실제 회차 목록이 나타납니다.</p>
+    </div>
+</div>
+
+<div class="casting-container" style="text-align: center;">
+    <h3> 출연진 (Casting)</h3>
+    <div id="casting-list" class="casting-flex">
+        <p style="color: #9ca3af;">출연진 정보를 불러오는 중...</p>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const mt10id = document.getElementById("venueKopisId").value;
+        const calendarDays = document.getElementById("calendar-days");
+
+        // 페이지 로드 시 공연장 정보 API 호출
+        fetch(`/hall/${mt10id}/info`)
+            .then(response => response.json())
+            .then(venue => {
+                const infoBox = document.getElementById("venue-info-box");
+                infoBox.innerHTML = `
+                    <div class="info-item"><span class="info-label">공연장명:</span> \${venue.venueName}</div>
+                    <div class="info-item"><span class="info-label">총 좌석 수:</span> \${venue.totalSeats}석</div>
+                    <div class="info-item"><span class="info-label">주소:</span> \${venue.address}</div>
+                    <div class="info-item"><span class="info-label">전화번호:</span> \${venue.telno}</div>
+                    <div class="info-item"><span class="info-label">홈페이지:</span> <a href="\${venue.relateUrl}" target="_blank">바로가기</a></div>
+                `;
+            });
+
+        // 페이지 로드 시 출연진(배우) 정보 API 호출 샘플 데이터
+        fetch(`/hall/${mt10id}/casting`)
+            .then(response => response.json())
+            .then(castingList => {
+                const castingBox = document.getElementById("casting-list");
+                castingBox.innerHTML = ""; // 초기화
+
+                if(castingList.length === 0) {
+                    castingBox.innerHTML = "<p style='color: #9ca3af;'>등록된 출연진 정보가 없습니다.</p>";
+                    return;
+                }
+
+                // 기획 변경에 맞춰 '이름'만 들어간 이쁜 타원형 배지 생성!
+                castingList.forEach(casting => {
+                    const badge = document.createElement("div");
+                    badge.classList.add("actor-badge");
+                    badge.innerText = casting.actorName;
+                    castingBox.appendChild(badge);
+                });
+            });
+
+        // 관람 가능 날짜 API 호출 (기존 유지)
+        fetch(`/hall/${mt10id}/dates`)
+            .then(response => response.json())
+            .then(data => {
+                calendarDays.innerHTML = "";
+                data.forEach(item => {
+                    const dayDiv = document.createElement("div");
+                    const dayNum = item.date.split("-")[2];
+                    dayDiv.innerText = dayNum;
+
+                    if (item.isAvailable) {
+                        dayDiv.classList.add("day", "available");
+                        dayDiv.addEventListener("click", () => loadSchedules(mt10id, item.date));
+                    } else {
+                        dayDiv.classList.add("day", "unavailable");
+                    }
+                    calendarDays.appendChild(dayDiv);
+                });
+            });
+    });
+
+    // 특정 날짜 클릭 시 스케줄 선택 API 호출 (기존 유지)
+    function loadSchedules(mt10id, selectedDate) {
+        const scheduleList = document.getElementById("schedule-list");
+        scheduleList.innerHTML = "<p>회차 정보를 불러오는 중...</p>";
+
+        fetch(`/hall/${mt10id}/schedules?date=${selectedDate}`)
+            .then(response => response.json())
+            .then(data => {
+                scheduleList.innerHTML = "";
+
+                if(data.length === 0) {
+                    scheduleList.innerHTML = "<p>해당 날짜에는 상영 스케줄이 없습니다.</p>";
+                    return;
+                }
+
+                data.forEach(schedule => {
+                    const btn = document.createElement("button");
+                    btn.classList.add("schedule-btn");
+                    btn.innerText = `${schedule.roundNumber}회차 (${schedule.showTime})`;
+
+                    btn.addEventListener("click", () => {
+                        alert(`선택하신 스케줄 ID는 [${schedule.scheduleId}] 입니다. 이제 좌석 선택하러 고고!`);
+                    });
+
+                    scheduleList.appendChild(btn);
+                });
+            });
+    }
+</script>
+</body>
+</html>
