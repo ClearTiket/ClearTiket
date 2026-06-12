@@ -1,10 +1,157 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클리어티켓 - 취향 설문</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <style>
+        .survey-page {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            padding: 48px 24px; background: var(--bg);
+        }
+        .survey-logo { margin-bottom: 8px; }
+        .survey-logo img { height: 44px; }
+        .survey-greeting { text-align: center; margin-bottom: 24px; }
+        .survey-greeting .name { font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+        .survey-greeting .sub  { font-size: 13px; color: var(--text-muted); }
+        .survey-card {
+            background: var(--white); border: 1.5px solid var(--border);
+            border-radius: var(--radius-lg); padding: 32px 36px;
+            width: 100%; max-width: 520px; box-shadow: var(--shadow-md);
+        }
+        .q-block { margin-bottom: 28px; }
+        .q-block:last-of-type { margin-bottom: 0; }
+        .q-label { font-size: 13px; font-weight: 700; color: var(--text-main); margin-bottom: 14px; line-height: 1.5; }
+        .q-label .limit { font-weight: 400; color: var(--text-muted); }
+        .chip-group { display: flex; flex-wrap: wrap; gap: 10px; }
+        .chip {
+            padding: 9px 22px; border-radius: 24px; border: 1.5px solid var(--border);
+            background: var(--white); color: var(--text-sub); font-size: 14px; font-weight: 600;
+            font-family: inherit; cursor: pointer; transition: all .18s; user-select: none;
+        }
+        .chip:hover { border-color: var(--primary); color: var(--primary); }
+        .chip.selected { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(75,110,245,.3); }
+        .tag-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag {
+            padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--border);
+            background: var(--white); color: var(--text-sub); font-size: 13px; font-weight: 500;
+            font-family: inherit; cursor: pointer; transition: all .18s; user-select: none;
+        }
+        .tag:hover { border-color: var(--primary); color: var(--primary); }
+        .tag.selected { background: var(--primary-light); border-color: var(--primary); color: var(--primary); font-weight: 700; }
+        .companion-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .companion-btn {
+            padding: 11px 10px; border-radius: 12px; border: 1.5px solid var(--border);
+            background: var(--white); color: var(--text-sub); font-size: 13.5px; font-weight: 600;
+            font-family: inherit; cursor: pointer; transition: all .18s; user-select: none; text-align: center;
+        }
+        .companion-btn:hover { border-color: var(--primary); color: var(--primary); }
+        .companion-btn.selected { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(75,110,245,.25); }
+        .q-divider { height: 1px; background: var(--border); margin: 24px 0; }
+        .skip-row { text-align: right; margin-top: 10px; }
+        .skip-link {
+            font-size: 12px; color: var(--text-muted); text-decoration: underline; cursor: pointer;
+            background: none; border: none; font-family: inherit; transition: color .15s;
+        }
+        .skip-link:hover { color: var(--primary); }
+        .survey-cta { width: 100%; max-width: 520px; margin-top: 16px; }
+        .btn-cta {
+            width: 100%; padding: 15px; border-radius: var(--radius); border: none;
+            font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer;
+            transition: all .2s; background: #C0C8E8; color: #fff; pointer-events: none;
+        }
+        .btn-cta.ready { background: var(--primary); pointer-events: auto; box-shadow: 0 4px 14px rgba(75,110,245,.35); }
+        .btn-cta.ready:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    </style>
 </head>
 <body>
+<main>
+    <div class="survey-page fade-in">
+        <a th:href="@{/mypage}" class="survey-logo">
+            <img th:src="@{/images/logo.png}" alt="클리어티켓"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <span style="display:none;font-size:24px;font-weight:800;color:#4B6EF5;align-items:center;">클리어티켓</span>
+        </a>
 
+        <div class="survey-greeting">
+            <p class="name" th:text="${currentUser.name} + '님'">홍길동님</p>
+            <p class="sub">30초만 투자하시면 취향에 맞는 인생공연을 찾아드릴게요</p>
+        </div>
+
+        <div class="survey-card">
+
+            <!-- Q1 장르 -->
+            <div class="q-block">
+                <p class="q-label">Q1. 가장 선호하는 공연 장르는 무엇인가요? <span class="limit">(최대 2개 선택)</span></p>
+                <div class="chip-group">
+                    <button th:each="genre : ${genreList}" th:text="${genre}"
+                            class="chip" onclick="selectChip(this,'q1',2)"></button>
+                </div>
+            </div>
+
+            <div class="q-divider"></div>
+
+            <!-- Q2 분위기 -->
+            <div class="q-block">
+                <p class="q-label">Q2. 공연을 볼 때 어떤 분위기를 원하시나요? <span class="limit">(최대 2개 선택)</span></p>
+                <div class="tag-group">
+                    <button th:each="mood : ${moodList}" th:text="${mood}"
+                            class="tag" onclick="selectChip(this,'q2',2)"></button>
+                </div>
+            </div>
+
+            <div class="q-divider"></div>
+
+            <!-- Q3 동행 -->
+            <div class="q-block">
+                <p class="q-label">Q3. 주로 누구와 함께 공연을 관람하시나요? <span class="limit">(1개 선택)</span></p>
+                <div class="companion-group">
+                    <button th:each="companion : ${companionList}" th:text="${companion}"
+                            class="companion-btn" onclick="selectChip(this,'q3',1)"></button>
+                </div>
+            </div>
+
+            <div class="skip-row">
+                <button class="skip-link" th:onclick="'location.href=\'' + @{/mypage} + '\''">다음에 할게요 Skip</button>
+            </div>
+        </div>
+
+        <div class="survey-cta">
+            <button class="btn-cta" id="cta-btn" onclick="goResult()">나에게 맞는 공연 보러 가기</button>
+        </div>
+    </div>
+</main>
+
+<script th:inline="javascript">
+    const state = {q1: [], q2: [], q3: []};
+
+    function selectChip(btn, group, max) {
+        const isSelected = btn.classList.contains('selected');
+        if (isSelected) {
+            btn.classList.remove('selected');
+            state[group] = state[group].filter(b => b !== btn);
+        } else {
+            if (state[group].length >= max) {
+                state[group].shift().classList.remove('selected');
+            }
+            btn.classList.add('selected');
+            state[group].push(btn);
+        }
+        updateCta();
+    }
+
+    function updateCta() {
+        const ready = state.q3.length >= 1;
+        document.getElementById('cta-btn').classList.toggle('ready', ready);
+    }
+
+    function goResult() {
+        location.href = /*[[@{/mypage}]]*/ '/mypage';
+    }
+</script>
 </body>
 </html>

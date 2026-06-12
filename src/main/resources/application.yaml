@@ -2,10 +2,29 @@ server:
   port: 8080
 
 spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: tjoeun.jr5@gmail.com
+    # 아래 password 값을 Gmail 앱 비밀번호 16자리로 교체하세요.
+    # 앱 비밀번호 발급:
+    #   Google 계정 → 보안 → 2단계 인증 활성화 →
+    #   앱 비밀번호 → "기타(직접 입력)" 선택 → 생성된 16자리 복사
+    password: akdq wcwe vcug titm
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   application:
     name: ClearTicket
   config:
-    import: optional:file:./config.yaml
+    import: optional:classpath:config.yaml
   datasource:
     url: jdbc:postgresql://localhost:5432/clearticket
     username: ${db.username}
@@ -30,16 +49,8 @@ spring:
     init:
       data-locations: classpath:sql/data.sql
       mode: always
-#  autoconfigure:
-#    exclude:
-#      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-#      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-#      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
-#      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
 
-app:
-  dummy-user:
-    id: hong123
-    password: "Test1234!"
-    name: 홍길동
-    email: test@test.com
+# 세션 타임아웃 30분 (비활동 시 자동 로그아웃)
+
+# 세션 만료 시 리다이렉트 (필요한 경우 추가)
+# spring.session.timeout=30m
