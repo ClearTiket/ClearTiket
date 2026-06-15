@@ -98,9 +98,9 @@ public class ReservationService {
 
 
     /**
-     * 엔티티(Entity) 데이터를 응답 DTO(ResponseDto)로 변환하는 중복 코드 제거용 헬퍼 메서드
-     * @param reservation 변환할 예약 엔티티 객체
-     * @return 변환이 완료된 예약 정보 응답 DTO 객체
+     * 예약 엔티티 데이터를 응답 DTO 객체로 변환
+     * @param reservation 변환할 예약 엔티티 원본 데이터
+     * @return 예약 정보 및 연관 공연 정보가 포함된 최종 응답 DTO 객체
      */
     private ReservationResponseDto toResponseDto(Reservation reservation) {
         Schedule schedule = reservation.getSchedule();

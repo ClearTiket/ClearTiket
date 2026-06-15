@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "payments")
 @Getter
-@Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
 @AllArgsConstructor
 public class Payment {
 
@@ -39,16 +39,4 @@ public class Payment {
 
     @CreationTimestamp
     LocalDateTime paymentDate;
-}
-
-enum PaymentMethod {
-    CARD,
-    BANK_TRANSFER,
-    EASY_PAYMENT
-}
-
-enum PaymentStatus {
-    PENDING,
-    CONFIRMED,
-    CANCELED
 }
