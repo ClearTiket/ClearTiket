@@ -1,5 +1,6 @@
 package com.clearticket.clearticket.service;
 
+
 import com.clearticket.clearticket.model.dto.GenreRatioDto;
 import com.clearticket.clearticket.model.dto.MyPageReservationResponseDto;
 import com.clearticket.clearticket.model.dto.MyPageStatisticsResponseDto;
@@ -31,7 +32,7 @@ public class MyPageService {
      */
     @Transactional(readOnly = true)
     public MyPageStatisticsResponseDto getUserStatistics(Long userId) {
-        List<Reservation> reservations = reservationRepository.findByUserIdAndStatus(userId, ReservationStatus.CONFIRMED);
+        List<Reservation> reservations = reservationRepository.findByUserUserIdAndStatus(userId, ReservationStatus.CONFIRMED);
 
         int totalWatchingTime = 0;
         int totalCount = reservations.size();
@@ -104,7 +105,7 @@ public class MyPageService {
      */
     @Transactional(readOnly = true)
     public List<MyPageReservationResponseDto> getMyReservations(Long userId) {
-        List<Reservation> reservations = reservationRepository.findByUserId(userId);
+        List<Reservation> reservations = reservationRepository.findByUserUserId(userId);
         List<MyPageReservationResponseDto> result = new ArrayList<>();
 
         for (Reservation reservation : reservations) {
@@ -157,14 +158,14 @@ public class MyPageService {
         }
 
 
-         int waitingOrder = 1; // 기본값 1
-         if (schedule != null) {
-             int aheadCount = waitingRepository.countByScheduleAndCreatedAtBeforeAndStatus(
-                     schedule,
-                     waiting.getCreatedAt(),
-                     WaitingStatus.WAITING
-             );
-             waitingOrder = aheadCount + 1;
+        int waitingOrder = 1; // 기본값 1
+        if (schedule != null) {
+            int aheadCount = waitingRepository.countByScheduleAndCreatedAtBeforeAndStatus(
+                    schedule,
+                    waiting.getCreatedAt(),
+                    WaitingStatus.WAITING
+            );
+            waitingOrder = aheadCount + 1;
         }
 
         Seat seat = waiting.getSeat();
@@ -196,7 +197,7 @@ public class MyPageService {
      */
     @Transactional(readOnly = true)
     public List<MyPageWaitingResponseDto> getMyWaitings(Long userId) {
-        List<Waiting> waitings = waitingRepository.findByUserId(userId);
+        List<Waiting> waitings = waitingRepository.findByUserUserId(userId);
         List<MyPageWaitingResponseDto> result = new ArrayList<>();
 
         for (Waiting waiting : waitings) {
@@ -207,52 +208,31 @@ public class MyPageService {
     }
 
 
+
     /**
      * 예매대기 취소 (상태 변경 방식)
      * @param waitingId 취소하고자 하는 예매대기 고유 ID
+     * @param userId 로그인한 사용자의 고유 ID (권한 검증용)
      */
     @Transactional
-    public void cancelWaitingById(Long waitingId) {
+
+    public void cancelWaitingById(Long waitingId, Long userId) {
         Optional<Waiting> optionalWaiting = waitingRepository.findById(waitingId);
 
-        if (optionalWaiting.isEmpty()) {
         if (optionalWaiting.isEmpty()) {
             throw new IllegalArgumentException("존재하지 않는 예매대기 내역입니다. ID: " + waitingId);
         }
 
         Waiting waiting = optionalWaiting.get();
-        waiting.changeStatus(WaitingStatus.EXPIRED)
-    }
 
-
-
-    /**
-     * 예매대기 엔티티를 마이페이지 전용 응답 DTO로 변환
-     */
-    private MyPageWaitingResponseDto toMyPageWaitingResponseDto(Waiting waiting) {
-        Schedule schedule = waiting.getSchedule();
-        Performance performance = (schedule != null) ? schedule.getPerformance() : null;
-
-        LocalDateTime showDateTime = null;
-        if (schedule != null && schedule.getShowDate() != null && schedule.getShowTime() != null) {
-            showDateTime = LocalDateTime.of(schedule.getShowDate(), schedule.getShowTime());
+        if (!waiting.getUser().getUserId().equals(userId)) {
+            throw new IllegalStateException("본인의 예매대기 내역만 취소할 수 있습니다.");
         }
 
-        // 대기순번 계산 로직 (임시로 1번 처리, 프로젝트 규칙에 따라 추후 보완 가능)
-        int waitingOrder = 1;
+        if (waiting.getStatus() != WaitingStatus.WAITING) {
+            throw new IllegalStateException("이미 취소되었거나 처리가 완료된 대기 내역입니다.");
+        }
 
-        return new MyPageWaitingResponseDto(
-                waiting.getWaitingId(),
-                performance != null ? performance.getTitle() : "공연 정보 없음",
-                performance != null ? performance.getPosterUrl() : null,
-                showDateTime,
-                "신청 좌석 정보", // 좌석 매핑 구조에 따라 텍스트 결합 필요
-                waitingOrder,
-                waiting.getStatus() != null ? waiting.getStatus().name() : null
-        );
+        waiting.changeStatus(WaitingStatus.EXPIRED);
     }
-
-
-
-
 }
