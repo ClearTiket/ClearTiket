@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/mypage")
-public class MypageController {
+public class MypageApiController {
 
     private UserSession getLoginUser(HttpSession session) {
         return (UserSession) session.getAttribute("loginUser");
