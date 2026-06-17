@@ -113,15 +113,15 @@ public class MypageApiController {
      * @param session
      * @return
      */
-    @GetMapping("/profile")
-    public ResponseEntity<?> getMyProfile(HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-
-        // TODO: 서비스에 getUserProfile 메서드 만들기
-        Object profile = myPageService.getUserProfile(userId);
-        return ResponseEntity.ok(profile);
-    }
+//    @GetMapping("/profile")
+//    public ResponseEntity<?> getMyProfile(HttpSession session) {
+//        Long userId = getLoginUserId(session);
+//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
+//
+//        // TODO: 서비스에 getUserProfile 메서드 만들기
+//        Object profile = myPageService.getUserProfile(userId);
+//        return ResponseEntity.ok(profile);
+//    }
 
     /**
      * 프로필 수정에서 회원 정보 수정
@@ -129,34 +129,34 @@ public class MypageApiController {
      * @param session
      * @return
      */
-    @PutMapping("/profile")
-    public ResponseEntity<?> updateMyProfile(@RequestBody Map<String, Object> updateData, HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-
-        try {
-            // TODO: 서비스에 updateUserProfile 메서드 만들기
-            myPageService.updateUserProfile(userId, updateData);
-            return ResponseEntity.ok("회원 정보가 성공적으로 수정되었습니다.");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("수정에 실패했습니다: " + e.getMessage());
-        }
-    }
+//    @PutMapping("/profile")
+//    public ResponseEntity<?> updateMyProfile(@RequestBody Map<String, Object> updateData, HttpSession session) {
+//        Long userId = getLoginUserId(session);
+//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
+//
+//        try {
+//            // TODO: 서비스에 updateUserProfile 메서드 만들기
+//            myPageService.updateUserProfile(userId, updateData);
+//            return ResponseEntity.ok("회원 정보가 성공적으로 수정되었습니다.");
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body("수정에 실패했습니다: " + e.getMessage());
+//        }
+//    }
 
     /**
      * 배송지 목록 조회
      * @param session
      * @return
      */
-    @GetMapping("/addresses")
-    public ResponseEntity<?> getMyAddresses(HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-
-        // TODO: 서비스에 getAddressList 메서드 만들기
-        List<?> addresses = myPageService.getAddressList(userId);
-        return ResponseEntity.ok(addresses);
-    }
+//    @GetMapping("/addresses")
+//    public ResponseEntity<?> getMyAddresses(HttpSession session) {
+//        Long userId = getLoginUserId(session);
+//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
+//
+//        // TODO: 서비스에 getAddressList 메서드 만들기
+//        List<?> addresses = myPageService.getAddressList(userId);
+//        return ResponseEntity.ok(addresses);
+//    }
 
     /**
      * 신규 배송지 등록
@@ -164,15 +164,15 @@ public class MypageApiController {
      * @param session
      * @return
      */
-    @PostMapping("/addresses")
-    public ResponseEntity<?> addAddress(@RequestBody Map<String, Object> addressData, HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-
-        // TODO: 서비스에 addAddress 메서드 만들기
-        myPageService.addAddress(userId, addressData);
-        return ResponseEntity.ok("새 배송지가 등록되었습니다.");
-    }
+//    @PostMapping("/addresses")
+//    public ResponseEntity<?> addAddress(@RequestBody Map<String, Object> addressData, HttpSession session) {
+//        Long userId = getLoginUserId(session);
+//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
+//
+//        // TODO: 서비스에 addAddress 메서드 만들기
+//        myPageService.addAddress(userId, addressData);
+//        return ResponseEntity.ok("새 배송지가 등록되었습니다.");
+//    }
 
     /**
      * 배송지 삭제
@@ -180,29 +180,29 @@ public class MypageApiController {
      * @param session
      * @return
      */
-    @DeleteMapping("/addresses/{address_id}")
-    public ResponseEntity<?> deleteAddress(@PathVariable("address_id") Long addressId, HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-
-        // TODO: 서비스에 deleteAddress 메서드 만들기
-        myPageService.deleteAddress(addressId, userId);
-        return ResponseEntity.ok("배송지가 삭제되었습니다.");
-    }
+//    @DeleteMapping("/addresses/{address_id}")
+//    public ResponseEntity<?> deleteAddress(@PathVariable("address_id") Long addressId, HttpSession session) {
+//        Long userId = getLoginUserId(session);
+//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
+//
+//        // TODO: 서비스에 deleteAddress 메서드 만들기
+//        myPageService.deleteAddress(addressId, userId);
+//        return ResponseEntity.ok("배송지가 삭제되었습니다.");
+//    }
 
     /**
      * 쿠폰 리스트 조회
      * @param session
      * @return
      */
-    @GetMapping("/coupons")
-    public ResponseEntity<?> getMyCoupons(HttpSession session) {
-        Long userId = getLoginUserId(session);
-        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-
-        // TODO: 서비스에 getCouponList 메서드 만들기
-        List<?> coupons = myPageService.getCouponList(userId);
-        return ResponseEntity.ok(coupons);
-    }
+//    @GetMapping("/coupons")
+//    public ResponseEntity<?> getMyCoupons(HttpSession session) {
+//        Long userId = getLoginUserId(session);
+//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
+//
+//        // TODO: 서비스에 getCouponList 메서드 만들기
+//        List<?> coupons = myPageService.getCouponList(userId);
+//        return ResponseEntity.ok(coupons);
+//    }
 
 }
