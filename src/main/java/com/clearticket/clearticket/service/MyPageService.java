@@ -1,14 +1,9 @@
 package com.clearticket.clearticket.service;
 
 
-import com.clearticket.clearticket.model.dto.GenreRatioDto;
-import com.clearticket.clearticket.model.dto.MyPageReservationResponseDto;
-import com.clearticket.clearticket.model.dto.MyPageStatisticsResponseDto;
-import com.clearticket.clearticket.model.dto.MyPageWaitingResponseDto;
+import com.clearticket.clearticket.model.dto.*;
 import com.clearticket.clearticket.model.entity.*;
-import com.clearticket.clearticket.repository.ReservationRepository;
-import com.clearticket.clearticket.repository.SeatRepository;
-import com.clearticket.clearticket.repository.WaitingRepository;
+import com.clearticket.clearticket.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +19,9 @@ public class MyPageService {
     private final ReservationRepository reservationRepository;
     private final WaitingRepository waitingRepository;
     private final SeatRepository seatRepository;
+    private final AddressRepository addressRepository;
+    private final UserRepository userRepository;
+    private final CouponRepository couponRepository;
 
     /**
      * 사용자 통계 및 취향분석 조회
@@ -208,14 +206,12 @@ public class MyPageService {
     }
 
 
-
     /**
      * 예매대기 취소 (상태 변경 방식)
      * @param waitingId 취소하고자 하는 예매대기 고유 ID
      * @param userId 로그인한 사용자의 고유 ID (권한 검증용)
      */
     @Transactional
-
     public void cancelWaitingById(Long waitingId, Long userId) {
         Optional<Waiting> optionalWaiting = waitingRepository.findById(waitingId);
 
@@ -235,4 +231,181 @@ public class MyPageService {
 
         waiting.changeStatus(WaitingStatus.EXPIRED);
     }
+
+
+
+    // ======================================================
+    // 마이페이지 회원정보 및 배송지관리 관련 서비스
+    // ======================================================
+
+    /**
+     * 마이페이지 프로필 첫 화면에 보이는 회원의 상세 정보
+     * @param userId 로그인한 사용자
+     * @return 프로필 정보
+     */
+    @Transactional(readOnly = true)
+    public MyPageProfileResponseDto getUserProfile(Long userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            throw new IllegalArgumentException("존재하지 않는 회원입니다. ID: " + userId);
+        }
+
+        User user = userOptional.get();
+        return new MyPageProfileResponseDto(
+                user.getUserId(),
+                user.getEmail(),
+                user.getName(),
+                user.getAddress(),
+                user.getPhone()
+        );
+    }
+
+
+    /**
+     * 프로필 수정 새 정보 업데이트
+     * @param userId 로그인한 회원
+     * @param requestDto 화면에서 수정요청한 데이터
+     */
+    @Transactional
+    public void updateUserProfile(Long userId, MyPageProfileUpdateRequestDto requestDto) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+
+        if (optionalUser.isEmpty()) {
+            throw new IllegalArgumentException("존재하지 않는 회원입니다. ID: " + userId);
+        }
+
+        User user = optionalUser.get();
+
+        user.setName(requestDto.getName());
+        user.setEmail(requestDto.getEmail());
+        user.setPhone(requestDto.getPhone());
+    }
+
+    /**
+     * 마이페이지 배송지 목록 전체 조회
+     * @param userId 로그인한 회원
+     * @return 배송지 정보 리스트
+     */
+    @Transactional(readOnly = true)
+    public List<MyPageAddressResponseDto> getAddressList(Long userId) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+
+        if (optionalUser.isEmpty()) {
+            throw new IllegalArgumentException("존재하지 않는 회원입니다. ID: " + userId);
+        }
+
+        User user = optionalUser.get();
+
+        List<Address> addresses = addressRepository.findByUser(user);
+        List<MyPageAddressResponseDto> result = new ArrayList<>();
+
+        for (Address addr : addresses) {
+            result.add(new MyPageAddressResponseDto(
+                    addr.getAddressId(),
+                    addr.getAddressName(),
+                    addr.getRecipientName(),
+                    addr.getRecipientPhone(),
+                    addr.getZonecode(),
+                    addr.getRoadAddress(),
+                    addr.getDetailAddress(),
+                    addr.isDefault()
+            ));
+        }
+        return result;
+    }
+
+
+    /**
+     * 신규 배송지 등록
+     * @param userId 로그인한 회원
+     * @param requestDto 신규 배송지 등록 요청 데이터
+     */
+    @Transactional
+    public void addAddress(Long userId, MyPageAddressSaveRequestDto requestDto) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+
+        if (optionalUser.isEmpty()) {
+            throw new IllegalArgumentException("존재하지 않는 회원입니다. ID: " + userId);
+        }
+
+        User user = optionalUser.get();
+
+        // 신규 배송지가 기본 배송지로 설정된 경우, 기존 기본 배송지 상태를 비활성화(false) 처리
+        if (requestDto.isDefault()) {
+            Optional<Address> oldDefaultAddress = addressRepository.findByUserAndIsDefaultTrue(user);
+            if (oldDefaultAddress.isPresent()) {
+                Address oldDefault = oldDefaultAddress.get();
+                oldDefault.changeDefaultStatus(false); // 기존 기본 주소를 일반 주소로 변경
+            }
+        }
+
+        Address newAddress = new Address(
+                null,
+                user,
+                requestDto.getAddressName(),
+                requestDto.getRecipientName(),
+                requestDto.getRecipientPhone(),
+                requestDto.getZonecode(),
+                requestDto.getRoadAddress(),
+                requestDto.getDetailAddress(),
+                requestDto.isDefault()
+        );
+
+        addressRepository.save(newAddress);
+    }
+
+
+    /**
+     * 배송지 삭제
+     * @param addressId 삭제하려는 배송지 ID
+     * @param userId 로그인한 회원
+     */
+    @Transactional
+    public void deleteAddress(Long addressId, Long userId) {
+        Optional<Address> optionalAddress = addressRepository.findById(addressId);
+
+        if (optionalAddress.isEmpty()) {
+            throw new IllegalArgumentException("존재하지 않는 배송지 내역입니다. ID: " + addressId);
+        }
+
+        Address address = optionalAddress.get();
+
+        if (!address.getUser().getUserId().equals(userId)) {
+            throw new IllegalStateException("본인의 배송지 정보만 삭제할 수 있습니다.");
+        }
+
+        addressRepository.delete(address);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyPageCouponResponseDto> getCouponList(Long userId) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+
+        if (optionalUser.isEmpty()) {
+            throw new IllegalArgumentException("존재하지 않는 회원입니다. ID: " + userId);
+        }
+
+        User user = optionalUser.get();
+
+        List<Coupon> coupons = couponRepository.findByUser(user);
+        List<MyPageCouponResponseDto> result = new ArrayList<>();
+
+        for (Coupon coupon : coupons) {
+            String discountTypeStr = coupon.getDiscountType() != null ? String.valueOf(coupon.getDiscountType()) : null;
+            String statusStr = coupon.getStatus() != null ? String.valueOf(coupon.getStatus()) : null;
+
+            result.add(new MyPageCouponResponseDto(
+                    coupon.getCouponId(),
+                    coupon.getCouponName(),
+                    coupon.getDiscountValue(),
+                    discountTypeStr,
+                    coupon.getExpiryDate() != null ? coupon.getExpiryDate().atStartOfDay() : null,
+                    statusStr
+            ));
+        }
+
+        return result;
+    }
+
+
 }

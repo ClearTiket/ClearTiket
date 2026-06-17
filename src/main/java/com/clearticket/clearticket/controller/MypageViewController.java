@@ -60,6 +60,21 @@ public class MypageViewController {
         return "mypage/address";
     }
 
+    /**
+     * 배송지 등록 및 수정
+     * @param session 현재 요청 세션
+     * @param model
+     * @return
+     */
+    @GetMapping("/address/form")
+    public String addressForm(HttpSession session, Model model) {
+        if (!checkLogin(session, model)) {
+            return "redirect:/login";
+        }
+        return "mypage/address-form"; // html명 확인후 수정예정
+    }
+
+
     @GetMapping("/survey")
     public String survey(HttpSession session, Model model) {
         if (!checkLogin(session, model)) return "redirect:/login";
@@ -77,4 +92,9 @@ public class MypageViewController {
         if (!checkLogin(session, model)) return "redirect:/login";
         return "mypage/waitlist";
     }
+
+
+
+
+
 }

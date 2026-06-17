@@ -1,5 +1,6 @@
 package com.clearticket.clearticket.model.entity;
 
+import aQute.bnd.annotation.headers.BundleContributors;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -8,10 +9,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "coupons")
+@Setter
 @Getter
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class Coupon {
 
     // Primary Key
@@ -49,15 +51,6 @@ public class Coupon {
     public void useCoupon() {
         this.status = CouponStatus.USED;
     }
+
 }
 
-enum DiscountType {
-    AMOUNT,   // 고정 금액 할인 (예: 5000원 할인)
-    PERCENT   // 정률 비율 할인 (예: 10% 할인)
-}
-
-enum CouponStatus {
-    AVAILABLE, // 사용 가능
-    USED,      // 사용 완료
-    EXPIRED    // 기간 만료
-}

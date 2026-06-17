@@ -1,9 +1,7 @@
 package com.clearticket.clearticket.controller;
 
 import com.clearticket.clearticket.model.UserSession;
-import com.clearticket.clearticket.model.dto.MyPageReservationResponseDto;
-import com.clearticket.clearticket.model.dto.MyPageStatisticsResponseDto;
-import com.clearticket.clearticket.model.dto.MyPageWaitingResponseDto;
+import com.clearticket.clearticket.model.dto.*;
 import com.clearticket.clearticket.service.MyPageService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -105,104 +103,120 @@ public class MypageApiController {
 
 
     // ==============================================================================
-    // 마이페이지 공통작업 백엔드 로직 구현
+    // 마이페이지 회원정보 및 배송지관리
     // ==============================================================================
 
     /**
      * 로그인한 사용자의 상세 프로필 정보 조회
-     * @param session
-     * @return
+     * @param session 현재 요청 세션
+     * @return 인증 성공시 프로필 정보, 미인증시 에러 메세지
      */
-//    @GetMapping("/profile")
-//    public ResponseEntity<?> getMyProfile(HttpSession session) {
-//        Long userId = getLoginUserId(session);
-//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-//
-//        // TODO: 서비스에 getUserProfile 메서드 만들기
-//        Object profile = myPageService.getUserProfile(userId);
-//        return ResponseEntity.ok(profile);
-//    }
+    @GetMapping("/profile")
+    public ResponseEntity<?> getMyProfile(HttpSession session) {
+        Long userId = getLoginUserId(session);
+
+        if (userId == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        MyPageProfileResponseDto profile = myPageService.getUserProfile(userId);
+        return ResponseEntity.ok(profile);
+    }
 
     /**
      * 프로필 수정에서 회원 정보 수정
-     * @param updateData
-     * @param session
-     * @return
+     * @param requestDto 화면에서 전달된 프로필 수정 요청 데이터
+     * @param session 현재 요청 세션
+     * @return 수정 성공시 성공 메세지, 미인증시 에러 메세지
      */
-//    @PutMapping("/profile")
-//    public ResponseEntity<?> updateMyProfile(@RequestBody Map<String, Object> updateData, HttpSession session) {
-//        Long userId = getLoginUserId(session);
-//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-//
-//        try {
-//            // TODO: 서비스에 updateUserProfile 메서드 만들기
-//            myPageService.updateUserProfile(userId, updateData);
-//            return ResponseEntity.ok("회원 정보가 성공적으로 수정되었습니다.");
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest().body("수정에 실패했습니다: " + e.getMessage());
-//        }
-//    }
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateMyProfile(@RequestBody MyPageProfileUpdateRequestDto requestDto, HttpSession session) {
+        Long userId = getLoginUserId(session);
+
+        if (userId == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        try {
+            myPageService.updateUserProfile(userId, requestDto);
+            return ResponseEntity.ok("회원 정보가 성공적으로 수정되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("수정에 실패했습니다: " + e.getMessage());
+        }
+    }
 
     /**
-     * 배송지 목록 조회
-     * @param session
-     * @return
+     * 배송지 목록 전체 조회
+     * @param session 현재 요청 세션
+     * @return 조회 성공시 배송지 정보 리스트, 미인증시 에러 메세지
      */
-//    @GetMapping("/addresses")
-//    public ResponseEntity<?> getMyAddresses(HttpSession session) {
-//        Long userId = getLoginUserId(session);
-//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-//
-//        // TODO: 서비스에 getAddressList 메서드 만들기
-//        List<?> addresses = myPageService.getAddressList(userId);
-//        return ResponseEntity.ok(addresses);
-//    }
+    @GetMapping("/addresses")
+    public ResponseEntity<?> getMyAddresses(HttpSession session) {
+        Long userId = getLoginUserId(session);
+
+        if (userId == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        List<MyPageAddressResponseDto> addresses = myPageService.getAddressList(userId);
+
+        return ResponseEntity.ok(addresses);
+    }
 
     /**
      * 신규 배송지 등록
-     * @param addressData
-     * @param session
-     * @return
+     * @param requestDto 화면에서 전달된 신규 배송지 등록 요청 데이터
+     * @param session 현재 요청 세션
+     * @return 등록 성공시 성공 메세지, 미인증시 에러 메세지
      */
-//    @PostMapping("/addresses")
-//    public ResponseEntity<?> addAddress(@RequestBody Map<String, Object> addressData, HttpSession session) {
-//        Long userId = getLoginUserId(session);
-//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-//
-//        // TODO: 서비스에 addAddress 메서드 만들기
-//        myPageService.addAddress(userId, addressData);
-//        return ResponseEntity.ok("새 배송지가 등록되었습니다.");
-//    }
+    @PostMapping("/addresses")
+    public ResponseEntity<?> addAddress(@RequestBody MyPageAddressSaveRequestDto requestDto, HttpSession session) {
+        Long userId = getLoginUserId(session);
+
+        if (userId == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        myPageService.addAddress(userId, requestDto);
+
+        return ResponseEntity.ok("새 배송지가 등록되었습니다.");
+    }
 
     /**
      * 배송지 삭제
-     * @param addressId
-     * @param session
-     * @return
+     * @param addressId 삭제 배송지 ID
+     * @param session 현재 요청 세션
+     * @return 삭제 성공시 성공 메세지, 미인증시 에러 메세지
      */
-//    @DeleteMapping("/addresses/{address_id}")
-//    public ResponseEntity<?> deleteAddress(@PathVariable("address_id") Long addressId, HttpSession session) {
-//        Long userId = getLoginUserId(session);
-//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-//
-//        // TODO: 서비스에 deleteAddress 메서드 만들기
-//        myPageService.deleteAddress(addressId, userId);
-//        return ResponseEntity.ok("배송지가 삭제되었습니다.");
-//    }
+    @DeleteMapping("/addresses/{address_id}")
+    public ResponseEntity<?> deleteAddress(@PathVariable("address_id") Long addressId, HttpSession session) {
+        Long userId = getLoginUserId(session);
+
+        if (userId == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        myPageService.deleteAddress(addressId, userId);
+
+        return ResponseEntity.ok("배송지가 삭제되었습니다.");
+    }
 
     /**
-     * 쿠폰 리스트 조회
-     * @param session
-     * @return
+     * 쿠폰 목록 전체 조회
+     * @param session 현재 요청 세션
+     * @return 조회 성공 시 쿠폰 정보 리스트, 미인증시 에러 메세지
      */
-//    @GetMapping("/coupons")
-//    public ResponseEntity<?> getMyCoupons(HttpSession session) {
-//        Long userId = getLoginUserId(session);
-//        if (userId == null) return ResponseEntity.status(401).body("로그인이 필요합니다.");
-//
-//        // TODO: 서비스에 getCouponList 메서드 만들기
-//        List<?> coupons = myPageService.getCouponList(userId);
-//        return ResponseEntity.ok(coupons);
-//    }
+    @GetMapping("/coupons")
+    public ResponseEntity<?> getMyCoupons(HttpSession session) {
+        Long userId = getLoginUserId(session);
+
+        if (userId == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        List<MyPageCouponResponseDto> coupons = myPageService.getCouponList(userId);
+
+        return ResponseEntity.ok(coupons);
+    }
 
 }
