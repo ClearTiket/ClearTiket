@@ -1,6 +1,5 @@
 package com.clearticket.clearticket.model.entity;
 
-import aQute.bnd.annotation.headers.BundleContributors;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -11,7 +10,6 @@ import java.time.LocalDateTime;
 @Table(name = "coupons")
 @Setter
 @Getter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class Coupon {
@@ -40,7 +38,7 @@ public class Coupon {
 
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private CouponStatus status; // 쿠폰 상태 (예: AVAILABLE, USED, EXPIRED)
+    private CouponStatus couponStatus; // 쿠폰 상태 (예: AVAILABLE, USED, EXPIRED)
 
     // 데이터 생성 일시
     @CreationTimestamp
@@ -49,8 +47,7 @@ public class Coupon {
 
     // 쿠폰을 사용했을 때 상태를 USED로 변경하는 메서드
     public void useCoupon() {
-        this.status = CouponStatus.USED;
+        this.couponStatus = CouponStatus.USED;
     }
 
 }
-
