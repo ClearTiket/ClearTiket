@@ -8,16 +8,21 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "coupons")
+@Setter
 @Getter
-@Builder
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class Coupon {
 
     // Primary Key
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long couponId;
+
+    // 외래키
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     // 2. 일반 컬럼들
     @Column(nullable = false, length = 100)
@@ -38,7 +43,7 @@ public class Coupon {
 
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
-    private CouponStatus status; // 쿠폰 상태 (예: AVAILABLE, USED, EXPIRED)
+    private CouponStatus couponStatus; // 쿠폰 상태 (예: AVAILABLE, USED, EXPIRED)
 
     // 데이터 생성 일시
     @CreationTimestamp
@@ -47,17 +52,7 @@ public class Coupon {
 
     // 쿠폰을 사용했을 때 상태를 USED로 변경하는 메서드
     public void useCoupon() {
-        this.status = CouponStatus.USED;
+        this.couponStatus = CouponStatus.USED;
     }
-}
 
-enum DiscountType {
-    AMOUNT,   // 고정 금액 할인 (예: 5000원 할인)
-    PERCENT   // 정률 비율 할인 (예: 10% 할인)
-}
-
-enum CouponStatus {
-    AVAILABLE, // 사용 가능
-    USED,      // 사용 완료
-    EXPIRED    // 기간 만료
 }

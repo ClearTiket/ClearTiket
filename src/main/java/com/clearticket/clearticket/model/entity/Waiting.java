@@ -36,11 +36,8 @@ public class Waiting {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public void changeStatus(WaitingStatus waitingStatus) {
+    }
 }
 
-enum WaitingStatus {
-    WAITING,
-    NOTIFIED,
-    COMPLETED,
-    EXPIRED
-}
