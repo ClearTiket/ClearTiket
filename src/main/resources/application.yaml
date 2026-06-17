@@ -5,12 +5,12 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: tjoeun.jr5@gmail.com
+    username: ${mail.username}
     # 아래 password 값을 Gmail 앱 비밀번호 16자리로 교체하세요.
     # 앱 비밀번호 발급:
     #   Google 계정 → 보안 → 2단계 인증 활성화 →
     #   앱 비밀번호 → "기타(직접 입력)" 선택 → 생성된 16자리 복사
-    password: akdq wcwe vcug titm
+    password: ${mail.password}
     properties:
       mail:
         smtp:
@@ -24,7 +24,7 @@ spring:
   application:
     name: ClearTicket
   config:
-    import: optional:classpath:config.yaml
+    import: optional:file:config.yaml
   datasource:
     url: jdbc:postgresql://localhost:5432/clearticket
     username: ${db.username}
