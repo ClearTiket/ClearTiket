@@ -392,7 +392,7 @@ public class MyPageService {
 
         for (Coupon coupon : coupons) {
             String discountTypeStr = coupon.getDiscountType() != null ? String.valueOf(coupon.getDiscountType()) : null;
-            String statusStr = coupon.getStatus() != null ? String.valueOf(coupon.getStatus()) : null;
+            String statusStr = coupon.getCouponStatus() != null ? String.valueOf(coupon.getCouponStatus()) : null;
 
             result.add(new MyPageCouponResponseDto(
                     coupon.getCouponId(),

@@ -19,6 +19,11 @@ public class Coupon {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long couponId;
 
+    // 외래키
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     // 2. 일반 컬럼들
     @Column(nullable = false, length = 100)
     private String couponName; // 쿠폰 이름 (예: 신규회원 가입 축하 쿠폰)
