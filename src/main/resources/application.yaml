@@ -49,6 +49,11 @@ spring:
     init:
       data-locations: classpath:sql/data.sql
       mode: always
+lemonsqueezy:
+  api-key: ${LEMON_SQUEEZY_API_KEY}
+  store-id: "410829"
+  variant-id: "1806370"
+
 
 # 세션 타임아웃 30분 (비활동 시 자동 로그아웃)
 
