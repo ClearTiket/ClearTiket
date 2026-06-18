@@ -1,12 +1,10 @@
 package com.clearticket.clearticket.service;
 
-import com.clearticket.clearticket.model.dto.LemonSqueezyRequestDto;
-import com.clearticket.clearticket.model.dto.LemonSqueezyResponseDto;
-import com.clearticket.clearticket.model.dto.PaymentRequestDto;
-import com.clearticket.clearticket.model.dto.PaymentResponseDto;
+import com.clearticket.clearticket.model.dto.*;
 import com.clearticket.clearticket.model.entity.*;
 import com.clearticket.clearticket.repository.PaymentRepository;
 import com.clearticket.clearticket.repository.ReservationRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.parameters.P;
@@ -16,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -34,6 +33,36 @@ public class PaymentService {
 
         return new LemonSqueezyResponseDto(mockCheckoutUrl);
     }
+
+
+    /**
+     * 레몬스퀴지로 부터 전달 받은 웹훅 신호 처리
+     * 전달 받은 데이터 결제상태, 예매번호(ID) 확인 후
+     * 결제상태가 "order_created" 인 경우 예약 상태를 "CONFIRMED" 로 변경 후 DB 저장
+     * @param webhookDto 레몬스퀴지 웹훅이 보내준 데이터
+     */
+    public void processWebhook(LemonSqueezyWebhookDto webhookDto) {
+        log.info("레몬스퀴지 웹훅 처리 시작");
+
+        String eventName = webhookDto.getEventName();
+        Long reservationId = webhookDto.getMeta().getCustomData().getReservationId();
+
+        log.info("웹훅 분석 완료 → 결제상태: {}, 예매번호(ID): {}", eventName, reservationId);
+
+        // 결제 성공시 "order_created"
+        if ("order_created".equals(eventName)) {
+            log.info("결제 성공 확인! 예매번호(ID) {}번을 [예매 완료] 상태로 업데이트", reservationId);
+            Reservation reservation = reservationRepository.findByReservationId(reservationId);
+             if (reservation != null) {
+                reservation.changeStatus(ReservationStatus.CONFIRMED);
+                reservationRepository.save(reservation);
+                log.info("예매번호(ID) {}번 DB 상태 변경 완료 [BOOKED]", reservationId);
+             } else {
+                log.error("DB에서 예매번호 {}번을 찾을 수 없습니다!", reservationId);
+             }
+        }
+    }
+
 
     /**
      * 신규 결제 요청 처리 및 완료 영수증 발급

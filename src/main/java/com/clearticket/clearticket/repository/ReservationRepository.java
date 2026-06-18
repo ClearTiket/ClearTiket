@@ -22,4 +22,11 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
      * @return 해당 회원이 가진 전체 예매 내역 리스트
      */
     List<Reservation> findByUserUserId(Long userId);
+
+    /**
+     * 예매 번호(ID)로 예매 내역 단건 조히
+     * @param reservationId 조회할 예매 내역 ID
+     * @return 조회된 예매내역, 존재하지 않으면 null
+     */
+    Reservation findByReservationId(Long reservationId);
 }
