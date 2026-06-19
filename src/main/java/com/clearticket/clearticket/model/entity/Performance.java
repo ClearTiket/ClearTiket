@@ -37,7 +37,7 @@ public class Performance {
     @Column(nullable = false, length = 50)
     String region;
 
-    @Column(length = 50)
+    @Column(length = 100)
     String enterpriseName;
 
     @Column(nullable = false)
@@ -59,10 +59,10 @@ public class Performance {
     @Enumerated(EnumType.STRING)
     PerformanceStatus status;
 
-    @Column(length = 255)
+    @Column(columnDefinition = "TEXT")
     String introImageUrl;
 
-    @Column(length = 3000)
+    @Column(columnDefinition = "TEXT")
     String extractedText;
 
     @CreationTimestamp

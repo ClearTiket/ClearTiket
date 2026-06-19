@@ -9,36 +9,35 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "users")
 @Getter
+@Setter
 @Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor
 public class User {
 
-    // Primary Key
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(nullable = false, unique = true)
-    Long userId;
+    private Long userId;
 
-    @Column(nullable = false, length = 100)
-    String email;
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
 
     @Column(nullable = false, length = 255)
-    String password;
+    private String password;
 
     @Column(nullable = false, length = 50)
-    String name;
+    private String name;
 
-    @Column(nullable = false, length = 13)
-    String phone;
+    @Column(nullable = false, unique = true, length = 13)
+    private String phone;
 
-    @Column(nullable = false, length = 255)
-    String address;
+    @Column(length = 255)
+    private String address;
 
     @Column(length = 50)
-    String preferenceGenre;
+    private String preferenceGenre;
 
-    @Column(nullable = false)
+    @Column(nullable = false, updatable = false)
     @CreationTimestamp
-    LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 }

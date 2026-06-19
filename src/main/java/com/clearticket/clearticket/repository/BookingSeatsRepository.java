@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 
+//
 @Repository
 public interface BookingSeatsRepository extends JpaRepository<BookingSeat, Long> {
     // seat_id에 데이터가 존재하는가?

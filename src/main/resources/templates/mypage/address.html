@@ -1,10 +1,397 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클리어티켓 - 배송지관리</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <style>
+        .addr-banner {
+            display: flex; align-items: center; gap: 20px;
+            padding: 28px 32px;
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+        .addr-banner-icon {
+            width: 56px; height: 56px; border-radius: 16px;
+            background: var(--primary-light);
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .addr-banner-icon svg { color: var(--primary); }
+        .addr-banner-text h2 { font-size: 17px; font-weight: 700; margin-bottom: 3px; }
+        .addr-banner-text p  { font-size: 13px; color: var(--text-muted); }
+        .addr-banner-count {
+            margin-left: auto;
+            font-size: 13px; color: var(--text-muted);
+            background: #F4F4F8; padding: 6px 14px; border-radius: 20px;
+        }
+        .addr-banner-count strong { color: var(--primary); font-size: 15px; }
+
+        .addr-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .addr-card {
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            border-radius: 16px;
+            padding: 24px 24px 20px;
+            position: relative;
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .addr-card:hover { border-color: #A0B4FA; box-shadow: 0 4px 20px rgba(75,110,245,.1); }
+        .addr-card.is-default { border-color: var(--primary); }
+
+        .addr-card-tag { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+        .addr-tag-name { font-size: 15px; font-weight: 700; }
+        .badge-default {
+            font-size: 11px; font-weight: 700; color: var(--primary);
+            background: rgba(75,110,245,.12); padding: 2px 9px; border-radius: 20px;
+        }
+        .addr-name-phone { font-size: 14px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; }
+        .addr-road { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+        .addr-zip  { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+        .addr-card-actions {
+            display: flex; gap: 8px; margin-top: 18px; padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .addr-card-actions .btn { flex: 1; font-size: 12px; padding: 8px 0; }
+
+        .addr-card.editing { border-color: var(--primary); box-shadow: 0 4px 20px rgba(75,110,245,.15); }
+        .card-edit { display: none; padding: 22px 24px 20px; }
+        .card-edit.open { display: block; }
+        .edit-mode-title {
+            font-size: 13px; font-weight: 700; color: var(--primary);
+            margin-bottom: 16px; display: flex; align-items: center; gap: 6px;
+        }
+        .form-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+        @media (max-width: 600px) { .form-2col { grid-template-columns: 1fr; } }
+        .form-row  { margin-top: 14px; }
+        .f-label {
+            display: block; font-size: 11px; font-weight: 600;
+            color: var(--text-sub); margin-bottom: 5px; letter-spacing: .02em;
+        }
+        .f-req { color: var(--error); }
+        .f-input {
+            width: 100%; padding: 9px 12px;
+            border: 1.5px solid var(--border); border-radius: 9px;
+            font-size: 13px; font-family: inherit; outline: none;
+            transition: border-color .2s, box-shadow .2s; color: var(--text-main);
+            background: var(--white);
+        }
+        .f-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(75,110,245,.1); }
+        .addr-search-row { display: flex; gap: 8px; margin-bottom: 7px; }
+        .addr-search-row .f-input { max-width: 130px; }
+        .edit-foot {
+            display: flex; align-items: center; gap: 10px;
+            margin-top: 18px; padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .default-check-label {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 12px; color: var(--text-sub); cursor: pointer;
+            margin-right: auto;
+        }
+        .default-check-label input { accent-color: var(--primary); width: 14px; height: 14px; }
+
+        .inline-form-wrap {
+            display: none;
+            background: #FAFAFE; border: 1.5px dashed var(--primary);
+            border-radius: 16px; padding: 26px 28px; margin-bottom: 20px;
+        }
+        .inline-form-wrap.open { display: block; }
+        .inline-form-title {
+            font-size: 14px; font-weight: 700; color: var(--primary);
+            margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+        }
+        .form-foot {
+            display: flex; align-items: center; gap: 12px;
+            margin-top: 22px; justify-content: flex-end;
+        }
+        .add-new-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 18px;
+            border: 1.5px dashed var(--primary); border-radius: 16px;
+            background: var(--white); color: var(--primary);
+            font-size: 14px; font-weight: 600; font-family: inherit;
+            cursor: pointer; transition: all .2s;
+        }
+        .add-new-btn:hover { background: var(--primary-light); }
+        .addr-footer-note { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 14px; }
+        .btn-outline-red {
+            background: var(--white); color: #E53E3E;
+            border: 1.5px solid #E53E3E;
+        }
+        .btn-outline-red:hover { background: #FFF5F5; }
+    </style>
 </head>
 <body>
+<th:block th:replace="~{fragments/header :: header}"></th:block>
+<main>
+    <div class="page-wrap fade-in">
+        <h1 class="section-title">배송지관리</h1>
 
+        <div class="mypage-layout">
+            <th:block th:replace="~{fragments/mypage-sidebar :: sidebar('address')}"></th:block>
+
+            <div class="main-content">
+
+                <div class="addr-banner">
+                    <div class="addr-banner-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                    </div>
+                    <div class="addr-banner-text">
+                        <h2>나의 배송지</h2>
+                        <p>기본 배송지는 예매 시 자동으로 선택됩니다.</p>
+                    </div>
+                    <div class="addr-banner-count">
+                        <strong th:text="${#lists.size(addressList)}">2</strong> / 5
+                    </div>
+                </div>
+
+                <div class="addr-grid">
+                    <div th:each="addr : ${addressList}"
+                         th:id="'addr-' + ${addr.id}"
+                         th:classappend="${addr.defaultAddress} ? 'is-default'"
+                         class="addr-card">
+
+                        <div th:id="'addr-' + ${addr.id} + '-view'">
+                            <div class="addr-card-tag">
+                                <span class="addr-tag-name" th:text="${addr.alias}">집</span>
+                                <span th:if="${addr.defaultAddress}" class="badge-default">기본배송지</span>
+                            </div>
+                            <p class="addr-name-phone"
+                               th:text="${addr.name} + ' · ' + ${addr.phone}">홍길동 · 010-1234-5678</p>
+                            <p class="addr-road">
+                                <span th:text="${addr.addr1}">서울특별시 강남구 테헤란로 123</span><br>
+                                <span th:text="${addr.addr2}">클리어빌딩 10층 1001호</span>
+                            </p>
+                            <p class="addr-zip" th:text="'우편번호 ' + ${addr.zip}">우편번호 06141</p>
+                            <div class="addr-card-actions">
+                                <button th:unless="${addr.defaultAddress}"
+                                        class="btn btn-outline-gray btn-sm"
+                                        th:onclick="'setDefault(\'' + ${addr.id} + '\')'">기본으로 설정</button>
+                                <button class="btn btn-outline-gray btn-sm"
+                                        th:onclick="'startEdit(\'' + ${addr.id} + '\')'">수정</button>
+                                <button class="btn btn-outline-red btn-sm"
+                                        th:onclick="'deleteAddr(\'' + ${addr.id} + '\')'">삭제</button>
+                            </div>
+                        </div>
+
+                        <div class="card-edit" th:id="'addr-' + ${addr.id} + '-edit'">
+                            <p class="edit-mode-title">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                                배송지 수정
+                            </p>
+                            <div class="form-2col">
+                                <div>
+                                    <label class="f-label">배송지명 <span class="f-req">*</span></label>
+                                    <input type="text" class="f-input" data-field="alias"
+                                           th:value="${addr.alias}" placeholder="예: 집, 회사">
+                                </div>
+                                <div>
+                                    <label class="f-label">받는 분 <span class="f-req">*</span></label>
+                                    <input type="text" class="f-input" data-field="name"
+                                           th:value="${addr.name}" placeholder="이름">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <label class="f-label">전화번호 <span class="f-req">*</span></label>
+                                <input type="tel" class="f-input" data-field="phone"
+                                       th:value="${addr.phone}"
+                                       placeholder="010-0000-0000" style="max-width:240px;"
+                                       oninput="formatPhone(this)">
+                            </div>
+                            <div class="form-row">
+                                <label class="f-label">주소 <span class="f-req">*</span></label>
+                                <div class="addr-search-row">
+                                    <input type="text" class="f-input" data-field="zip"
+                                           th:value="${addr.zip}" placeholder="우편번호" readonly>
+                                    <button class="btn btn-primary btn-sm"
+                                            onclick="alert('주소 검색 (데모)')">주소 검색</button>
+                                </div>
+                                <input type="text" class="f-input" data-field="addr1"
+                                       th:value="${addr.addr1}"
+                                       placeholder="기본 주소" style="margin-bottom:8px;">
+                                <input type="text" class="f-input" data-field="addr2"
+                                       th:value="${addr.addr2}" placeholder="상세 주소">
+                            </div>
+                            <div class="edit-foot">
+                                <label class="default-check-label">
+                                    <input type="checkbox" data-field="isDefault"
+                                           th:checked="${addr.defaultAddress}"> 기본 배송지로 설정
+                                </label>
+                                <button class="btn btn-outline-gray btn-sm"
+                                        th:onclick="'cancelEdit(\'' + ${addr.id} + '\')'">취소</button>
+                                <button class="btn btn-primary btn-sm"
+                                        th:onclick="'saveEdit(\'' + ${addr.id} + '\')'">저장하기</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- 추가 폼 -->
+                <div class="inline-form-wrap" id="add-form">
+                    <p class="inline-form-title">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"/>
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        새 배송지 추가
+                    </p>
+                    <div class="form-2col">
+                        <div>
+                            <label class="f-label">배송지명 <span class="f-req">*</span></label>
+                            <input type="text" class="f-input" placeholder="예: 집, 회사, 부모님댁">
+                        </div>
+                        <div>
+                            <label class="f-label">받는 분 <span class="f-req">*</span></label>
+                            <input type="text" class="f-input" placeholder="이름">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label class="f-label">전화번호 <span class="f-req">*</span></label>
+                        <input type="tel" class="f-input" placeholder="010-0000-0000"
+                               style="max-width:240px;" oninput="formatPhone(this)">
+                    </div>
+                    <div class="form-row">
+                        <label class="f-label">주소 <span class="f-req">*</span></label>
+                        <div class="addr-search-row">
+                            <input type="text" class="f-input" placeholder="우편번호" readonly>
+                            <button class="btn btn-primary btn-sm"
+                                    onclick="alert('주소 검색 (데모)')">주소 검색</button>
+                        </div>
+                        <input type="text" class="f-input" placeholder="기본 주소" style="margin-bottom:8px;">
+                        <input type="text" class="f-input" placeholder="상세 주소">
+                    </div>
+                    <div class="form-foot">
+                        <label class="default-check-label">
+                            <input type="checkbox"> 기본 배송지로 설정
+                        </label>
+                        <button class="btn btn-outline-gray" onclick="closeAddForm()">취소</button>
+                        <button class="btn btn-primary"
+                                onclick="alert('배송지 추가 완료 (데모)')">추가하기</button>
+                    </div>
+                </div>
+
+                <button class="add-new-btn" id="add-new-btn" onclick="openAddForm()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    새 배송지 추가
+                </button>
+                <p class="addr-footer-note">최대 5개까지 등록 가능합니다.</p>
+
+            </div>
+        </div>
+    </div>
+</main>
+<th:block th:replace="~{fragments/footer :: footer}"></th:block>
+
+<script th:inline="javascript">
+    const ADDR_DATA = /*[[${addressListJson}]]*/ {};
+
+    function startEdit(id) {
+        document.querySelectorAll('.card-edit.open').forEach(el => {
+            const otherId = el.id.replace('-edit', '');
+            if (otherId !== id) cancelEdit(otherId);
+        });
+        const d = ADDR_DATA[id] || {};
+        const editEl = document.getElementById(id + '-edit');
+        editEl.querySelectorAll('[data-field]').forEach(input => {
+            const field = input.dataset.field;
+            if (input.type === 'checkbox') input.checked = !!d[field];
+            else input.value = d[field] || '';
+        });
+        document.getElementById(id + '-view').style.display = 'none';
+        editEl.classList.add('open');
+        document.getElementById(id).classList.add('editing');
+    }
+
+    function cancelEdit(id) {
+        document.getElementById(id + '-view').style.display = 'block';
+        document.getElementById(id + '-edit').classList.remove('open');
+        document.getElementById(id).classList.remove('editing');
+    }
+
+    function saveEdit(id) {
+        const editEl = document.getElementById(id + '-edit');
+        const d = ADDR_DATA[id];
+        editEl.querySelectorAll('[data-field]').forEach(input => {
+            const field = input.dataset.field;
+            if (input.type === 'checkbox') d[field] = input.checked;
+            else d[field] = input.value;
+        });
+        const viewEl = document.getElementById(id + '-view');
+        viewEl.querySelector('.addr-tag-name').textContent = d.alias;
+        viewEl.querySelector('.addr-name-phone').textContent = d.name + ' · ' + d.phone;
+        viewEl.querySelector('.addr-road').innerHTML = d.addr1 + '<br>' + d.addr2;
+        viewEl.querySelector('.addr-zip').textContent = '우편번호 ' + d.zip;
+        cancelEdit(id);
+        alert('배송지가 수정되었습니다. (데모)');
+    }
+
+    function deleteAddr(id) {
+        if (confirm('이 배송지를 삭제하시겠습니까?')) {
+            const el = document.getElementById(id);
+            el.style.transition = 'opacity .3s, transform .3s';
+            el.style.opacity = '0'; el.style.transform = 'scale(.95)';
+            setTimeout(() => el.remove(), 300);
+        }
+    }
+
+    function setDefault(id) {
+        document.querySelectorAll('.addr-card').forEach(c => {
+            c.classList.remove('is-default');
+            c.querySelector('.badge-default')?.remove();
+        });
+        const target = document.getElementById(id);
+        target.classList.add('is-default');
+        const tag = target.querySelector('.addr-card-tag');
+        const badge = document.createElement('span');
+        badge.className = 'badge-default'; badge.textContent = '기본배송지';
+        tag.appendChild(badge);
+        target.querySelector('[onclick^="setDefault"]')?.remove();
+    }
+
+    function openAddForm() {
+        document.getElementById('add-form').classList.add('open');
+        document.getElementById('add-new-btn').style.display = 'none';
+        document.getElementById('add-form').scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }
+
+    function closeAddForm() {
+        document.getElementById('add-form').classList.remove('open');
+        document.getElementById('add-new-btn').style.display = 'flex';
+    }
+
+    function formatPhone(el) {
+        let v = el.value.replace(/\D/g,'');
+        if (v.length <= 3) el.value = v;
+        else if (v.length <= 7) el.value = v.slice(0,3) + '-' + v.slice(3);
+        else el.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7,11);
+    }
+</script>
 </body>
 </html>

@@ -8,9 +8,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "reservations")
 @Getter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
 public class Reservation {
 
     // Primary Key
@@ -67,8 +66,3 @@ public class Reservation {
     }
 }
 
-enum ReservationStatus {
-    WAITING,
-    CONFIRMED,
-    CANCELED
-}
