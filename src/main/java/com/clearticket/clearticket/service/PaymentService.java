@@ -1,12 +1,11 @@
 package com.clearticket.clearticket.service;
 
-import com.clearticket.clearticket.model.dto.LemonSqueezyRequestDto;
-import com.clearticket.clearticket.model.dto.LemonSqueezyResponseDto;
-import com.clearticket.clearticket.model.dto.PaymentRequestDto;
-import com.clearticket.clearticket.model.dto.PaymentResponseDto;
+import com.clearticket.clearticket.model.dto.*;
 import com.clearticket.clearticket.model.entity.*;
 import com.clearticket.clearticket.repository.PaymentRepository;
 import com.clearticket.clearticket.repository.ReservationRepository;
+import com.clearticket.clearticket.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.parameters.P;
@@ -16,24 +15,79 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final ReservationRepository reservationRepository;
+    private final LemonSqueezyClient lemonSqueezyClient;
 
     /**
      * 레몬스퀴지 체크아웃 가상 결제창 URL 생성
      * @param lemonSqueezyRequestDto 가상 결제창 생성을 위한 요청 데이터
      * @return 레몬스퀴지 가상 결제창 접속 URL 주소 객체
      */
+    @Transactional(readOnly = true)
     public LemonSqueezyResponseDto createCheckout(LemonSqueezyRequestDto lemonSqueezyRequestDto) {
-        // 테스트용 레몬스퀴지 가상 체크아웃 주소 생성 (실제 연동 전 테스트용 가짜 URL)
-        String mockCheckoutUrl = "https://clearticket.lemonsqueezy.com/checkout/buy/mock-test-id?reservation_id="
-                + lemonSqueezyRequestDto.getReservationId();
+        log.info("Lemon Squeezy 동적 체크아웃 URL 생성 프로세스 시작");
 
-        return new LemonSqueezyResponseDto(mockCheckoutUrl);
+        Long reservationId = lemonSqueezyRequestDto.getReservationId();
+
+        // 예약 데이터 및 연관 엔티티 검증 및 조회
+        Reservation reservation = reservationRepository.findByReservationId(reservationId);
+        if (reservation == null) {
+            log.error("체크아웃 생성 실패: 존재하지 않는 예약 ID = {}", reservationId);
+            throw new IllegalArgumentException("존재하지 않는 예약 번호입니다: " + reservationId);
+        }
+
+        // DB에 저장된 실제 결제 금액 추출
+        int realPrice = reservation.getTotalPrice();
+
+        // 결제창에 표시할 커스텀 공연 상품명 동적 구성
+        String performanceTitle = "클리어티켓 공연 예매";
+        if (reservation.getSchedule() != null && reservation.getSchedule().getPerformance() != null) {
+            performanceTitle = reservation.getSchedule().getPerformance().getTitle();
+        }
+        String checkoutName = String.format("[%s] %s 티켓", performanceTitle, reservation.getTicketType());
+
+        log.info("DB 데이터 조회 완료 - 상품명: '{}', 결제 요청 금액: {}원", checkoutName, realPrice);
+
+        // 레몬스퀴지 외부 API 연동 객체를 통한 실시간 체크아웃 URL 발급 요청
+        String realCheckoutUrl = lemonSqueezyClient.requestDynamicCheckoutUrl(realPrice, checkoutName, reservationId);
+
+        return new LemonSqueezyResponseDto(realCheckoutUrl);
     }
+
+
+    /**
+     * 레몬스퀴지로 부터 전달 받은 웹훅 신호 처리
+     * 전달 받은 데이터 결제상태, 예매번호(ID) 확인 후
+     * 결제상태가 "order_created" 인 경우 예약 상태를 "CONFIRMED" 로 변경 후 DB 저장
+     * @param webhookDto 레몬스퀴지 웹훅이 보내준 데이터
+     */
+    public void processWebhook(LemonSqueezyWebhookDto webhookDto) {
+        log.info("레몬스퀴지 웹훅 처리 시작");
+
+        String eventName = webhookDto.getEventName();
+        Long reservationId = webhookDto.getMeta().getCustomData().getReservationId();
+
+        log.info("웹훅 분석 완료 → 결제상태: {}, 예매번호(ID): {}", eventName, reservationId);
+
+        // 결제 성공시 "order_created"
+        if ("order_created".equals(eventName)) {
+            log.info("결제 성공 확인! 예매번호(ID) {}번을 [예매 완료] 상태로 업데이트", reservationId);
+            Reservation reservation = reservationRepository.findByReservationId(reservationId);
+             if (reservation != null) {
+                reservation.changeStatus(ReservationStatus.CONFIRMED);
+                reservationRepository.save(reservation);
+                log.info("예매번호(ID) {}번 DB 상태 변경 완료 [BOOKED]", reservationId);
+             } else {
+                log.error("DB에서 예매번호 {}번을 찾을 수 없습니다!", reservationId);
+             }
+        }
+    }
+
 
     /**
      * 신규 결제 요청 처리 및 완료 영수증 발급

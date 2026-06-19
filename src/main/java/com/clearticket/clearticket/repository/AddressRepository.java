@@ -17,8 +17,6 @@ public interface AddressRepository extends JpaRepository<Address, Long> {
      */
     List<Address> findByUser(User user);
 
-    // 🎯 2. 특정 회원의 '기본 배송지' 딱 하나만 찾아오는 메서드 (예매 시 자동 입력용!)
-
     /**
      * 기본 배송지로 설정된 주소 조회
      * @param user 조회할 회원
