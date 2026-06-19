@@ -8,16 +8,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <style>
-        .survey-page {
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            padding: 48px 24px; background: var(--bg);
-        }
-        .survey-logo { margin-bottom: 8px; }
-        .survey-logo img { height: 44px; }
-        .survey-greeting { text-align: center; margin-bottom: 24px; }
+        .survey-greeting { margin-bottom: 24px; }
         .survey-greeting .name { font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
         .survey-greeting .sub  { font-size: 13px; color: var(--text-muted); }
+
         .survey-card {
             background: var(--white); border: 1.5px solid var(--border);
             border-radius: var(--radius-lg); padding: 32px 36px;
@@ -58,73 +52,74 @@
             background: none; border: none; font-family: inherit; transition: color .15s;
         }
         .skip-link:hover { color: var(--primary); }
-        .survey-cta { width: 100%; max-width: 520px; margin-top: 16px; }
         .btn-cta {
             width: 100%; padding: 15px; border-radius: var(--radius); border: none;
             font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer;
             transition: all .2s; background: #C0C8E8; color: #fff; pointer-events: none;
+            margin-top: 24px;
         }
         .btn-cta.ready { background: var(--primary); pointer-events: auto; box-shadow: 0 4px 14px rgba(75,110,245,.35); }
         .btn-cta.ready:hover { background: var(--primary-dark); transform: translateY(-1px); }
     </style>
 </head>
 <body>
+<th:block th:replace="~{fragments/header :: header}"></th:block>
 <main>
-    <div class="survey-page fade-in">
-        <a th:href="@{/mypage}" class="survey-logo">
-            <img th:src="@{/images/logo.png}" alt="클리어티켓"
-                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <span style="display:none;font-size:24px;font-weight:800;color:#4B6EF5;align-items:center;">클리어티켓</span>
-        </a>
+    <div class="page-wrap fade-in">
+        <h1 class="section-title">취향 설문</h1>
 
-        <div class="survey-greeting">
-            <p class="name" th:text="${currentUser.name} + '님'">홍길동님</p>
-            <p class="sub">30초만 투자하시면 취향에 맞는 인생공연을 찾아드릴게요</p>
-        </div>
+        <div class="mypage-layout">
+            <th:block th:replace="~{fragments/mypage-sidebar :: sidebar('survey')}"></th:block>
 
-        <div class="survey-card">
+            <div class="main-content">
+                <div class="survey-greeting">
+                    <p class="name" th:text="${currentUser.name} + '님'">홍길동님</p>
+                    <p class="sub">30초만 투자하시면 취향에 맞는 인생공연을 찾아드릴게요</p>
+                </div>
 
-            <!-- Q1 장르 -->
-            <div class="q-block">
-                <p class="q-label">Q1. 가장 선호하는 공연 장르는 무엇인가요? <span class="limit">(최대 2개 선택)</span></p>
-                <div class="chip-group">
-                    <button th:each="genre : ${genreList}" th:text="${genre}"
-                            class="chip" onclick="selectChip(this,'q1',2)"></button>
+                <div class="survey-card">
+                    <!-- Q1 장르 -->
+                    <div class="q-block">
+                        <p class="q-label">Q1. 가장 선호하는 공연 장르는 무엇인가요? <span class="limit">(최대 2개 선택)</span></p>
+                        <div class="chip-group">
+                            <button th:each="genre : ${genreList}" th:text="${genre}"
+                                    class="chip" onclick="selectChip(this,'q1',2)"></button>
+                        </div>
+                    </div>
+
+                    <div class="q-divider"></div>
+
+                    <!-- Q2 분위기 -->
+                    <div class="q-block">
+                        <p class="q-label">Q2. 공연을 볼 때 어떤 분위기를 원하시나요? <span class="limit">(최대 2개 선택)</span></p>
+                        <div class="tag-group">
+                            <button th:each="mood : ${moodList}" th:text="${mood}"
+                                    class="tag" onclick="selectChip(this,'q2',2)"></button>
+                        </div>
+                    </div>
+
+                    <div class="q-divider"></div>
+
+                    <!-- Q3 동행 -->
+                    <div class="q-block">
+                        <p class="q-label">Q3. 주로 누구와 함께 공연을 관람하시나요? <span class="limit">(1개 선택)</span></p>
+                        <div class="companion-group">
+                            <button th:each="companion : ${companionList}" th:text="${companion}"
+                                    class="companion-btn" onclick="selectChip(this,'q3',1)"></button>
+                        </div>
+                    </div>
+
+                    <div class="skip-row">
+                        <button class="skip-link" th:onclick="'location.href=\'' + @{/mypage} + '\''">다음에 할게요 Skip</button>
+                    </div>
+
+                    <button class="btn-cta" id="cta-btn" onclick="goResult()">나에게 맞는 공연 보러 가기</button>
                 </div>
             </div>
-
-            <div class="q-divider"></div>
-
-            <!-- Q2 분위기 -->
-            <div class="q-block">
-                <p class="q-label">Q2. 공연을 볼 때 어떤 분위기를 원하시나요? <span class="limit">(최대 2개 선택)</span></p>
-                <div class="tag-group">
-                    <button th:each="mood : ${moodList}" th:text="${mood}"
-                            class="tag" onclick="selectChip(this,'q2',2)"></button>
-                </div>
-            </div>
-
-            <div class="q-divider"></div>
-
-            <!-- Q3 동행 -->
-            <div class="q-block">
-                <p class="q-label">Q3. 주로 누구와 함께 공연을 관람하시나요? <span class="limit">(1개 선택)</span></p>
-                <div class="companion-group">
-                    <button th:each="companion : ${companionList}" th:text="${companion}"
-                            class="companion-btn" onclick="selectChip(this,'q3',1)"></button>
-                </div>
-            </div>
-
-            <div class="skip-row">
-                <button class="skip-link" th:onclick="'location.href=\'' + @{/mypage} + '\''">다음에 할게요 Skip</button>
-            </div>
-        </div>
-
-        <div class="survey-cta">
-            <button class="btn-cta" id="cta-btn" onclick="goResult()">나에게 맞는 공연 보러 가기</button>
         </div>
     </div>
 </main>
+<th:block th:replace="~{fragments/footer :: footer}"></th:block>
 
 <script th:inline="javascript">
     const state = {q1: [], q2: [], q3: []};

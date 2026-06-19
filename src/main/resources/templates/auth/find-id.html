@@ -17,17 +17,117 @@
             <span style="display:none;font-size:28px;font-weight:800;color:#4B6EF5;align-items:center;">클리어티켓</span>
         </a>
         <div class="auth-card">
-            <form th:action="@{/find-id}" method="post">
+            <h2 style="font-size:18px;font-weight:700;text-align:center;margin-bottom:20px;">이메일 찾기</h2>
+
+            <!-- 탭: 이름 / 전화번호 -->
+            <div class="tab-group">
+                <button type="button" class="tab-btn active" id="tab-name" onclick="switchTab('name')">이름으로 찾기</button>
+                <button type="button" class="tab-btn" id="tab-phone" onclick="switchTab('phone')">전화번호로 찾기</button>
+            </div>
+
+            <!-- 이름 탭 -->
+            <div id="group-name">
                 <div class="form-group">
-                    <label class="form-label">가입 시 입력했던 이메일을 입력해주세요.</label>
-                    <input type="email" class="form-input" name="email" placeholder="이메일">
-                    <p class="error-msg" th:if="${error != null}" th:text="${error}" style="display:block;"></p>
+                    <label class="form-label">가입 시 입력한 이름</label>
+                    <input type="text" class="form-input" id="fi-name" placeholder="이름">
                 </div>
-                <button type="submit" class="btn btn-primary btn-full">확인</button>
-            </form>
+                <div class="form-group">
+                    <label class="form-label">생년월일 8자리</label>
+                    <input type="text" class="form-input" id="fi-birth"
+                           placeholder="예) 19990101" maxlength="8"
+                           oninput="this.value=this.value.replace(/\D/g,'')">
+                </div>
+            </div>
+
+            <!-- 전화번호 탭 -->
+            <div id="group-phone" style="display:none;">
+                <div class="form-group">
+                    <label class="form-label">가입 시 입력한 전화번호</label>
+                    <input type="tel" class="form-input" id="fi-phone"
+                           placeholder="010-0000-0000" oninput="formatPhone(this)">
+                </div>
+            </div>
+
+            <span class="status-badge" id="fi-status"></span>
+
+            <button type="button" class="btn btn-primary btn-full" style="margin-top:16px;"
+                    onclick="findEmail()">이메일 찾기</button>
+
+            <!-- 결과 -->
+            <div id="result-box" style="display:none;margin-top:20px;padding:18px;
+                 background:var(--primary-light);border-radius:var(--radius);text-align:center;">
+                <p style="font-size:13px;color:var(--text-muted);margin-bottom:6px;">회원님의 이메일 주소는</p>
+                <p id="result-email" style="font-size:18px;font-weight:800;color:var(--primary);"></p>
+                <p style="font-size:12px;color:var(--text-muted);margin-top:4px;" id="result-date"></p>
+            </div>
+
+            <div style="display:flex;gap:12px;margin-top:20px;">
+                <a th:href="@{/find-password}" class="btn btn-outline-gray" style="flex:1;text-align:center;">비밀번호 찾기</a>
+                <a th:href="@{/login}" class="btn btn-primary" style="flex:1;text-align:center;">로그인</a>
+            </div>
         </div>
     </div>
 </main>
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
+<script>
+    let currentTab = 'name';
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('tab-name').classList.toggle('active', tab === 'name');
+        document.getElementById('tab-phone').classList.toggle('active', tab === 'phone');
+        document.getElementById('group-name').style.display  = tab === 'name'  ? '' : 'none';
+        document.getElementById('group-phone').style.display = tab === 'phone' ? '' : 'none';
+        setStatus('', '');
+        document.getElementById('result-box').style.display = 'none';
+    }
+
+    async function findEmail() {
+        let body = {};
+        if (currentTab === 'name') {
+            const name  = document.getElementById('fi-name').value.trim();
+            const birth = document.getElementById('fi-birth').value.trim();
+            if (!name || !birth) { setStatus('이름과 생년월일을 모두 입력해 주세요.', 'err'); return; }
+            body = { type: 'name', name, birth };
+        } else {
+            const phone = document.getElementById('fi-phone').value.trim();
+            if (!phone) { setStatus('전화번호를 입력해 주세요.', 'err'); return; }
+            body = { type: 'phone', phone };
+        }
+
+        try {
+            const res  = await fetch('/api/auth/find-email', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (data.email) {
+                setStatus('', '');
+                document.getElementById('result-email').textContent = data.email;
+                document.getElementById('result-date').textContent  =
+                    data.createdAt ? '가입일: ' + data.createdAt : '';
+                document.getElementById('result-box').style.display = 'block';
+            } else {
+                setStatus(data.message ?? '일치하는 회원 정보가 없습니다.', 'err');
+                document.getElementById('result-box').style.display = 'none';
+            }
+        } catch {
+            setStatus('서버 오류가 발생했습니다.', 'err');
+        }
+    }
+
+    function setStatus(msg, type) {
+        const el = document.getElementById('fi-status');
+        el.textContent = msg;
+        el.className = 'status-badge' + (type ? ' ' + type : '');
+    }
+
+    function formatPhone(el) {
+        let v = el.value.replace(/\D/g, '');
+        if      (v.length <= 3) el.value = v;
+        else if (v.length <= 7) el.value = v.slice(0,3) + '-' + v.slice(3);
+        else                    el.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7,11);
+    }
+</script>
 </body>
 </html>
