@@ -33,6 +33,8 @@ spring:
     hikari:
       maximum-pool-size: 10
       connection-timeout: 30000
+  elasticsearch:
+    uris: http://localhost:9200
   jpa:
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
