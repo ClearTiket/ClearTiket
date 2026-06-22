@@ -17,12 +17,11 @@ public class VenueViewController {
         // 타임리프 HTML에 KOPIS ID 쏙 넣어주기
         model.addAttribute("venueKopisId", mt10id);
 
-        // templates/performances/performance-detail.html 화면을 열어라!
         return "performances/performance-detail";
     }
 
     @GetMapping("/seat/selection")
     public String showSeatSelection() {
-        return "performances/seat-selection"; // templates/performances/seat-selection.html을 열어라!
+        return "performances/seat-selection";
     }
 }

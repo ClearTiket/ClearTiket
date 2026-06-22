@@ -336,6 +336,150 @@
         .review-header { display: flex; justify-content: space-between; color: #6b7280; font-size: 0.85rem; margin-bottom: 8px; }
         .review-content { color: #1f2937; font-size: 0.95rem; line-height: 1.5; }
         .review-rating { color: #ffcc00; font-weight: bold; margin-top: 8px; }
+        /* 모달 */
+        /* 1. 모달 전체 배경 암전 효과 */
+        .custom-modal-overlay {
+            display: none; /* 기본은 숨김 */
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.4); /* 이미지처럼 부드러운 암전 */
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 2. 모달 본체 박스 (디자인 완벽 반영) */
+        .custom-modal-content {
+            background-color: #ffffff;
+            width: 90%;
+            max-width: 580px; /* 진님이 선정한 최적의 가로사이즈 */
+            padding: 40px;    /* 사방 여백을 넉넉히 주어 깔끔함 유치 */
+            border-radius: 28px; /* 🌟 디자인 속 둥근 테두리 구현 */
+            border: 1px solid #111; /* 바깥 미세한 블랙 테두리선 */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        /* 3. 모달 타이틀 (중앙 정렬 및 굵게) */
+        .modal-title-area {
+            text-align: center;
+            font-size: 1.65rem;
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 35px;
+        }
+
+        /* 4. 입력 폼 레이아웃 */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+        .form-group label {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 10px;
+        }
+
+        /* 🌟 제목 Input & 내용 Textarea 디자인 맞춤 */
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid #cccccc;
+            border-radius: 12px; /* 둥근 입력창 테두리 */
+            font-size: 0.95rem;
+            color: #333333;
+            outline: none;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        .form-group input[type="text"]::placeholder,
+        .form-group textarea::placeholder {
+            color: #cccccc; /* 연한 회색 플레이스홀더 */
+        }
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus {
+            border-color: #2563eb; /* 포커스 시 포인트 블루 */
+        }
+
+        /* 5. 모달 푸터 버튼 바 (우측 정렬 및 예쁜 간격) */
+        .modal-button-footer {
+            display: flex;
+            justify-content: flex-end; /* 🌟 오른쪽 정렬 구조 적용 */
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        /* 🌟 버튼 개별 커스텀 스타일 (취소 / 등록) */
+        .modal-button-footer button {
+            border: none;
+            padding: 10px 22px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #ffffff;
+        }
+        .btn-custom-cancel {
+            background-color: #ef4444; /* 🔴 취소 버튼 색상 */
+        }
+        .btn-custom-submit {
+            background-color: #3b82f6; /* 🔵 등록 버튼 색상 */
+        }
+        .modal-button-footer button:hover {
+            opacity: 0.9;
+        }
+        /* 별점 항목 전체를 감싸는 컨테이너 (세로 정렬 구조로 변경) */
+        .simple-rating-container {
+            display: flex;
+            flex-direction: column; /* 🌟 가로로 밀어 넣지 않고 세로로 정렬 */
+            gap: 10px;              /* 항목 간의 위아래 간격 */
+            padding: 12px;
+            background-color: #f9fafb; /* 연한 배경을 깔아서 평점 구역을 깔끔하게 분리 */
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        /* 라디오 버튼과 텍스트를 묶은 개별 라벨 */
+        .rating-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;        /* 라디오 버튼과 별점 사이의 넉넉한 간격 */
+            cursor: pointer;
+            font-size: 1rem;
+            color: #374151;
+            padding: 6px 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        /* 마우스를 올렸을 때 어디를 고르는지 명확하게 시각 효과 부여 */
+        .rating-item:hover {
+            background-color: #f3f4f6;
+        }
+
+        /* 라디오 버튼 자체 디자인 조정 */
+        .rating-item input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            cursor: pointer;
+            accent-color: #3b82f6; /* 라디오 버튼 선택 시 파란색 포인트 */
+        }
+
+        /* 별 개수 문자열 정렬 및 스타일 */
+        .stars-text {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
     </style>
 </head>
 <body>
@@ -537,8 +681,8 @@
                         <div style="font-size: 0.95rem; color: #111827;">
                             총 <span id="total-expect-count" style="font-weight: bold; color: #2563eb;">0</span>개의 기대평이 등록되었습니다.
                         </div>
-                        <!-- ⚫ 와이어프레임 기준 검은색 작성하러 가기 버튼 -->
-                        <button type="button" onclick="location.href='/expect/write?venueId=' + document.getElementById('venueKopisId').value"
+                        <!-- 기대평 작성하러 가기 버튼 -->
+                        <button type="button" onclick="openReviewModal('EXPECT')"
                                 style="background-color: #111827; color: #ffffff; border: none; padding: 10px 16px; font-size: 0.85rem; font-weight: bold; border-radius: 4px; cursor: pointer;">
                             기대평 작성
                         </button>
@@ -561,35 +705,39 @@
             <div id="tab-reviews" class="ct-tab-content" style="display: none;">
                 <div class="ct-section-block" style="margin-top: 20px; text-align: left;">
 
-                    <!-- 💡 와이어프레임 상단 유의사항 안내문 -->
+                    <!--  와이어프레임 상단 유의사항 안내문 -->
                     <div style="font-size: 0.85rem; color: #6b7280; line-height: 1.6; border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 20px;">
                         <p style="margin: 0 0 4px 0;">게시판 운영 규정에 어긋난다고 판단되는 게시글은 사전 통보없이 블라인드 처리될 수 있습니다.</p>
                         <p style="margin: 0 0 4px 0;">특히 티켓 매매 및 양도의 글은 발견 즉시 임의 삭제되며 전화번호, 이메일 등의 개인정보는 악용될 우려가 있으므로 게시글 작성을 삼가 주시기 바랍니다.</p>
                         <p style="margin: 0;">사전 경고에도 불구하고 불법 게시물을 지속적으로 게재한 게시자의 경우 예매 및 게시판 작성 권한이 제한됩니다.</p>
                     </div>
 
-                    <!-- 💡 총 개수 표기 및 작성 버튼 구역 -->
+                    <!--  총 개수 표기 및 작성 버튼 구역 -->
+                    <div class="rating-summary">
+                        <span class="avg-star">★</span>
+                        <span id="avg-rating-text">0.0</span>
+                        (<span id="total-count-text">0</span>건)
+                    </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                         <div style="font-size: 0.95rem; color: #111827;">
-                            총 <span id="total-count-text" style="font-weight: bold; color: #2563eb;">0</span>개의 관람후기가 등록되었습니다.
+                            총 <span id="total-count-text-sub" style="font-weight: bold; color: #2563eb;">0</span>개의 관람후기가 등록되었습니다.
                         </div>
-                        <!-- ⚫ 와이어프레임 기준 검은색 작성하러 가기 버튼 -->
-                        <button type="button" onclick="location.href='/review/write?venueId=' + document.getElementById('venueKopisId').value"
+                        <!-- 관람후기 작성하러 가기 버튼 -->
+                        <button type="button" onclick="openReviewModal('REVIEW')"
                                 style="background-color: #111827; color: #ffffff; border: none; padding: 10px 16px; font-size: 0.85rem; font-weight: bold; border-radius: 4px; cursor: pointer;">
                             관람후기 작성
                         </button>
                     </div>
 
-                    <!-- 💡 최신순 / 평점순 정렬 링크 바 -->
+                    <!--  최신순 / 평점순 정렬 링크 바 -->
                     <div style="display: flex; justify-content: flex-end; gap: 16px; font-size: 0.85rem; color: #6b7280; border-bottom: 1px solid #f3f4f6; padding-bottom: 12px; margin-bottom: 16px;">
                         <span style="cursor: pointer; font-weight: bold; color: #111827;" onclick="sortReviews('latest')">최신순</span>
                         <span style="color: #e5e7eb;">|</span>
                         <span style="cursor: pointer;" onclick="sortReviews('rating')">평점순</span>
                     </div>
 
-                    <!-- 🔄 동적 렌더링 후기 목록 컨테이너 -->
+                    <!--  동적 렌더링 후기 목록 컨테이너 -->
                     <div id="review-list-box" class="ct-review-list-wrapper">
-                        <p style="color: #9ca3af; text-align: center; padding: 40px 0;">등록된 관람후기가 없습니다.</p>
                     </div>
                 </div>
             </div>
@@ -631,11 +779,64 @@
         </div>
     </div>
 </div>
+<div id="reviewModal" class="custom-modal-overlay">
+    <div class="custom-modal-content">
 
+        <div class="modal-title-area">
+            <span id="modalTitle">관람후기 작성</span>
+        </div>
+
+        <form id="reviewForm" onsubmit="return false;">
+            <input type="hidden" id="modalType" value="REVIEW">
+
+            <div class="form-group" id="ratingArea">
+                <label>평점</label>
+                <div class="simple-rating-container">
+                    <label class="rating-item">
+                        <input type="radio" name="rating" value="5" required checked>
+                        <span class="stars-text">⭐⭐⭐⭐⭐ 강력 추천</span>
+                    </label>
+                    <label class="rating-item">
+                        <input type="radio" name="rating" value="4">
+                        <span class="stars-text">⭐⭐⭐⭐ 추천</span>
+                    </label>
+                    <label class="rating-item">
+                        <input type="radio" name="rating" value="3">
+                        <span class="stars-text">⭐⭐⭐ 보통</span>
+                    </label>
+                    <label class="rating-item">
+                        <input type="radio" name="rating" value="2">
+                        <span class="stars-text">⭐⭐ 아쉬움</span>
+                    </label>
+                    <label class="rating-item">
+                        <input type="radio" name="rating" value="1">
+                        <span class="stars-text">⭐ 실망</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="reviewTitle">제목</label>
+                <input type="text" id="reviewTitle" placeholder="제목을 입력해주세요" maxlength="300" required>
+            </div>
+
+            <div class="form-group">
+                <label for="reviewContent">내용</label>
+                <textarea id="reviewContent" rows="7" placeholder="관람하신 공연의 생생한 후기를 남겨주세요!" maxlength="1000" required></textarea>
+            </div>
+        </form>
+
+        <div class="modal-button-footer">
+            <button type="button" class="btn-custom-cancel" onclick="closeReviewModal()">취소</button>
+            <button type="button" class="btn-custom-submit" onclick="submitReview()">등록</button>
+        </div>
+
+    </div>
+</div>
 <div th:replace="~{fragments/footer :: footer}"></div>
 
 <script>
-    // 💡 [추가] 서브 인페이지 탭 스위칭 비동기 컨트롤러 로직
+    //  [추가] 서브 인페이지 탭 스위칭 비동기 컨트롤러 로직
     function switchTab(event, tabId) {
         const tabContents = document.querySelectorAll('.ct-tab-content');
         tabContents.forEach(content => content.style.display = 'none');
@@ -715,50 +916,69 @@
         fetch(`/hall/${mt10id}/reviews?page=1`)
             .then(response => response.json())
             .then(data => {
-                document.getElementById("avg-rating-text").innerText = data.averageRating.toFixed(1);
-                document.getElementById("total-count-text").innerText = data.totalReviewsCount || 0;
-                const reviewListBox = document.getElementById("review-list-box");
-                reviewListBox.innerHTML = "";
-
-                if (data.reviews.length === 0) {
-                    reviewListBox.innerHTML = "<p style='color: #9ca3af; text-align: center;'>아직 작성된 후기가 없습니다.</p>";
-                    return;
+                console.log("서버가 준 데이터 구조", data)
+                const avgRatingEl = document.getElementById("avg-rating-text");
+                if (avgRatingEl) {
+                    avgRatingEl.innerText = data.averageRating ? data.averageRating.toFixed(1) : "0.0";
                 }
 
-                data.reviews.forEach(review => {
-                    const card = document.createElement("div");
-                    card.classList.add("review-card");
-                    card.style.cssText = "padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #fff; margin-bottom: 12px;";
+                const totalCountEl = document.getElementById("total-count-text");
+                if (totalCountEl) {
+                    totalCountEl.innerText = data.totalReviewsCount || 0;
+                }
 
-                    const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
+                const subCountEl = document.getElementById("total-count-text-sub");
+                if (subCountEl) {
+                    subCountEl.innerText = data.totalReviewsCount || 0;
+                }
 
-                    // image_556c25.png 와이어프레임 인포라인 완벽 복제
-                    card.innerHTML = `
-        <div style="display: flex; gap: 8px; align-items: center; color: #9ca3af; font-size: 0.8rem; margin-bottom: 12px;">
-            <span style="font-weight: 600; color: #4b5563;">${review.nickname || 'abc****'}</span>
-            <span style="background-color: #eff6ff; color: #2563eb; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;">예매자</span>
-            <span>|</span>
-            <span>${review.createdAt || '2026-06-19'}</span>
-            <span>|</span>
-            <span>조회 0</span>
-            <span>|</span>
-            <span>댓글 0</span>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <div style="font-weight: bold; font-size: 1rem; margin-bottom: 6px; color: #111827;">${review.title || '멋진 무대!'}</div>
-                <div class="review-content" style="color: #4b5563; font-size: 0.9rem; line-height: 1.5;">${review.content}</div>
-                <div class="review-rating" style="color: #ffcc00; font-size: 0.9rem; margin-top: 8px;">${stars}</div>
-            </div>
-            <button type="button" style="background: none; border: none; color: #9ca3af; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                더보기 <span style="font-size: 0.6rem;">▼</span>
-            </button>
-        </div>
-    `;
-                    reviewListBox.appendChild(card);
-                });
+                const reviewListBox = document.getElementById("review-list-box");
+
+                // ⭕ 상자(reviewListBox)가 확실히 존재할 때만 내부를 다루도록 한 번에 격리!
+                if (reviewListBox) {
+                    reviewListBox.innerHTML = ""; // 기존 껍데기 내용 싹 비우기
+
+                    // 1. 진짜 데이터가 아예 없을 때 (0개일 때)
+                    if (!data.reviews || data.reviews.length === 0) {
+                        reviewListBox.innerHTML = "<p style='color: #9ca3af; text-align: center; padding: 40px 0;'>등록된 관람후기가 없습니다.</p>";
+                        return; // 데이터가 없으므로 아래 forEach 카드는 그리지 않고 여기서 종료
+                    }
+
+                    // 2. 데이터가 1개 이상 존재할 때 카드 그리기
+                    data.reviews.forEach(review => {
+                        const card = document.createElement("div");
+                        card.classList.add("review-card");
+                        card.style.cssText = "padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #fff; margin-bottom: 12px;";
+
+                        const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
+
+                        card.innerHTML = `
+                    <div style="display: flex; gap: 8px; align-items: center; color: #9ca3af; font-size: 0.8rem; margin-bottom: 12px;">
+                        <span style="font-weight: 600; color: #4b5563;">${review.nickname || 'abc****'}</span>
+                        <span style="background-color: #eff6ff; color: #2563eb; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;">예매자</span>
+                        <span>|</span>
+                        <span>${review.createdAt || '2026-06-19'}</span>
+                        <span>|</span>
+                        <span>조회 0</span>
+                        <span>|</span>
+                        <span>댓글 0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-weight: bold; font-size: 1rem; margin-bottom: 6px; color: #111827;">${review.title || '멋진 무대!'}</div>
+                            <div class="review-content" style="color: #4b5563; font-size: 0.9rem; line-height: 1.5;">${review.content}</div>
+                            <div class="review-rating" style="color: #ffcc00; font-size: 0.9rem; margin-top: 8px;">${stars}</div>
+                        </div>
+                        <button type="button" style="background: none; border: none; color: #9ca3af; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            더보기 <span style="font-size: 0.6rem;">▼</span>
+                        </button>
+                    </div>
+                `;
+                        reviewListBox.appendChild(card);
+                    });
+                }
             })
-            .catch(err => console.error("리뷰 로드 에러:", err));
+                .catch(err => console.error("리뷰 로드 에러:", err));
     });
 
     // 특정 날짜 클릭 시 스케줄 선택 API 호출
@@ -798,6 +1018,110 @@
         const popupOptions = "width=1000, height=700, resizable=no, scrollbars=yes, status=no, location=no";
 
         window.open(popupUrl, popupName, popupOptions);
+    }
+    // 모달 열기
+    function openReviewModal(type) {
+        const modalTitle = document.getElementById('modalTitle');
+        const modalType = document.getElementById('modalType');
+        const ratingArea = document.getElementById('ratingArea');
+
+        modalType.value = type; // REVIEW 또는 EXPECT 저장
+
+        if (type === 'REVIEW') {
+            modalTitle.innerText = '관람후기 작성';
+            ratingArea.style.display = 'block'; // 후기는 별점 보이기
+        } else {
+            modalTitle.innerText = '기대평 작성';
+            ratingArea.style.display = 'none';  // 기대평은 별점 숨기기
+        }
+
+        // 모달 켜기 (flex 레이아웃으로 중앙 정렬)
+        document.getElementById('reviewModal').style.display = 'flex';
+    }
+
+    // 2. 모달 닫기
+    function closeReviewModal() {
+        document.getElementById('reviewModal').style.display = 'none';
+        document.getElementById('reviewForm').reset(); // 입력 폼 초기화
+    }
+
+    // 3. 백엔드로 데이터 전송 (POST)
+    function submitReview() {
+        // 1. HTML 요소에서 입력값 가져오기 및 공백 제거(trim)
+        const performanceId = document.getElementById("venueKopisId").value; // 현재 공연 ID
+        const type = document.getElementById("modalType").value;              // REVIEW 또는 EXPECT
+        const title = document.getElementById("reviewTitle").value.trim();
+        const content = document.getElementById("reviewContent").value.trim();
+
+        // 추후 시큐리티나 세션 적용 시 로그인 유저 PK로 동적 매핑하시면 됩니다!===============================================================
+        const userId = document.getElementById("sessionUserId")?.value || 1;
+
+        // 2. 필수 입력값 유효성 검사 (방어 코드)
+        if (!title) {
+            alert("제목을 입력해주세요.");
+            document.getElementById("reviewTitle").focus();
+            return;
+        }
+        if (!content) {
+            alert("내용을 입력해주세요.");
+            document.getElementById("reviewContent").focus();
+            return;
+        }
+
+        // 3. 별점 값 체크 (REVIEW 타입일 때만 체크)
+        let rating = null;
+        if (type === 'REVIEW') {
+            const selectedRating = document.querySelector('input[name="rating"]:checked');
+            if (!selectedRating) {
+                alert("평점을 고르고 등록을 눌러주세요!");
+                return;
+            }
+            rating = parseInt(selectedRating.value); // 선택된 라디오 버튼의 1 ~ 5 숫자 파싱
+        }
+
+        // 4. 백엔드 DTO(또는 RequestBody Map) 구조와 Key 매핑 싱크 일치 작업
+        const payload = {
+            performanceId: performanceId,
+            userId: userId,
+            title: title,
+            content: content,
+            type: type,
+            rating: rating
+        };
+
+        // 5. 비동기 Fetch API 통신 요청
+        fetch('/api/reviews/write', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("서버 에러 발생");
+                }
+                return response.json();
+            })
+            .then(data => {
+                // 백엔드 응답 결과 처리 분기 구조
+                if (data.status === 'SUCCESS' || data.result === 'SUCCESS') {
+                    alert(`${type === 'REVIEW' ? '관람후기' : '기대평'}가 성공적으로 등록되었습니다!`);
+                    closeReviewModal(); // 모달 닫기 및 폼 초기화
+                    location.reload();  // 리스트 자동 새로고침해서 내가 쓴 글 확인하기
+                } else if (data.status === 'BLIND' || data.result === 'BLINDED') {
+                    // 우리가 서비스 단에 심어둔 금칙어(양도, 팝니다 등) 필터링에 걸린 경우
+                    alert("⚠️ 안내: 작성하신 글에 금칙어(양도/판매 등)가 포함되어 있어 규정에 따라 자동으로 블라인드 처리되었습니다.");
+                    closeReviewModal();
+                    location.reload();
+                } else {
+                    alert("등록 실패: " + (data.message || "다시 시도해 주세요."));
+                }
+            })
+            .catch(err => {
+                console.error("통신 장애 발생:", err);
+                alert("네트워크 통신 중 오류가 발생했습니다. 서버가 정상적으로 켜져 있는지 확인해 주세요.");
+            });
     }
 </script>
 </body>
