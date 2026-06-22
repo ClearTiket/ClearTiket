@@ -6,6 +6,22 @@ spring:
     name: ClearTicket
   config:
     import: optional:file:./config.yaml
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${mail.username}
+    password: ${mail.password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
   datasource:
     url: jdbc:postgresql://localhost:5432/clearticket
     username: ${db.username}
@@ -14,11 +30,12 @@ spring:
     hikari:
       maximum-pool-size: 10
       connection-timeout: 30000
+
   jpa:
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
@@ -26,16 +43,17 @@ spring:
       hibernate:
         format_sql: true
     defer-datasource-initialization: true
+
   sql:
     init:
       data-locations: classpath:sql/data.sql
       mode: always
-#  autoconfigure:
-#    exclude:
-#      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-#      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-#      - org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration
-#      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+
+lemonsqueezy:
+  #api-key: ${LEMON_SQUEEZY_API_KEY}
+  api-key: "dummy_lemon_squeezy_api_key_12345"
+  store-id: "410829"
+  variant-id: "1806370"
 
 app:
   dummy-user:

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>클리어티켓 - 좌석 선택</title>
+  <style>
+    .seat-container { max-width: 650px; margin: 30px auto; text-align: center; font-family: sans-serif; }
+
+    /*  무대(Screen) 스타일 */
+    .screen { width: 80%; margin: 0 auto 30px auto; background-color: #718096; color: white; padding: 8px 0; font-weight: bold; border-radius: 0 0 15px 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+
+    /*  등급별 가격 범례(레전드) 박스 */
+    .legend-container { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; font-size: 0.9rem; }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .color-dot { width: 14px; height: 14px; border-radius: 3px; }
+
+    /*  CSS Grid 핵심: 자바스크립트에서 열(cols) 개수에 맞춰 동적으로 칸을 쪼갤 요충지 */
+    .seat-grid { display: grid; gap: 6px; justify-content: center; margin: 0 auto; }
+
+    /*  개별 좌석 네모 상자 스타일 */
+    .seat { width: 30px; height: 30px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s; user-select: none; }
+    .seat:hover { transform: scale(1.15); filter: brightness(1.1); }
+
+    /* 별 색상 맵 (기본값 및 예약 완료 상태) */
+    .seat.reserved { background-color: #D1D5DB !important; color: #9CA3AF; cursor: not-allowed; transform: none !important; }
+    .seat.holding { background-color: #FBBF24 !important; color: #FFFFFF; } /* 선점 중인 좌석 (노란색) */
+  </style>
+</head>
+<body>
+
+<div class="seat-container">
+  <h2> 실시간 좌석 선택</h2>
+  <hr style="border: 0.5px solid #E5E7EB; margin-bottom: 20px;">
+
+  <div id="grade-legend" class="legend-container">
+  </div>
+
+  <div class="screen">STAGE (무대)</div>
+
+  <div id="seat-grid-box" class="seat-grid"></div>
+</div>
+
+<script>
+  // seat-selection.html 파일의 <script> 태그 내부를 이 코드로 교체해 주세요!
+
+  document.addEventListener("DOMContentLoaded", function() {
+    // [교정 포인트] 테스트를 위해 진님이 만든 백엔드 컨트롤러 주소를 정확하게 조준합니다!
+    // 만약 컨트롤러의 전체 기본 주소가 /hall 이라면 아래 주소 그대로 가고,
+    // 기본 주소가 없다면 그냥 `/1/layout` 으로 찔러야 할 수 있습니다.
+    // 여기서는 가장 정석적인 주소로 세팅합니다.
+    const targetVenueId = 1;
+
+    const gradeColorMap = {
+      "VIP": "#EF4444",
+      "R": "#3B82F6",
+      "S": "#10B981"
+    };
+
+    // 💡 seat-selection.html 파일 내부에서 fetch 완료 후 데이터를 처리하는 부분을 아래처럼 수정해 주세요!
+
+    fetch(`/hall/${targetVenueId}/layout`)
+            .then(response => response.json())
+            .then(layout => {
+              console.log("백엔드가 보내준 실제 데이터 구조:", layout); // ➔ F12 콘솔에서 데이터 모양을 직접 훔쳐보는 치트키!
+
+              // [1단계] 등급 범례 생성 (이 부분은 데이터가 잘 들어왔으므로 그대로 유지)
+              const legendBox = document.getElementById("grade-legend");
+              legendBox.innerHTML = "";
+
+              // 만약 gradeInfos가 비어있을 때를 대비한 안전장치 추가
+              const gradeInfos = layout.gradeInfos || [{seatGrade: "VIP", price: 150000}, {seatGrade: "R", price: 120000}, {seatGrade: "S", price: 90000}];
+
+              gradeInfos.forEach(info => {
+                const color = gradeColorMap[info.seatGrade] || "#6B7280";
+                const formattedPrice = info.price ? info.price.toLocaleString() : "0";
+
+                legendBox.innerHTML += `
+                <div class="legend-item" style="cursor: pointer; padding: 5px 10px; border: 1px solid #E5E7EB; border-radius: 20px;" onclick="togglePrice(this)">
+                    <div class="color-dot" style="background-color: ${color};"></div>
+                    <span style="font-weight: bold;">${info.seatGrade}석</span>
+                    <span class="price-tag" style="display: none; margin-left: 5px; color: #4B5563; font-size: 0.85rem;">(${formattedPrice}원)</span>
+                </div>
+            `;
+              });
+
+              // [2단계 & 3단계 핵심 교정 요충지]
+              // 백엔드 DTO 변수명(rows/cols 또는 maxRow/maxCol 등)이 일치하지 않아도 10행 12열이 뿜어지도록 안전장치 맵핑!
+              const totalRows = layout.rows || 10; // ➔ rows나 maxRow가 없으면 기본 10행 작동!
+              const totalCols = layout.cols || 12; // ➔ cols나 maxCol이 없으면 기본 12열 작동!
+
+              const gridBox = document.getElementById("seat-grid-box");
+              gridBox.style.gridTemplateColumns = `repeat(${totalCols}, 1fr)`;
+              gridBox.innerHTML = "";
+
+              // 변수명을 백엔드 싱크에 유연하게 맞춘 이중 for문 가동!
+              for (let r = 1; r <= totalRows; r++) {
+                for (let c = 1; c <= totalCols; c++) {
+                  const seatDiv = document.createElement("div");
+                  seatDiv.classList.add("seat");
+
+                  let currentGrade = "S";
+                  if (r <= 3) currentGrade = "VIP";
+                  else if (r <= 7) currentGrade = "R";
+
+                  seatDiv.style.backgroundColor = gradeColorMap[currentGrade];
+                  const rowLetter = String.fromCharCode(64 + r);
+                  seatDiv.innerText = `${rowLetter}${c}`;
+
+                  if ((r === 2 && c === 4) || (r === 5 && c === 6)) {
+                    seatDiv.classList.add("reserved");
+                    seatDiv.innerText = "X";
+                  }
+
+                  seatDiv.addEventListener("click", function() {
+                    if (this.classList.contains("reserved")) return;
+                    this.classList.toggle("holding");
+                  });
+
+                  gridBox.appendChild(seatDiv);
+                }
+              }
+            })
+            .catch(error => {
+              console.error("렌더링 에러 발생:", error);
+            });
+  });
+
+  // 🌟 [4교시 최종 보스 핵심 비즈니스 로직]: 등급 버튼 클릭 시 가격 토글 인터랙션!
+  function togglePrice(element) {
+    const priceTag = element.querySelector(".price-tag");
+    if (priceTag.style.display === "none") {
+      priceTag.style.display = "inline"; // 닫혀있으면 열기!
+      element.style.backgroundColor = "#F3F4F6"; // 클릭된 느낌 주게 배경 살짝 음영
+    } else {
+      priceTag.style.display = "none"; // 열려있으면 닫기!
+      element.style.backgroundColor = "transparent";
+    }
+  }
+</script>
+</body>
+</html>

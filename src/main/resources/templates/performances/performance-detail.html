@@ -1,111 +1,697 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
     <meta charset="UTF-8">
     <title>클리어티켓 - 공연장 상세 선택</title>
     <style>
-        /* 📅 간단하고 직관적인 달력 스타일링 */
-        .calendar-container { max-width: 500px; margin: 20px auto; font-family: sans-serif; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .calendar-header { font-weight: bold; background-color: #f3f4f6; padding: 10px 0; }
-        .day { padding: 15px 0; border: 1px solid #e5e7eb; border-radius: 4px; cursor: pointer; }
-        .available { background-color: #ecfdf5; color: #059669; font-weight: bold; border: 1px solid #10b981; }
-        .available:hover { background-color: #d1fae5; }
-        .unavailable { background-color: #f9fafb; color: #d1d5db; cursor: not-allowed; }
+        /* 1. 기본 브라우저 여백 제거 및 컨텍스트 초기화 */
+        body {
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            color: #111827;
+        }
 
-        /* ⏱️ 회차(스케줄) 선택 영역 */
-        .schedule-container { max-width: 500px; margin: 30px auto; text-align: center; font-family: sans-serif; }
-        .schedule-btn { padding: 10px 20px; margin: 5px; border: 1px solid #3b82f6; background-color: #eff6ff; color: #1d4ed8; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .schedule-btn:hover { background-color: #dbeafe; }
+        /* 레이아웃 격리 방어벽: 헤더/푸터와 격리하여 가로 1920px 대응 */
+        .ct-main-wrapper {
+            width: 100%;
+            min-width: 1920px; /* 전체 웹사이트 가로 사이즈 고정 */
+            background-color: #f8fafc;
+            overflow: hidden;
+        }
 
-        /* 🏛️ [신규] 1교시: 공연장 상세 정보 섹션 스타일 */
-        .info-container { max-width: 500px; margin: 30px auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #fff; font-family: sans-serif; }
-        .info-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; color: #1f2937; border-bottom: 2px solid #3b82f6; padding-bottom: 5px; }
-        .info-item { margin: 8px 0; color: #4b5563; font-size: 0.95rem; }
-        .info-label { font-weight: bold; color: #111827; display: inline-block; width: 90px; }
+        /* 2. 와이어프레임 기준 핵심 레이아웃 패널 (Content: 1200px 중앙 정렬) */
+        .ct-content-container {
+            width: 1200px;
+            margin: 40px auto;
+            display: flex;
+            gap: 40px;
+        }
 
-        /* 🎭 [신규] 2교시: 출연진(배우) 이름 배지 스타일 */
-        .casting-container { max-width: 500px; margin: 30px auto; font-family: sans-serif; }
-        .casting-flex { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
-        .actor-badge { padding: 8px 16px; background-color: #f3f4f6; color: #374151; font-weight: bold; border-radius: 20px; border: 1px solid #d1d5db; font-size: 0.9rem; }
+        /* 좌측 메인 정보 플로우 패널 */
+        .ct-left-main {
+            width: 820px;
+            flex-shrink: 0;
+        }
+
+        /* 우측 실시간 예매 스티키 패널 */
+        .ct-right-sidebar {
+            width: 340px;
+            flex-shrink: 0;
+        }
+        .ct-sticky-panel-box {
+            position: sticky;
+            top: 40px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 3. 좌측 상단 요약 구역 (포스터 + 인포 그리드) */
+        .ct-show-summary-box {
+            display: flex;
+            gap: 32px;
+            margin-bottom: 40px;
+        }
+        .ct-mock-poster {
+            width: 260px;
+            height: 360px;
+            background-color: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #9ca3af;
+            border-radius: 8px;
+        }
+        .ct-show-info-details {
+            flex: 1;
+        }
+        .ct-show-title {
+            font-size: 2.2rem;
+            margin: 0 0 8px 0;
+            font-weight: 700;
+        }
+        .ct-show-subtitle {
+            font-size: 1.1rem;
+            color: #6b7280;
+            margin: 0 0 20px 0;
+        }
+
+        /* 클리어티켓 AI 3줄 요약 컴포넌트 */
+        .ct-ai-summary {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        .ct-ai-summary h3 {
+            font-size: 0.95rem;
+            color: #2563eb;
+            margin: 0 0 8px 0;
+            font-weight: bold;
+        }
+        .ct-ai-summary ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 0.88rem;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        /* 동적 주입되는 공연장 상세 정보 레이아웃 정의 */
+        .ct-real-info-grid {
+            border-top: 1px solid #f3f4f6;
+            padding-top: 16px;
+            color: #4b5563;
+            font-size: 0.95rem;
+        }
+        .info-item { margin: 8px 0; display: flex; }
+        .info-label { font-weight: bold; color: #111827; width: 100px; flex-shrink: 0; }
+
+        /* 4. 와이어프레임 탭 네비게이션 컴포넌트 */
+        .ct-tab-menu-bar {
+            display: flex;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 32px;
+        }
+        .ct-tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            position: relative;
+        }
+        .ct-tab-btn.active {
+            color: #111827;
+        }
+        .ct-tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #111827;
+        }
+
+        /* 5. 컨텐츠 내부 섹션 공통 */
+        .ct-section-block {
+            margin-bottom: 48px;
+        }
+        .ct-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .ct-section-block h2, .ct-section-block h3 {
+            font-size: 1.3rem;
+            margin: 0;
+        }
+        .ct-mini-btn {
+            padding: 6px 12px;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            font-size: 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* 와이어프레임 서클 캐스팅 레이아웃 복제 */
+        .ct-actor-flex-wrap {
+            display: flex;
+            gap: 24px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .ct-actor-card {
+            text-align: center;
+            width: 90px;
+        }
+        .ct-actor-circle-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #e5e7eb;
+            margin: 0 auto 8px auto;
+        }
+        .ct-actor-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .ct-more-btn {
+            width: 100%;
+            padding: 12px;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            color: #6b7280;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* 6. 우측 사이드바 달력 & 회차 컴포넌트 */
+        .ct-panel-section {
+            margin-bottom: 24px;
+            border-bottom: 1px solid #f3f4f6;
+            padding-bottom: 20px;
+        }
+        .ct-panel-section:last-of-type {
+            border-bottom: none;
+        }
+        .ct-panel-toggle-title {
+            font-weight: bold;
+            font-size: 1rem;
+            margin-bottom: 16px;
+        }
+
+        .ct-calendar-wrapper {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            background: #fafafa;
+        }
+        .ct-cal-nav {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            text-align: center;
+        }
+        .calendar-header {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #9ca3af;
+            padding-bottom: 6px;
+        }
+
+        /* 날짜 데이터 원형 셀 컴포넌트 */
+        .day {
+            font-size: 0.85rem;
+            padding: 10px 0;
+            cursor: pointer;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.15s;
+        }
+        .available {
+            background-color: #ffffff;
+            color: #2563eb;
+            border: 1px solid #cbd5e1;
+        }
+        .available:hover {
+            background-color: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+        .unavailable {
+            color: #cbd5e1;
+            cursor: not-allowed;
+            background-color: transparent;
+        }
+
+        /* 회차 리스트 및 버튼 포맷 */
+        .ct-schedule-list-box {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .schedule-btn {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #3b82f6;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            text-align: left;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .schedule-btn:hover {
+            background-color: #dbeafe;
+        }
+
+        /* 와이어프레임 최종 예매하기 대형 버튼 */
+        .ct-btn-reservation-submit {
+            width: 100%;
+            padding: 18px;
+            background-color: #4361ee;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.2);
+        }
+        .ct-btn-reservation-submit:hover {
+            background-color: #2b4cdb;
+        }
+
+        /* 7. 하단 리뷰 리스트 카드 레이아웃 정리 */
+        .ct-review-summary-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background-color: #fefce8;
+            border: 1px solid #fef08a;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+        .avg-star { font-size: 1.3rem; font-weight: bold; color: #f0ad4e; }
+        .ct-review-list-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .review-card {
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background-color: #fff;
+            text-align: left;
+        }
+        .review-header { display: flex; justify-content: space-between; color: #6b7280; font-size: 0.85rem; margin-bottom: 8px; }
+        .review-content { color: #1f2937; font-size: 0.95rem; line-height: 1.5; }
+        .review-rating { color: #ffcc00; font-weight: bold; margin-top: 8px; }
     </style>
 </head>
 <body>
 
-<div class="info-container">
-    <div class="info-title">🏛️ 공연장 상세 정보</div>
-    <div id="venue-info-box">
-        <p style="color: #9ca3af;">공연장 정보를 불러오는 중입니다...</p>
+<div th:replace="~{fragments/header :: header}"></div>
+
+<div class="ct-main-wrapper">
+    <div class="ct-content-container">
+
+        <div class="ct-left-main">
+            <div class="ct-show-summary-box">
+                <div class="ct-poster-wrapper">
+                    <div class="ct-mock-poster">이미지</div>
+                </div>
+                <div class="ct-show-info-details">
+                    <h1 class="ct-show-title">제목</h1>
+                    <p class="ct-show-subtitle" id="venue-name-top">위치명</p>
+
+                    <div class="ct-ai-summary">
+                        <h3>클리어티켓 AI 3줄 요약</h3>
+                        <ul>
+                            <li>웅장한 오케스트라 선율과 함께하는 특별기획 정기 연주회</li>
+                            <li>클래식 입문자도 편안하게 즐길 수 있는 친숙한 명곡들로 구성</li>
+                            <li>디큐브 링크아트센터에서 펼쳐지는 올여름 단 하나의 감동</li>
+                        </ul>
+                    </div>
+
+                    <div id="venue-info-box" class="ct-real-info-grid">
+                        <p style="color: #9ca3af;">공연장 정보를 불러오는 중입니다...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ct-tab-menu-bar">
+                <button type="button" class="ct-tab-btn active" onclick="switchTab(event, 'tab-info')">공연정보</button>
+                <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-casting')">캐스팅정보</button>
+                <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-sales')">판매정보</button>
+                <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-reviews')">관람후기</button>
+                <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-expect')">기대평(0)</button>
+            </div>
+
+            <div id="tab-info" class="ct-tab-content">
+                <div class="ct-section-block">
+                    <div class="ct-section-header">
+                        <h2>캐스팅</h2>
+                        <button type="button" class="ct-mini-btn" onclick="document.querySelectorAll('.ct-tab-btn')[1].click();">캐스팅 일정조회</button>
+                    </div>
+                    <div id="casting-list" class="ct-actor-flex-wrap">
+                        <p style="color: #9ca3af;">출연진 정보를 불러오는 중...</p>
+                    </div>
+                    <button type="button" class="ct-more-btn" onclick="document.querySelectorAll('.ct-tab-btn')[1].click();">더보기 ➔</button>
+                </div>
+
+                <div class="ct-detail-body-wrapper" style="display: flex; flex-direction: column; gap: 40px; margin-top: 20px;">
+                    <div class="ct-body-section" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; text-align: left;">
+                        <h3 style="font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; color: #ef4444; display: flex; align-items: center; gap: 8px;">
+                             꼭 확인해주세요! (공지사항)
+                        </h3>
+                        <div style="font-size: 0.9rem; color: #4b5563; line-height: 1.8; display: flex; flex-direction: column; gap: 12px;">
+                            <p style="margin: 0; font-weight: 600; color: #111827;">※ 무통장입금 취소 기한 안내</p>
+                            <p style="margin: 0; padding-left: 12px; border-left: 2px solid #ef4444;">결제 수단 중 '무통장입금'으로 예매한 경우 예매 당일 23:59(KST)까지 입금하셔야 예매가 취소되지 않으며, 은행별 점검시간(23:00) 전 입금을 권장합니다.</p>
+
+                            <p style="margin: 0; font-weight: 600; color: #111827;">※ 관람 연령 및 티켓 수령 안내</p>
+                            <p style="margin: 0; padding-left: 12px; border-left: 2px solid #ef4444;">본 공연은 8세 이상 관람가입니다. 미취학 아동은 티켓 소지 여부와 관계없이 입장이 불가합니다. 현장 티켓 수령은 공연 시작 2시간 전부터 가능합니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="ct-body-section" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; text-align: left;">
+                        <h3 style="font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; color: #111827;">공연 기본 정보</h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+                            <tr style="border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 14px 0; font-weight: bold; color: #6b7280; width: 120px;">공연기간</td>
+                                <td style="padding: 14px 0; color: #111827;" id="perf-period-text">2026.06.19 ~ 2026.08.23</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 14px 0; font-weight: bold; color: #6b7280;">공연시간</td>
+                                <td style="padding: 14px 0; color: #111827;">165분 (인터미션 20분 포함)</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #f3f4f6;">
+                                <td style="padding: 14px 0; font-weight: bold; color: #6b7280;">관람연령</td>
+                                <td style="padding: 14px 0; color: #111827;">8세 이상 관람가능</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 14px 0; font-weight: bold; color: #6b7280; vertical-align: top;">티켓가격</td>
+                                <td style="padding: 14px 0; color: #111827; line-height: 1.6;">
+                                    <span style="color:#ef4444; font-weight:bold;">VIP석</span> 160,000원 |
+                                    <span style="color:#f59e0b; font-weight:bold;">R석</span> 140,000원 |
+                                    <span style="color:#3b82f6; font-weight:bold;">S석</span> 110,000원
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="ct-body-section" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; text-align: center;">
+                        <h3 style="font-size: 1.2rem; font-weight: bold; margin-bottom: 24px; color: #111827; text-align: left;">공연 상세 소개</h3>
+                        <div style="width: 100%; min-height: 500px; background-color: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 0; gap: 20px;">
+                            <p style="color: #9ca3af; font-size: 0.95rem; margin: 0;">[KOPIS 제공 공연 상세 이미지 로드 구역]</p>
+                            <div style="width: 400px; height: 550px; background: #e5e7eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #9ca3af; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                                상세 포스터/소개 이미지
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-casting" class="ct-tab-content" style="display: none;">
+                <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; text-align: left;">
+                    <h3 style="font-size: 1.2rem; font-weight: bold; margin-bottom: 8px; color: #111827;"> 캐스팅 일정 상세 조회</h3>
+                    <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 24px;">원하시는 날짜나 배우를 선택하여 회차별 캐스팅 일정을 확인하세요.</p>
+
+                    <div class="ct-filter-container" style="display: flex; flex-direction: column; gap: 16px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 32px; font-size: 0.9rem;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span style="font-weight: bold; width: 80px; color: #4b5563;">공연 기간</span>
+                            <input type="date" value="2026-06-19" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                            <span>~</span>
+                            <input type="date" value="2026-08-23" style="padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span style="font-weight: bold; width: 80px; color: #4b5563;">요일 선택</span>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" style="padding: 6px 14px; background: #fff; border: 1px solid #cbd5e1; border-radius: 20px; cursor: pointer;">금요일</button>
+                                <button type="button" style="padding: 6px 14px; background: #fff; border: 1px solid #cbd5e1; border-radius: 20px; cursor: pointer;">토요일</button>
+                                <button type="button" style="padding: 6px 14px; background: #fff; border: 1px solid #cbd5e1; border-radius: 20px; cursor: pointer;">일요일</button>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <span style="font-weight: bold; width: 80px; color: #4b5563;">배우 선택</span>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" style="padding: 6px 12px; background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: 600;">조승우</button>
+                                <button type="button" style="padding: 6px 12px; background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: 600;">홍광호</button>
+                                <button type="button" style="padding: 6px 12px; background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: 600;">박은태</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem; text-align: center;">
+                        <thead>
+                        <tr style="background: #f1f5f9; border-top: 2px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">
+                            <th style="padding: 12px; font-weight: 600;">관람일</th>
+                            <th style="padding: 12px; font-weight: 600;">시간</th>
+                            <th style="padding: 12px; font-weight: 600; color: #2563eb;">출연 배우 1</th>
+                            <th style="padding: 12px; font-weight: 600; color: #2563eb;">출연 배우 2</th>
+                            <th style="padding: 12px; font-weight: 600; color: #2563eb;">출연 배우 3</th>
+                        </tr>
+                        </thead>
+                        <tbody style="color: #334155;">
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 14px; font-weight: 600;">2026-06-19 (금)</td>
+                            <td style="padding: 14px;">20:00</td>
+                            <td style="padding: 14px; color: #1e40af; font-weight: bold; background-color: #eff6ff;">조승우</td>
+                            <td style="padding: 14px; color: #9ca3af;">-</td>
+                            <td style="padding: 14px; color: #9ca3af;">-</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 14px; font-weight: 600;">2026-06-20 (토)</td>
+                            <td style="padding: 14px;">14:00</td>
+                            <td style="padding: 14px; color: #9ca3af;">-</td>
+                            <td style="padding: 14px; color: #1e40af; font-weight: bold; background-color: #eff6ff;">홍광호</td>
+                            <td style="padding: 14px; color: #9ca3af;">-</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 14px; font-weight: 600;">2026-06-20 (토)</td>
+                            <td style="padding: 14px;">18:30</td>
+                            <td style="padding: 14px; color: #9ca3af;">-</td>
+                            <td style="padding: 14px; color: #9ca3af;">-</td>
+                            <td style="padding: 14px; color: #1e40af; font-weight: bold; background-color: #eff6ff;">박은태</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                            <td style="padding: 14px; font-weight: 600;">2026-06-21 (일)</td>
+                            <td style="padding: 14px;">15:00</td>
+                            <td style="padding: 14px; color: #1e40af; font-weight: bold; background-color: #eff6ff;">조승우</td>
+                            <td style="padding: 14px; color: #1e40af; font-weight: bold; background-color: #eff6ff;">홍광호</td>
+                            <td style="padding: 14px; color: #9ca3af;">-</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="tab-sales" class="ct-tab-content" style="display: none;">
+                <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; margin-top: 20px;">
+                    <h3>판매 및 취소수수료 정보 안내</h3>
+                    <p style="color: #6b7280; font-size: 0.9rem;">티켓 취소 및 환불 수수료 규정은 공정거래위원회 기준을 준수합니다.</p>
+                </div>
+            </div>
+
+            <div id="tab-expect" class="ct-tab-content" style="display: none;">
+                <div class="ct-section-block" style="margin-top: 20px; text-align: left;">
+
+                    <!-- 💡 와이어프레임 상단 유의사항 안내문 -->
+                    <div style="font-size: 0.85rem; color: #6b7280; line-height: 1.6; border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 20px;">
+                        <p style="margin: 0 0 4px 0;">게시판 운영 규정에 어긋난다고 판단되는 게시글은 사전 통보없이 블라인드 처리될 수 있습니다.</p>
+                        <p style="margin: 0 0 4px 0;">특히 티켓 매매 및 양도의 글은 발견 즉시 임의 삭제되며 전화번호, 이메일 등의 개인정보는 악용될 우려가 있으므로 게시글 작성을 삼가 주시기 바랍니다.</p>
+                        <p style="margin: 0;">사전 경고에도 불구하고 불법 게시물을 지속적으로 게재한 게시자의 경우 예매 및 게시판 작성 권한이 제한됩니다.</p>
+                    </div>
+
+                    <!-- 💡 총 개수 표기 및 작성 버튼 구역 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <div style="font-size: 0.95rem; color: #111827;">
+                            총 <span id="total-expect-count" style="font-weight: bold; color: #2563eb;">0</span>개의 기대평이 등록되었습니다.
+                        </div>
+                        <!-- ⚫ 와이어프레임 기준 검은색 작성하러 가기 버튼 -->
+                        <button type="button" onclick="location.href='/expect/write?venueId=' + document.getElementById('venueKopisId').value"
+                                style="background-color: #111827; color: #ffffff; border: none; padding: 10px 16px; font-size: 0.85rem; font-weight: bold; border-radius: 4px; cursor: pointer;">
+                            기대평 작성
+                        </button>
+                    </div>
+
+                    <!-- 💡 최신순 정렬 바 -->
+                    <div style="display: flex; justify-content: flex-end; gap: 16px; font-size: 0.85rem; color: #6b7280; border-bottom: 1px solid #f3f4f6; padding-bottom: 12px; margin-bottom: 16px;">
+                        <span style="cursor: pointer; font-weight: bold; color: #111827;">최신순</span>
+                        <span style="color: #e5e7eb;">|</span>
+                        <span style="cursor: pointer;">평점순</span>
+                    </div>
+
+                    <!-- 🔄 동적 렌더링 기대평 목록 컨테이너 -->
+                    <div id="expect-list-box" class="ct-review-list-wrapper">
+                        <p style="color: #9ca3af; text-align: center; padding: 40px 0;">등록된 기대평이 없습니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-reviews" class="ct-tab-content" style="display: none;">
+                <div class="ct-section-block" style="margin-top: 20px; text-align: left;">
+
+                    <!-- 💡 와이어프레임 상단 유의사항 안내문 -->
+                    <div style="font-size: 0.85rem; color: #6b7280; line-height: 1.6; border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 20px;">
+                        <p style="margin: 0 0 4px 0;">게시판 운영 규정에 어긋난다고 판단되는 게시글은 사전 통보없이 블라인드 처리될 수 있습니다.</p>
+                        <p style="margin: 0 0 4px 0;">특히 티켓 매매 및 양도의 글은 발견 즉시 임의 삭제되며 전화번호, 이메일 등의 개인정보는 악용될 우려가 있으므로 게시글 작성을 삼가 주시기 바랍니다.</p>
+                        <p style="margin: 0;">사전 경고에도 불구하고 불법 게시물을 지속적으로 게재한 게시자의 경우 예매 및 게시판 작성 권한이 제한됩니다.</p>
+                    </div>
+
+                    <!-- 💡 총 개수 표기 및 작성 버튼 구역 -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                        <div style="font-size: 0.95rem; color: #111827;">
+                            총 <span id="total-count-text" style="font-weight: bold; color: #2563eb;">0</span>개의 관람후기가 등록되었습니다.
+                        </div>
+                        <!-- ⚫ 와이어프레임 기준 검은색 작성하러 가기 버튼 -->
+                        <button type="button" onclick="location.href='/review/write?venueId=' + document.getElementById('venueKopisId').value"
+                                style="background-color: #111827; color: #ffffff; border: none; padding: 10px 16px; font-size: 0.85rem; font-weight: bold; border-radius: 4px; cursor: pointer;">
+                            관람후기 작성
+                        </button>
+                    </div>
+
+                    <!-- 💡 최신순 / 평점순 정렬 링크 바 -->
+                    <div style="display: flex; justify-content: flex-end; gap: 16px; font-size: 0.85rem; color: #6b7280; border-bottom: 1px solid #f3f4f6; padding-bottom: 12px; margin-bottom: 16px;">
+                        <span style="cursor: pointer; font-weight: bold; color: #111827;" onclick="sortReviews('latest')">최신순</span>
+                        <span style="color: #e5e7eb;">|</span>
+                        <span style="cursor: pointer;" onclick="sortReviews('rating')">평점순</span>
+                    </div>
+
+                    <!-- 🔄 동적 렌더링 후기 목록 컨테이너 -->
+                    <div id="review-list-box" class="ct-review-list-wrapper">
+                        <p style="color: #9ca3af; text-align: center; padding: 40px 0;">등록된 관람후기가 없습니다.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="ct-right-sidebar">
+            <div class="ct-sticky-panel-box">
+                <div class="ct-panel-section">
+                    <div class="ct-panel-toggle-title"> 관람일 선택</div>
+                    <input type="hidden" id="venueKopisId" th:value="${venueKopisId}">
+
+                    <div class="ct-calendar-wrapper">
+                        <div class="ct-cal-nav">2026. 06</div>
+                        <div class="calendar-grid">
+                            <div class="calendar-header" style="color:#ef4444;">일</div>
+                            <div class="calendar-header">월</div>
+                            <div class="calendar-header">화</div>
+                            <div class="calendar-header">수</div>
+                            <div class="calendar-header">목</div>
+                            <div class="calendar-header">금</div>
+                            <div class="calendar-header" style="color:#3b82f6;">토</div>
+                            <div id="calendar-days" style="display: contents;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ct-panel-section">
+                    <div class="ct-panel-toggle-title"> 관람 회차 선택</div>
+                    <div id="schedule-list" class="ct-schedule-list-box">
+                        <p style="color: #9ca3af; font-size: 0.85rem; margin:0;">날짜를 선택하시면 실제 회차 목록이 나타납니다.</p>
+                    </div>
+                </div>
+
+                <button type="button" class="ct-btn-reservation-submit" onclick="openSeatSelection()">
+                    예매하기
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="calendar-container">
-    <h2> 관람 날짜 선택</h2>
-    <input type="hidden" id="venueKopisId" th:value="${venueKopisId}">
-
-    <div class="calendar-grid">
-        <div class="calendar-header">일</div><div class="calendar-header">월</div><div class="calendar-header">화</div>
-        <div class="calendar-header">수</div><div class="calendar-header">목</div><div class="calendar-header">금</div>
-        <div class="calendar-header">토</div>
-        <div id="calendar-days" style="display: contents;"></div>
-    </div>
-</div>
-
-<div class="schedule-container">
-    <h3> 관람 회차 선택</h3>
-    <div id="schedule-list">
-        <p style="color: #9ca3af;">날짜를 선택하시면 실제 회차 목록이 나타납니다.</p>
-    </div>
-</div>
-
-<div class="casting-container" style="text-align: center;">
-    <h3> 출연진 (Casting)</h3>
-    <div id="casting-list" class="casting-flex">
-        <p style="color: #9ca3af;">출연진 정보를 불러오는 중...</p>
-    </div>
-</div>
+<div th:replace="~{fragments/footer :: footer}"></div>
 
 <script>
+    // 💡 [추가] 서브 인페이지 탭 스위칭 비동기 컨트롤러 로직
+    function switchTab(event, tabId) {
+        const tabContents = document.querySelectorAll('.ct-tab-content');
+        tabContents.forEach(content => content.style.display = 'none');
+
+        const tabButtons = document.querySelectorAll('.ct-tab-btn');
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+
+        const targetContent = document.getElementById(tabId);
+        if (targetContent) targetContent.style.display = 'block';
+
+        event.currentTarget.classList.add('active');
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
         const mt10id = document.getElementById("venueKopisId").value;
         const calendarDays = document.getElementById("calendar-days");
 
-        // 페이지 로드 시 공연장 정보 API 호출
+        // 💡 백틱(`) 템플릿 리터럴을 통해 연동 오류 완벽 보정 수술
         fetch(`/hall/${mt10id}/info`)
             .then(response => response.json())
             .then(venue => {
                 const infoBox = document.getElementById("venue-info-box");
                 infoBox.innerHTML = `
-                    <div class="info-item"><span class="info-label">공연장명:</span> \${venue.venueName}</div>
-                    <div class="info-item"><span class="info-label">총 좌석 수:</span> \${venue.totalSeats}석</div>
-                    <div class="info-item"><span class="info-label">주소:</span> \${venue.address}</div>
-                    <div class="info-item"><span class="info-label">전화번호:</span> \${venue.telno}</div>
-                    <div class="info-item"><span class="info-label">홈페이지:</span> <a href="\${venue.relateUrl}" target="_blank">바로가기</a></div>
+                    <div class="info-item"><span class="info-label">공연장명:</span> ${venue.venueName}</div>
+                    <div class="info-item"><span class="info-label">총 좌석 수:</span> ${venue.totalSeats}석</div>
+                    <div class="info-item"><span class="info-label">주소:</span> ${venue.address}</div>
+                    <div class="info-item"><span class="info-label">전화번호:</span> ${venue.telnum || '정보없음'}</div>
                 `;
+                document.getElementById("venue-name-top").innerText = venue.venueName;
             });
 
-        // 페이지 로드 시 출연진(배우) 정보 API 호출 샘플 데이터
+        // 출연진(배우) 정보 API 호출
         fetch(`/hall/${mt10id}/casting`)
             .then(response => response.json())
             .then(castingList => {
                 const castingBox = document.getElementById("casting-list");
-                castingBox.innerHTML = ""; // 초기화
+                castingBox.innerHTML = "";
 
                 if(castingList.length === 0) {
                     castingBox.innerHTML = "<p style='color: #9ca3af;'>등록된 출연진 정보가 없습니다.</p>";
                     return;
                 }
 
-                // 기획 변경에 맞춰 '이름'만 들어간 이쁜 타원형 배지 생성!
                 castingList.forEach(casting => {
-                    const badge = document.createElement("div");
-                    badge.classList.add("actor-badge");
-                    badge.innerText = casting.actorName;
-                    castingBox.appendChild(badge);
+                    const actorCard = document.createElement("div");
+                    actorCard.classList.add("ct-actor-card");
+                    actorCard.innerHTML = `
+                        <div class="ct-actor-circle-img"></div>
+                        <div class="ct-actor-name">${casting.actorName}</div>
+                        <div style="font-size:0.75rem; color:#9ca3af;">출연 배우</div>
+                    `;
+                    castingBox.appendChild(actorCard);
                 });
             });
 
-        // 관람 가능 날짜 API 호출 (기존 유지)
+        // 관람 가능 날짜 API 호출
         fetch(`/hall/${mt10id}/dates`)
             .then(response => response.json())
             .then(data => {
@@ -124,12 +710,61 @@
                     calendarDays.appendChild(dayDiv);
                 });
             });
+
+        // 후기 목록 API 호출
+        fetch(`/hall/${mt10id}/reviews?page=1`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("avg-rating-text").innerText = data.averageRating.toFixed(1);
+                document.getElementById("total-count-text").innerText = data.totalReviewsCount || 0;
+                const reviewListBox = document.getElementById("review-list-box");
+                reviewListBox.innerHTML = "";
+
+                if (data.reviews.length === 0) {
+                    reviewListBox.innerHTML = "<p style='color: #9ca3af; text-align: center;'>아직 작성된 후기가 없습니다.</p>";
+                    return;
+                }
+
+                data.reviews.forEach(review => {
+                    const card = document.createElement("div");
+                    card.classList.add("review-card");
+                    card.style.cssText = "padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; background-color: #fff; margin-bottom: 12px;";
+
+                    const stars = "★".repeat(review.rating) + "☆".repeat(5 - review.rating);
+
+                    // image_556c25.png 와이어프레임 인포라인 완벽 복제
+                    card.innerHTML = `
+        <div style="display: flex; gap: 8px; align-items: center; color: #9ca3af; font-size: 0.8rem; margin-bottom: 12px;">
+            <span style="font-weight: 600; color: #4b5563;">${review.nickname || 'abc****'}</span>
+            <span style="background-color: #eff6ff; color: #2563eb; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;">예매자</span>
+            <span>|</span>
+            <span>${review.createdAt || '2026-06-19'}</span>
+            <span>|</span>
+            <span>조회 0</span>
+            <span>|</span>
+            <span>댓글 0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-weight: bold; font-size: 1rem; margin-bottom: 6px; color: #111827;">${review.title || '멋진 무대!'}</div>
+                <div class="review-content" style="color: #4b5563; font-size: 0.9rem; line-height: 1.5;">${review.content}</div>
+                <div class="review-rating" style="color: #ffcc00; font-size: 0.9rem; margin-top: 8px;">${stars}</div>
+            </div>
+            <button type="button" style="background: none; border: none; color: #9ca3af; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                더보기 <span style="font-size: 0.6rem;">▼</span>
+            </button>
+        </div>
+    `;
+                    reviewListBox.appendChild(card);
+                });
+            })
+            .catch(err => console.error("리뷰 로드 에러:", err));
     });
 
-    // 특정 날짜 클릭 시 스케줄 선택 API 호출 (기존 유지)
+    // 특정 날짜 클릭 시 스케줄 선택 API 호출
     function loadSchedules(mt10id, selectedDate) {
         const scheduleList = document.getElementById("schedule-list");
-        scheduleList.innerHTML = "<p>회차 정보를 불러오는 중...</p>";
+        scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#6b7280;'>회차 정보를 불러오는 중...</p>";
 
         fetch(`/hall/${mt10id}/schedules?date=${selectedDate}`)
             .then(response => response.json())
@@ -137,7 +772,7 @@
                 scheduleList.innerHTML = "";
 
                 if(data.length === 0) {
-                    scheduleList.innerHTML = "<p>해당 날짜에는 상영 스케줄이 없습니다.</p>";
+                    scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>해당 날짜에는 상영 스케줄이 없습니다.</p>";
                     return;
                 }
 
@@ -147,12 +782,22 @@
                     btn.innerText = `${schedule.roundNumber}회차 (${schedule.showTime})`;
 
                     btn.addEventListener("click", () => {
-                        alert(`선택하신 스케줄 ID는 [${schedule.scheduleId}] 입니다. 이제 좌석 선택하러 고고!`);
+                        alert(`선택하신 스케줄 ID는 [${schedule.scheduleId}] 입니다. 우측 하단의 [예매하기] 버튼을 눌러 좌석을 선택해 주세요!`);
                     });
 
                     scheduleList.appendChild(btn);
                 });
             });
+    }
+
+    // 팝업창 열기 기능
+    function openSeatSelection() {
+        const venueId = document.getElementById("venueKopisId").value;
+        const popupUrl = `/seat/selection?venueId=${venueId}`;
+        const popupName = "ClearTicket_SeatSelection";
+        const popupOptions = "width=1000, height=700, resizable=no, scrollbars=yes, status=no, location=no";
+
+        window.open(popupUrl, popupName, popupOptions);
     }
 </script>
 </body>

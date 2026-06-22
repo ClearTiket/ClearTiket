@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
@@ -100,5 +101,16 @@ public class VenueService {
         double avgRating = sortedReviews.isEmpty() ? 0.0 : (double) totalSum / sortedReviews.size();
 
         return new ReviewListResponse(avgRating, sortedReviews.size(), sortedReviews);
+    }
+
+    public VenueLayoutResponse getVenueLayout(Long venueId) {
+        List<SeatGradeInfo> gradeList = Arrays.asList(
+                new SeatGradeInfo("VIP", 150000),
+                new SeatGradeInfo("R", 120000),
+                new SeatGradeInfo("S", 90000)
+        );
+
+        // 10행 12열 숫자를 담아 정석대로 반환!
+        return new VenueLayoutResponse(venueId, 10, 12, gradeList);
     }
 }

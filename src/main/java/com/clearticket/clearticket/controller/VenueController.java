@@ -16,7 +16,7 @@ public class VenueController { // 변수명과 도메인은 우리 표준인 Ven
 
     private final VenueService VenueService;
 
-    // 📅 1. 공연장 관람 가능 날짜 조회
+    // 1. 공연장 관람 가능 날짜 조회
     @GetMapping("/{mt10id}/dates")
     public ResponseEntity<List<AvailableDateResponse>> getAvailableDates(
             @PathVariable("mt10id") String mt10id) { // KOPIS 공연장 ID (예: mt10id)
@@ -25,7 +25,7 @@ public class VenueController { // 변수명과 도메인은 우리 표준인 Ven
         return ResponseEntity.ok(dates);
     }
 
-    // ⏱️ 2. 공연장 특정 날짜의 회차(세션) 조회
+    //  2. 공연장 특정 날짜의 회차(세션) 조회
     @GetMapping("/{mt10id}/schedules")
     public ResponseEntity<List<ScheduleResponse>> getSchedules(
             @PathVariable("mt10id") String mt10id,
@@ -51,9 +51,15 @@ public class VenueController { // 변수명과 도메인은 우리 표준인 Ven
     @GetMapping("/{mt10id}/reviews") // 💡 GET /hall/<mt10id>/reviews 주소 매핑!
     public ResponseEntity<ReviewListResponse> getVenueReviews(
             @PathVariable("mt10id") String mt10id,
-            @RequestParam(value = "page", defaultValue = "1") int page) { // 💡 기본 1페이지 장전!
+            @RequestParam(value = "page", defaultValue = "1") int page) { // 기본 1페이지 장전!
 
         ReviewListResponse reviews = VenueService.getReviewsByVenueKopisId(mt10id, page);
         return ResponseEntity.ok(reviews);
+    }
+
+    @GetMapping("/{id}/layout")
+    public ResponseEntity<VenueLayoutResponse> getVenueLayout(@PathVariable("id") Long id) {
+        VenueLayoutResponse layout = VenueService.getVenueLayout(id);
+        return ResponseEntity.ok(layout);
     }
 }
