@@ -21,6 +21,8 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+  thymeleaf:
+    cache: false
   application:
     name: ClearTicket
   config:
