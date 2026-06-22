@@ -3,24 +3,21 @@ package com.clearticket.clearticket.service;
 import com.clearticket.clearticket.model.dto.ReservationRequestDto;
 import com.clearticket.clearticket.model.dto.ReservationResponseDto;
 //import com.clearticket.clearticket.model.entity.Performance;
-import com.clearticket.clearticket.model.entity.Performance;
-import com.clearticket.clearticket.model.entity.Reservation;
-import com.clearticket.clearticket.model.entity.ReservationStatus;
-import com.clearticket.clearticket.model.entity.Schedule;
+import com.clearticket.clearticket.model.entity.*;
 import com.clearticket.clearticket.repository.ReservationRepository;
+import com.clearticket.clearticket.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
     private final ReservationRepository reservationRepository;
+    private final SeatRepository seatRepository;
 
     /**
      * 신규 티켓 예매 내역 생성 및 DB저장
@@ -123,4 +120,48 @@ public class ReservationService {
     }
 
 
+    /**
+     * 특정 공연에 설정된 좌석 등급 목록을 중복 없이 조회
+     * @param performanceId 조회할 공연의 고유 ID
+     * @return 고유한 좌석 등급 리스트
+     */
+    public List<String> getSeatGrades(Long performanceId) {
+        List<String> grades = seatRepository.findDistinctByPerformancePerformanceId(performanceId);
+
+        System.out.println("디버깅: 조회된 등급 리스트 = " + grades);
+        return grades;
+    }
+
+
+    /**
+     * 예매 상세 페이지에서 사용할 요약 정보(예약 객체, 공연 정보, 좌석 계산 등)를 생성
+     * @param reservationId 요약 정보를 생성할 예약 ID
+     * @return 화면 렌더링에 필요한 데이터를 담은 Map 객체
+     */
+    public Map<String, Object> getReservationSummary(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예매입니다."));
+
+        Performance performance = (Performance) org.hibernate.Hibernate.unproxy(reservation.getSchedule().getPerformance());
+        List<ReservationSeat> resSeats = reservation.getReservationSeats();
+
+        System.out.println("디버깅: 조회된 예약 좌석 수 = " + (resSeats != null ? resSeats.size() : "null"));
+
+        int seatPriceSum = 0;
+        Set<String> gradeSet = new LinkedHashSet<>();
+
+        for (ReservationSeat rs : resSeats) {
+            gradeSet.add(rs.getSeat().getSeatGrade());
+            seatPriceSum += rs.getSeat().getPrice();
+        }
+
+        Map<String, Object> summary = new HashMap<>();
+        summary.put("reservation", reservation);
+        summary.put("performance", performance);
+        summary.put("seatGrade", String.join(", ", gradeSet));
+        summary.put("seatCount", resSeats.size());
+        summary.put("seatPriceSum", seatPriceSum);
+
+        return summary;
+    }
 }
