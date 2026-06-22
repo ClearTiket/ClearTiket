@@ -42,11 +42,11 @@ public class CouponApiController {
 
         Optional<User> user = userRepository.findByEmail(loginUser.getId());
 
-        if (user == null) {
+        if (user.isEmpty()) {
             throw new IllegalArgumentException("존재하지 않는 회원 정보입니다.");
         }
 
-        List<CouponResponseDto> coupons = couponService.getAvailableCoupons(user);
+        List<CouponResponseDto> coupons = couponService.getAvailableCoupons(String.valueOf(user));
         return ResponseEntity.ok(coupons);
     }
 }
