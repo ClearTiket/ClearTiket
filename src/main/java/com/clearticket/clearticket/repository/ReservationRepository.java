@@ -29,6 +29,4 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
      * @return 조회된 예매내역, 존재하지 않으면 null
      */
     Reservation findByReservationId(Long reservationId);
-
-    //List<String> findDistinctGradesByPerformanceId(Long performanceId);
 }

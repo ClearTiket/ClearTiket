@@ -15,9 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 예매 및 결제 프로세스에서 쿠폰 관련 비동기 데이터를 처리하는 REST 컨트롤러입니다.
- */
 @RestController
 @RequestMapping("/api/coupons")
 @RequiredArgsConstructor
