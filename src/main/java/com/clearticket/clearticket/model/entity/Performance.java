@@ -3,6 +3,7 @@ package com.clearticket.clearticket.model.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -25,7 +26,7 @@ public class Performance {
     @JoinColumn(name = "venue_id")
     Venue venue;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 50, unique = true)
     String kopisId;
 
     @Column(nullable = false, length = 200)
@@ -34,10 +35,10 @@ public class Performance {
     @Column(nullable = false, length = 50)
     String genre;
 
-    @Column(nullable = false, length = 50)
+    @Column(length = 50)
     String region;
 
-    @Column(length = 100)
+    @Column(length = 255)
     String enterpriseName;
 
     @Column(nullable = false)
@@ -65,7 +66,7 @@ public class Performance {
     @Column(columnDefinition = "TEXT")
     String extractedText;
 
-    @CreationTimestamp
+    @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", updatable = false)
     LocalDateTime createdAt;
 }
 

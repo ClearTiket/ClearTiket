@@ -47,6 +47,6 @@ public class Venue {
     @Column(nullable = false)
     int capacity;
 
-    @CreationTimestamp
+    @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", updatable = false)
     LocalDateTime created_at;
 }

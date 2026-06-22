@@ -23,7 +23,7 @@ public class Seat {
     @JoinColumn(name = "venue_id")
     Venue venue;
 
-    @Column(length = 20)
+    @Column(length = 255)
     String seatGrade;
 
     @Column(length = 20)

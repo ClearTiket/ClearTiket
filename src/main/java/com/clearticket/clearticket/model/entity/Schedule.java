@@ -37,7 +37,6 @@ public class Schedule {
     private int roundNumber; // 회차 번호 (예: 1회차, 2회차)
 
     // 데이터 등록 일시
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime createdAt;
 }

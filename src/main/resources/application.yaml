@@ -30,7 +30,8 @@ spring:
     hikari:
       maximum-pool-size: 10
       connection-timeout: 30000
-
+  elasticsearch:
+    uris: http://localhost:9200
   jpa:
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -43,15 +44,12 @@ spring:
       hibernate:
         format_sql: true
     defer-datasource-initialization: true
-
   sql:
     init:
       data-locations: classpath:sql/data.sql
       mode: always
-
 lemonsqueezy:
-  #api-key: ${LEMON_SQUEEZY_API_KEY}
-  api-key: "dummy_lemon_squeezy_api_key_12345"
+  api-key: ${LEMON_SQUEEZY_API_KEY}
   store-id: "410829"
   variant-id: "1806370"
 
