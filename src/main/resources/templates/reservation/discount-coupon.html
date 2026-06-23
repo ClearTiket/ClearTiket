@@ -181,6 +181,49 @@
         document.getElementById('sidebar-discount').innerText = discountText;
         document.getElementById('sidebar-total').innerText = `${(originalPrice - calculatedDiscount + shippingFee).toLocaleString()} 원`;
     }
+
+    // 다음 단계 버튼 클릭시
+    document.getElementById('next-btn').addEventListener('click', function () {
+        const selectedRadio = document.querySelector('input[name="couponSelect"]:checked');
+        if (!selectedRadio) {
+            alert("쿠폰 선택 정보가 올바르지 않습니다.");
+            return;
+        }
+
+        const couponId = selectedRadio.value;
+
+        const totalText = document.getElementById('sidebar-total').innerText;
+        const totalPrice = parseInt(totalText.replace(/[^0-9]/g, '')) || 0;
+
+        const reservationId = /*[[${reservation?.reservationId}]]*/ null;
+
+        if (!reservationId) {
+            alert("예매 정보가 존재하지 않습니다.");
+            return;
+        }
+
+        fetch(`/api/reservations/${reservationId}/coupon`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                couponId: couponId,
+                totalPrice: totalPrice
+            })
+        })
+            .then(res => {
+                if (res.ok) {
+                    location.href = `/reservations/${reservationId}/buyer-info`;
+                } else {
+                    alert("쿠폰 정보 저장에 실패했습니다. 다시 시도해 주세요.");
+                }
+            })
+            .catch(err => {
+                console.error("네트워크 에러 발생:", err);
+                alert("서버 통신 중 오류가 발생했습니다.");
+            });
+    });
 </script>
 </body>
 </html>

@@ -1,7 +1,9 @@
 package com.clearticket.clearticket.controller;
 
 import com.clearticket.clearticket.model.UserSession;
+import com.clearticket.clearticket.service.ReservationService;
 import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,7 +12,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/reservations")
+@RequiredArgsConstructor
 public class ReservationViewController {
+
+    private final ReservationService reservationService;
 
      /**
      * 세션에서 로그인한 사용자 정보 조회
@@ -63,4 +68,33 @@ public class ReservationViewController {
         if (!checkLogin(session, model)) return "redirect:/login";
         return "mypage/cancel-complete";
     }
+
+    /**
+     * 예매 2단계 : 수령/주문자 정보 입력 화면
+     * @param reservationId 현재 진행중인 예약 ID
+     * @param session 현재 요청 HTTP 세션
+     * @param model 화면으로 데이터를 넘겨주기 위한 객체
+     * @return
+     */
+    @GetMapping("/{reservation_id}/buyer-info")
+    public String showBuyerInfoPage(
+            @PathVariable("reservation_id") Long reservationId,
+            HttpSession session,
+            Model model) {
+
+        if (!checkLogin(session, model)) return "redirect:/login";
+
+        try {
+            java.util.Map<String, Object> summary = reservationService.getReservationSummary(reservationId);
+            model.addAllAttributes(summary);
+            model.addAttribute("user", getLoginUser(session));
+
+            return "reservation/buyer-info";
+
+        } catch (IllegalArgumentException e) {
+            return "redirect:/main";
+        }
+    }
+
+
 }

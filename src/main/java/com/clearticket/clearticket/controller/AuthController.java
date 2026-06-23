@@ -90,7 +90,7 @@ public class AuthController {
             User user = userService.register(dto);
             session.removeAttribute(EmailVerificationController.SESSION_VERIFIED_EMAIL);
             session.setAttribute("loginUser",
-                    new UserSession(user.getEmail(), user.getName(), user.getEmail()));
+                    new UserSession(user.getEmail(), user.getName(), user.getEmail(), user.getPhone()));
             return "redirect:/survey";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
