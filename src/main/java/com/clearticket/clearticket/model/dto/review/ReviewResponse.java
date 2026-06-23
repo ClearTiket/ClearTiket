@@ -4,6 +4,7 @@ import com.clearticket.clearticket.model.entity.Review;
 import java.util.List;
 
 public record ReviewResponse (
-    List<Review> list,
-    long totalCount
+    List<Review> reviews,
+    long totalCount,
+    double averageRating
 ) {}
