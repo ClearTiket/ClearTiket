@@ -158,8 +158,33 @@ public class ReservationService {
         Map<String, Object> summary = new HashMap<>();
         summary.put("reservation", reservation);
         summary.put("performance", performance);
-        summary.put("seatGrade", String.join(", ", gradeSet));
-        summary.put("seatCount", resSeats.size());
+
+        // [★ 새로 추가] HTML의 th:each가 한 줄씩 뽑아 쓸 수 있도록 등급별 리스트 바구니 생성
+        List<Map<String, Object>> selectedGrades = new ArrayList<>();
+
+        // 우리가 위에서 구한 등급 세트(gradeSet)를 돌면서 등급별 정보를 맵으로 포장합니다.
+        for (String grade : gradeSet) {
+            Map<String, Object> gradeInfo = new HashMap<>();
+            gradeInfo.put("grade", grade); // 예: "R석"
+
+            // 등급별 정확한 개수와 가격 합산을 구하기 위해 필터링을 해줍니다.
+            int count = 0;
+            int priceSum = 0;
+
+            for (ReservationSeat rs : resSeats) {
+                if (rs.getSeat().getSeatGrade().equals(grade)) {
+                    count++;
+                    priceSum += rs.getSeat().getPrice();
+                }
+            }
+
+            gradeInfo.put("count", count);    // 해당 등급의 매수 (예: 1)
+            gradeInfo.put("price", priceSum); // 해당 등급의 가격 (예: 154000)
+
+            selectedGrades.add(gradeInfo);    // 바구니에 차곡차곡 담기
+        }
+
+        summary.put("selectedGrades", selectedGrades);
         summary.put("seatPriceSum", seatPriceSum);
 
         return summary;

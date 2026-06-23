@@ -44,8 +44,8 @@ public class CouponViewController {
         model.addAttribute("seatGradeList", seatGradeList); // 뷰에서 th:each로 사용
         model.addAttribute("coupons", coupons); // 뷰에서 라디오 버튼으로 사용
 
-        model.addAttribute("seatGrade", summary.get("seatGrade"));
-        model.addAttribute("seatCount", summary.get("seatCount"));
+        // [★ 수정된 부분] 서비스에서 새로 포장한 등급별 리스트 바구니를 화면(타임리프)으로 던져줍니다!
+        model.addAttribute("selectedGrades", summary.get("selectedGrades"));
         model.addAttribute("seatPriceSum", summary.get("seatPriceSum"));
 
         return "reservation/discount-coupon";

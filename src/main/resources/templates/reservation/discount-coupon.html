@@ -51,15 +51,10 @@
                         <p style="font-size: 13px; color: var(--text-muted);" th:text="${performance?.venue?.name}"></p>
                     </div>
                 </div>
-                <hr style="margin: 16px 0; border: 0; border-top: 1px solid var(--border);">
-                <div style="display: flex; justify-content: space-between; font-size: 14px;">
-                    <span th:text="|${seatGrade ?: ''} ${seatCount ?: 0}매|"></span>
-                    <span th:text="|${#numbers.formatInteger(seatPriceSum ?: 0, 0, 'COMMA')} 원|"></span>
-                </div>
             </div>
 
             <div class="card">
-                <table class="fee-table">
+                <table class="fee-table" style="min-height: 250px;">
                     <tr><td>상품금액</td><td th:text="|${#numbers.formatInteger(seatPriceSum ?: 0, 0, 'COMMA')} 원|"></td></tr>
                     <tr><td>할인금액</td><td id="sidebar-discount" style="color: var(--error);">0 원</td></tr>
                     <tr><td>배송비</td><td th:text="|${reservation?.shippingFee ?: 0} 원|"></td></tr>
@@ -74,24 +69,19 @@
         </div>
 
         <div class="main-section">
-            <div class="select-card">
-                <h3 class="section-title" style="font-size: 14px; margin-bottom: 12px;">등급선택</h3>
-                <div class="chip-container">
-                    <button type="button"
-                            style="border-radius: 10px;"
-                            th:each="grade : ${seatGradeList}"
-                            class="s-chip"
-                            th:classappend="${grade == seatGrade} ? 'selected' : (${seatGrade == null && gradeStat.index == 0} ? 'selected' : '')"
-                            th:text="${grade}">
-                            th:text="${grade}">
-                    </button>
+            <div class="select-card" style="margin-bottom: 9px;">
+                <h3 class="section-title" style="font-size: 15px; margin-bottom: 12px;">등급선택</h3>
+                <div style="display: flex; flex-direction: column; gap: 22px; font-size: 14px; background-color: #ffffff; padding: 16px; border: 1px solid var(--border, #e5e7eb); border-radius: 12px; margin-top: 8px;">
+                    <div th:each="item : ${selectedGrades}" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-sub, #555); font-weight: 500;" th:text="|${item.grade} ${item.count}매|"></span>
+                        <span style="color: var(--text-main, #111); font-weight: 600;" th:text="|${#numbers.formatInteger(item.price ?: 0, 0, 'COMMA')} 원|"></span>
+                    </div>
                 </div>
             </div>
 
-            <hr style="border: 0; border-top: 1px solid var(--border);">
 
             <div class="select-card" style="flex: 1; display: flex; flex-direction: column;">
-                <h3 class="section-title" style="font-size: 14px; margin-bottom: 4px;">할인쿠폰선택</h3>
+                <h3 class="section-title" style="font-size: 15px; margin-bottom: 4px;">할인쿠폰선택</h3>
                 <div id="coupon-container" class="coupon-list"></div>
             </div>
 
@@ -118,17 +108,57 @@
             .then(res => res.json())
             .then(list => {
                 const container = document.getElementById('coupon-container');
+
+                container.innerHTML = '';
+
+                const noneLabel = document.createElement('label');
+                noneLabel.className = 'coupon-item';
+                noneLabel.style.display = 'flex';
+                noneLabel.style.alignItems = 'center';
+                noneLabel.style.gap = '8px';
+
+                // checked 속성을 넣어서 처음부터 자동 선택되게 만들고, data-discount는 0원으로 줍니다.
+                noneLabel.innerHTML = `
+                    <input type="radio" name="couponSelect" value="NONE" data-discount="0" checked onchange="calculateDiscount(this)">
+                    <span style="font-size: 14px; font-weight: 500; color: var(--text-main, #111);">적용 안 함</span>
+                `;
+                container.appendChild(noneLabel);
+
+                // 2. 만약 받아온 쿠폰 리스트가 없다면 '적용 안 함' 아래에 안내 문구만 띄우고 끝냅니다.
                 if (!list || list.length === 0) {
-                    container.innerHTML = '<div class="no-coupon-msg">할인항목이 없습니다.</div>';
+                    const noCoupon = document.createElement('div');
+                    noCoupon.className = 'no-coupon-msg';
+                    noCoupon.innerText = '보유하신 쿠폰이 없습니다.';
+                    noCoupon.style.padding = '8px 0';
+                    noCoupon.style.color = '#999';
+                    container.appendChild(noCoupon);
                     return;
                 }
+
+                // 3. 쿠폰이 있다면 그 아래로 차곡차곡 리스트를 그립니다.
                 list.forEach(c => {
-                    const discount = c.discountAmount || 0;
+                    const type = c.discountType; // "AMOUNT" 또는 "PERCENT"
+                    const discount = c.discountValue || 0; // 혜인님이 선언하신 이름!
+
                     const label = document.createElement('label');
                     label.className = 'coupon-item';
+                    label.style.display = 'flex';
+                    label.style.alignItems = 'center';
+                    label.style.gap = '8px';
+
+                    let displayText = "";
+                    if (type === "PERCENT") {
+                        displayText = `${c.couponName} (${discount}% 할인)`;
+                    } else {
+                        displayText = `${c.couponName} (${discount.toLocaleString()}원 할인)`;
+                    }
+
                     label.innerHTML = `
-                        <input type="radio" name="couponSelect" value="${c.id}" data-discount="${discount}" onchange="calculateDiscount(this)">
-                        <span>${c.name}</span>
+                        <input type="radio" name="couponSelect" value="${c.couponId}"
+                               data-type="${type}"
+                               data-value="${discount}"
+                               onchange="calculateDiscount(this)">
+                        <span style="font-size: 14px;">${displayText}</span>
                     `;
                     container.appendChild(label);
                 });
@@ -139,9 +169,25 @@
     }
 
     function calculateDiscount(radio) {
-        const d = parseInt(radio.dataset.discount) || 0;
-        document.getElementById('sidebar-discount').innerText = `-${d.toLocaleString()} 원`;
-        document.getElementById('sidebar-total').innerText = `${(originalPrice - d + shippingFee).toLocaleString()} 원`;
+        const type = radio.dataset.type; // "AMOUNT" 또는 "PERCENT" 또는 undefined(적용안함)
+        const val = parseInt(radio.dataset.value) || 0; // 쿠폰에 적힌 숫자 (예: 5000 또는 10)
+
+        let calculatedDiscount = 0;
+
+        // 퍼센트 할인
+        if (type === "PERCENT") {
+            calculatedDiscount = Math.floor(originalPrice * (val / 100));
+        } else if (type === "AMOUNT") {
+            // 정액 할인
+            calculatedDiscount = val;
+        } else {
+            // '적용 안 함'을 눌렀을 때는 0원 처리
+            calculatedDiscount = 0;
+        }
+
+        const discountText = calculatedDiscount > 0 ? `-${calculatedDiscount.toLocaleString()} 원` : '0 원';
+        document.getElementById('sidebar-discount').innerText = discountText;
+        document.getElementById('sidebar-total').innerText = `${(originalPrice - calculatedDiscount + shippingFee).toLocaleString()} 원`;
     }
 </script>
 </body>
