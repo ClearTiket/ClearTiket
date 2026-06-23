@@ -3,6 +3,7 @@ package com.clearticket.clearticket.service;
 import com.clearticket.clearticket.model.entity.Review;
 import com.clearticket.clearticket.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -20,11 +21,26 @@ public class ReviewService {
 
     //  A. 관람후기 / 기대평 목록 조회
     public List<Review> getReviewList(Long performanceId, String type, String sort) {
-        //  버그 수정: 상태 값을 "Y"에서 "ACTIVE"로 매칭 싱크 보정
-        if ("rating".equals(sort) && "REVIEW".equals(type)) {
-            return reviewRepository.findByPerformance_PerformanceIdAndTypeAndStatusOrderByRatingDescCreatedAtDesc(performanceId, type, "ACTIVE");
+        // 1. 기본 정렬 순서는 최신순(createdAt DESC)으로 설정합니다.
+        Sort sortOrder = Sort.by(Sort.Direction.DESC, "createdAt");
+
+        // 2. 🌟 [추가] 정렬 조건이 'views' (조회순) 일 경우 처리
+        if ("views".equals(sort)) {
+            // 조회수가 높은 순서대로 정렬하고, 조회수가 같다면 최신글이 먼저 오도록 서브 정렬을 붙여줍니다.
+            sortOrder = Sort.by(Sort.Direction.DESC, "views")
+                    .and(Sort.by(Sort.Direction.DESC, "createdAt"));
+
+            // 3. 기존 평점순 조건 (관람후기 전용)
+        } else if ("rating".equals(sort) && "REVIEW".equals(type)) {
+            sortOrder = Sort.by(Sort.Direction.DESC, "rating")
+                    .and(Sort.by(Sort.Direction.DESC, "createdAt"));
         }
-        return reviewRepository.findByPerformance_PerformanceIdAndTypeAndStatusOrderByCreatedAtDesc(performanceId, type, "ACTIVE");
+
+        // 4. 결정된 정렬 기준(sortOrder)을 레포지토리에 넘겨서 쿼리를 실행합니다.
+        return reviewRepository.findByPerformance_PerformanceIdAndTypeAndStatus(
+                performanceId, type, "ACTIVE", sortOrder
+        );
+
     }
 
     //  B. 총 개수 카운트

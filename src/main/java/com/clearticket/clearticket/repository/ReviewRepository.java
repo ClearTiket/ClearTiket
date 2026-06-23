@@ -12,35 +12,25 @@ import java.util.Optional;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
-    //  1. 특정 공연의 [관람후기] 또는 [기대평] 목록 최신순 조회 (status = 'Y' 인 것만)
-    // 예: 최신순 정렬에 대응
-    List<Review> findByPerformance_PerformanceIdAndTypeAndStatusOrderByCreatedAtDesc(Long performanceId, String type, String status);
 
-    //  2. 특정 공연의 [관람후기] 목록 평점순 조회 (status = 'Y' 인 것만)
-    // 예: 관람후기 탭에서 '평점순' 정렬을 누를 때 대응
-    List<Review> findByPerformance_PerformanceIdAndTypeAndStatusOrderByRatingDescCreatedAtDesc(Long performanceId, String type, String status);
+    // 1. 특정 공연의 [관람후기/기대평] 목록 조회 (Sort 객체로 최신순/평점순 동적 정렬 처리)
+    List<Review> findByPerformance_PerformanceIdAndTypeAndStatus(Long performanceId, String type, String status, Sort sort);
 
-    //  3. 특정 공연에 등록된 특정 타입(후기/기대평)의 총 개수 카운트
-    // 와이어프레임의 "총 X개의 관람후기가 등록되었습니다"에 바인딩할 때 쓰입니다.
+    // 2. 특정 공연에 등록된 [관람후기/기대평] 중 ACTIVE 상태인 총 개수 카운트
     long countByPerformance_PerformanceIdAndTypeAndStatus(Long performanceId, String type, String status);
 
-    //  4. 게시글 상세 조회나 수정/삭제 시 status가 'Y'인 정상 글만 가져오기
+    // 3. 게시글 상세 조회 시 ACTIVE 상태인 정상 글만 가져오기
     Review findByReviewIdAndStatus(Long reviewId, String status);
 
-    //  5. 조회수(views) 증가를 위한 벌크 연산 쿼리
-    // 사용자가 아코디언을 열거나 상세 보기 시 카운트를 올릴 때 유용합니다.
+    // 4. 조회수(views) 증가를 위한 벌크 연산 쿼리
     @Modifying
     @Query("UPDATE Review r SET r.views = r.views + 1 WHERE r.reviewId = :reviewId")
     int incrementViews(@Param("reviewId") Long reviewId);
 
-    List<Review> findByPerformance_PerformanceIdAndType(Long performanceId, String type, Sort sort);
-
-    long countByPerformance_PerformanceIdAndType(Long performanceId, String type);
-
+    // 5. 특정 공연의 관람후기 평점 평균 계산 (소수점 연산)
     @Query("SELECT AVG(r.rating) FROM Review r " +
             "WHERE r.performance.performanceId = :performanceId " +
             "AND r.type = 'REVIEW' " +
             "AND r.status = 'ACTIVE'")
     Optional<Double> getAverageRatingByPerformanceId(@Param("performanceId") Long performanceId);
-
 }
