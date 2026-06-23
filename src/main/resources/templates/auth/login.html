@@ -12,11 +12,7 @@
 <th:block th:replace="~{fragments/header :: header}"></th:block>
 <main>
     <div class="auth-page fade-in">
-        <a th:href="@{/mypage}" class="auth-logo">
-            <img th:src="@{/images/logo.png}" alt="클리어티켓" style="height:48px;"
-                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <span style="display:none;font-size:28px;font-weight:800;color:#4B6EF5;align-items:center;">클리어티켓</span>
-        </a>
+        <h2 style="font-size:22px;font-weight:800;color:var(--text-main);margin-bottom:24px;">로그인</h2>
 
         <div class="auth-card">
             <form th:action="@{/login}" method="post">

@@ -89,7 +89,6 @@ public class AuthController {
         try {
             User user = userService.register(dto);
             session.removeAttribute(EmailVerificationController.SESSION_VERIFIED_EMAIL);
-            // 가입 후 바로 설문을 진행할 수 있도록 세션 생성 (ID나 Email 정보 세팅)
             session.setAttribute("loginUser",
                     new UserSession(user.getEmail(), user.getName(), user.getEmail()));
             return "redirect:/survey";
@@ -121,36 +120,19 @@ public class AuthController {
     @ResponseBody
     public String saveSurvey(@RequestBody SurveyRequestDto dto, HttpSession session) {
         UserSession loginUser = (UserSession) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return "FAIL";
-        }
-
-        // 현재 로그인된 사용자의 이메일(혹은 ID)과 함께 설문 데이터 저장
+        if (loginUser == null) return "FAIL";
         userService.saveSurvey(loginUser.getEmail(), dto);
         return "SUCCESS";
     }
 
     // ─── 아이디(이메일) 찾기 ───────────────────────────────────────────────
+    // GET /find-id  → 폼 페이지 (find-id.html에서 JS로 /api/auth/find-email 호출)
+    // POST /find-id 는 더 이상 사용하지 않음 (REST API로 대체)
 
     @GetMapping("/find-id")
     public String findIdForm(HttpSession session, Model model) {
         addLoginUser(session, model);
         return "auth/find-id";
-    }
-
-    @PostMapping("/find-id")
-    public String findIdSubmit(@RequestParam String email,
-                               HttpSession session, Model model) {
-        addLoginUser(session, model);
-        return userService.findByEmail(email)
-                .map(user -> {
-                    model.addAttribute("userId", maskEmail(user.getEmail()));
-                    return "auth/find-id-result";
-                })
-                .orElseGet(() -> {
-                    model.addAttribute("error", "일치하는 이메일 정보가 없습니다.");
-                    return "auth/find-id";
-                });
     }
 
     // ─── 비밀번호 찾기 ─────────────────────────────────────────────────────
@@ -164,8 +146,7 @@ public class AuthController {
     // ─── 비밀번호 재설정 ───────────────────────────────────────────────────
 
     @GetMapping("/reset-password")
-    public String resetPasswordForm(@RequestParam(required = false) String email,
-                                    HttpSession session, Model model) {
+    public String resetPasswordForm(HttpSession session, Model model) {
         String resetVerifiedEmail = (String) session.getAttribute(
                 EmailVerificationController.SESSION_RESET_VERIFIED_EMAIL);
 
@@ -204,15 +185,5 @@ public class AuthController {
             model.addAttribute("email", email);
             return "auth/reset-password";
         }
-    }
-
-    // ─── 유틸 ──────────────────────────────────────────────────────────────
-
-    private String maskEmail(String email) {
-        int atIdx = email.indexOf('@');
-        if (atIdx <= 2) return email;
-        String local  = email.substring(0, atIdx);
-        String domain = email.substring(atIdx);
-        return local.substring(0, 2) + "*".repeat(local.length() - 2) + domain;
     }
 }
