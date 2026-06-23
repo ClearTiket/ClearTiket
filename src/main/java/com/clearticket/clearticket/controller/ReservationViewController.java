@@ -97,4 +97,30 @@ public class ReservationViewController {
     }
 
 
+    /**
+     * 예매 3단계 : 결제 방법 최종 선택 화면
+     * @param reservationId 현재 진행 중인 예약 고유 ID
+     * @param session 현재 요청의 HTTP 세션
+     * @param model 화면에 예매 요약 데이터를 전달하기 위한 Model 객체
+     * @return 결제 페이지 뷰 경로, 미로그인 시 로그인 페이지 리다이렉트 경로
+     */
+    @GetMapping("/{reservation_id}/payment")
+    public String showPaymentPage(
+            @PathVariable("reservation_id") Long reservationId,
+            HttpSession session,
+            Model model) {
+        if (!checkLogin(session, model)) return "redirect:/login";
+
+        try {
+            java.util.Map<String, Object> summary = reservationService.getReservationSummary(reservationId);
+            model.addAllAttributes(summary);
+
+            model.addAttribute("user", getLoginUser(session));
+
+            return "reservation/payment";
+
+        } catch (IllegalArgumentException e) {
+            return "redirect:/main";
+        }
+    }
 }

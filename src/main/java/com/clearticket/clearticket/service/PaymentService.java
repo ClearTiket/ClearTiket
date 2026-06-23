@@ -103,9 +103,11 @@ public class PaymentService {
         payment.setAmount(paymentRequestDto.getAmount());
         payment.setBankName(paymentRequestDto.getBankName());
 
+        Reservation reservation = null;
+
         // 결제 데이터와 예약 엔티티 간의 연관 관계 매핑
         if (paymentRequestDto.getReservationId() != null) {
-            Reservation reservation = reservationRepository.findByReservationId(paymentRequestDto.getReservationId());
+            reservation = reservationRepository.findByReservationId(paymentRequestDto.getReservationId());
             payment.setReservation(reservation);
         }
 
@@ -116,6 +118,13 @@ public class PaymentService {
         }
         payment.setMethod(PaymentMethod.valueOf(methodStr.toUpperCase()));
         payment.setStatus(PaymentStatus.CONFIRMED);
+
+        if ("BANK_TRANSFER".equalsIgnoreCase(methodStr) && reservation != null) {
+            reservation.changeStatus(ReservationStatus.CONFIRMED);
+            reservationRepository.save(reservation); // 예약 상태 반영
+            log.info("무통장 입금 확인: 예매번호 {}번 [CONFIRMED] 상태 변경 완료", reservation.getReservationId());
+        }
+
         Payment savedPayment = paymentRepository.save(payment);
 
         return toResponseDto(savedPayment);

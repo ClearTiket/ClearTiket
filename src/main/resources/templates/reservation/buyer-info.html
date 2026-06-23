@@ -75,7 +75,7 @@
             <input type="radio" name="receiptMethod" value="DELIVERY" checked style="margin-top: 3px;" onchange="changeShippingFee(this)">
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
               <div style="font-size: 14px; font-weight: 700; color: #111;">배송</div>
-              <div style="font-size: 12px; color: #999;">배송받을 주소로 티켓을 보내드려요.</div>
+              <div style="font-size: 12px; color: #999;">배송받을 주소로 티켓을 보내드려요</div>
             </div>
           </label>
 
@@ -116,14 +116,12 @@
 </div>
 
 <script th:inline="javascript">
-  // 백엔드 타임리프 데이터를 안전하게 자바스크립트 변수로 파싱
   const seatPriceSum = /*[[${seatPriceSum ?: 0}]]*/ 0;
   const discountAmount = /*[[${discountAmount ?: 0}]]*/ 0; // 1단계에서 넘어온 할인쿠폰 금액
 
-  let currentShippingFee = 4000; // 초기 상태는 시안에 맞춰 '배송(4,000원)'으로 설정
+  let currentShippingFee = 4000;
 
   document.addEventListener("DOMContentLoaded", function() {
-    // 첫 화면 진입 시 총결제금액을 계산해서 띄웁니다.
     updateTotalPrice();
   });
 
@@ -131,32 +129,40 @@
   function changeShippingFee(radio) {
     const items = document.querySelectorAll('.receipt-item');
 
-    // 시안처럼 선택된 라디오박스에 테두리 효과(active) 토글링
     items.forEach(item => item.classList.remove('active'));
     radio.closest('.receipt-item').classList.add('active');
 
-    // 선택값에 따라 배송비 변수 갱신
     if (radio.value === 'VENUE') {
       currentShippingFee = 0;
     } else if (radio.value === 'DELIVERY') {
       currentShippingFee = 4000;
     }
 
-    // 화면 금액 정보 리렌더링
     updateTotalPrice();
   }
 
-  // 금액 최종 합산 및 화면 렌더링 함수
   function updateTotalPrice() {
-    // 1. 영수증 영역 배송비 텍스트 변경
     document.getElementById('sidebar-shipping').innerText = `${currentShippingFee.toLocaleString()} 원`;
-
-    // 2. 총결제금액 계산 (상품금액 - 할인금액 + 배송비)
     const finalTotal = seatPriceSum - discountAmount + currentShippingFee;
-
-    // 3. 영수증 영역 총결제금액 텍스트 변경
     document.getElementById('sidebar-total').innerText = `${finalTotal.toLocaleString()} 원`;
   }
+
+
+  document.getElementById('next-btn').addEventListener('click', function() {
+    // 타임리프 변수로 현재 예약 ID 가져오기
+    const reservationId = /*[[${reservation?.reservationId}]]*/ null;
+
+    if (!reservationId) {
+      alert("예매 정보가 존재하지 않습니다.");
+      return;
+    }
+
+    // 💡 2단계 주문자 입력 정보나 수령방법을 별도로 서버에 임시저장하는 API가 없다면,
+    // 바로 아까 뷰 컨트롤러에 만들어 둔 3단계 결제 화면 주소로 쏴줍니다!
+    location.href = `/reservations/${reservationId}/payment`;
+  });
+
+
 </script>
 </body>
 </html>
