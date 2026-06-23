@@ -181,7 +181,30 @@ public class MypageApiController {
 
         return ResponseEntity.ok("새 배송지가 등록되었습니다.");
     }
+    /**
+     * 배송지 수정
+     * @param addressId 수정할 배송지 ID
+     * @param requestDto 화면에서 전달된 배송지 수정 요청 데이터
+     * @param session 현재 요청 세션
+     * @return 수정 성공시 성공 메세지, 미인증시 에러 메세지
+     */
+    @PutMapping("/addresses/{address_id}")
+    public ResponseEntity<?> updateAddress(@PathVariable("address_id") Long addressId,
+                                           @RequestBody MyPageAddressSaveRequestDto requestDto,
+                                           HttpSession session) {
+        Long userId = getLoginUserId(session);
 
+        if (userId == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        try {
+            myPageService.updateAddress(addressId, userId, requestDto);
+            return ResponseEntity.ok("배송지가 수정되었습니다.");
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
     /**
      * 배송지 삭제
      * @param addressId 삭제 배송지 ID

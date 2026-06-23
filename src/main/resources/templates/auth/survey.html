@@ -6,61 +6,7 @@
     <title>클리어티켓 - 취향 설문</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --primary: #4B6EF5; --primary-dark: #3558E0; --primary-light: #EEF1FF;
-            --text-main: #1A1A2E; --text-sub: #555577; --text-muted: #9999BB;
-            --border: #E2E4F0; --bg: #F8F9FF; --white: #FFFFFF;
-            --error: #E53E3E; --success: #38A169;
-            --shadow-md: 0 4px 20px rgba(75,110,245,.12);
-            --radius: 10px; --radius-lg: 16px;
-        }
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: var(--bg);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .survey-page {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; padding: 48px 24px;
-        }
-        .survey-logo { margin-bottom: 8px; }
-        .survey-logo img { height: 44px; }
-        .survey-greeting { text-align: center; margin-bottom: 24px; }
-        .survey-greeting .name { font-size: 15px; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
-        .survey-greeting .sub { font-size: 13px; color: var(--text-muted); }
-        .survey-card {
-            background: var(--white); border: 1.5px solid var(--border);
-            border-radius: var(--radius-lg); padding: 32px 36px; width: 100%; max-width: 520px; box-shadow: var(--shadow-md);
-        }
-        .q-block { margin-bottom: 28px; }
-        .q-title { font-size: 15px; font-weight: 600; color: var(--text-main); margin-bottom: 12px; }
-        .q-title span { font-size: 12px; color: var(--text-muted); font-weight: 400; margin-left: 4px; }
-        .chip-group { display: flex; flex-wrap: wrap; gap: 10px; }
-        .chip {
-            background: var(--white); border: 1.5px solid var(--border); border-radius: 20px;
-            padding: 8px 16px; font-size: 13px; font-weight: 500; color: var(--text-sub);
-            cursor: pointer; transition: all .2s ease; user-select: none;
-        }
-        .chip:hover { border-color: var(--primary); color: var(--primary); background: #F8F9FF; }
-        .chip.selected { background: var(--primary); border-color: var(--primary); color: var(--white); font-weight: 600; }
-        .skip-row { text-align: center; margin-top: 12px; }
-        .skip-link { background: none; border: none; font-family: inherit; font-size: 13px; color: var(--text-muted); text-decoration: underline; cursor: pointer; }
-        .skip-link:hover { color: var(--text-sub); }
-        .survey-cta { width: 100%; max-width: 520px; margin-top: 20px; }
-        .btn-cta {
-            width: 100%; background: #CBD5E1; color: var(--white); border: none;
-            border-radius: var(--radius); padding: 16px; font-size: 15px; font-weight: 600;
-            cursor: not-allowed; transition: all .2s ease; font-family: inherit;
-        }
-        .btn-cta.ready { background: var(--primary); cursor: pointer; }
-        .btn-cta.ready:hover { background: var(--primary-dark); }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
 

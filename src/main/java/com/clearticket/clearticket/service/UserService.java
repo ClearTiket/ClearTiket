@@ -20,16 +20,20 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     // ─────────────────────────────────────────────
-    // 이메일 중복 확인
+    // 검증 정규식 (프론트 JS와 동일한 패턴)
+    // ─────────────────────────────────────────────
+
+    private static final String EMAIL_REGEX    = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
+    private static final String PHONE_REGEX     = "^01[0-9]-\\d{3,4}-\\d{4}$";
+    private static final String PASSWORD_REGEX  = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_]).{8,20}$";
+
+    // ─────────────────────────────────────────────
+    // 중복 확인
     // ─────────────────────────────────────────────
 
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
     }
-
-    // ─────────────────────────────────────────────
-    // 휴대폰 중복 확인
-    // ─────────────────────────────────────────────
 
     public boolean existsByPhone(String phone) {
         return userRepository.existsByPhone(phone);
@@ -42,7 +46,7 @@ public class UserService {
     public Optional<UserSession> login(String email, String password) {
         return userRepository.findByEmail(email)
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
-                .map(user -> new UserSession(user.getEmail(), user.getName(), user.getEmail(), user.getPhone()));
+                .map(user -> new UserSession(String.valueOf(user.getUserId()), user.getName(), user.getEmail(), user.getPhone()));
     }
 
     // ─────────────────────────────────────────────
@@ -51,48 +55,74 @@ public class UserService {
 
     @Transactional
     public User register(RegisterRequestDto dto) {
-        if (userRepository.existsByEmail(dto.getEmail())) {
+        if (dto.getEmail() == null || !dto.getEmail().matches(EMAIL_REGEX)) {
+            throw new IllegalArgumentException("올바른 이메일 형식이 아닙니다.");
+        }
+        if (dto.getPhone() == null || !dto.getPhone().matches(PHONE_REGEX)) {
+            throw new IllegalArgumentException("올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)");
+        }
+        if (existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
-        if (userRepository.existsByPhone(dto.getPhone())) {
+        if (existsByPhone(dto.getPhone())) {
             throw new IllegalArgumentException("이미 사용 중인 휴대폰 번호입니다.");
+        }
+        if (dto.getPassword() == null || !dto.getPassword().equals(dto.getPasswordConfirm())) {
+            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+        }
+        if (!dto.getPassword().matches(PASSWORD_REGEX)) {
+            throw new IllegalArgumentException("비밀번호는 8~20자의 영문 대/소문자, 숫자, 특수문자 조합이어야 합니다.");
         }
 
         User user = User.builder()
                 .email(dto.getEmail())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .name(dto.getName())
+                .birthdate(dto.getBirthdate())
                 .phone(dto.getPhone())
+                .zipcode(dto.getZipcode())
                 .address(dto.getAddress())
+                .addressDetail(dto.getAddressDetail())
                 .build();
 
         return userRepository.save(user);
     }
 
     // ─────────────────────────────────────────────
-    // 이메일로 사용자 조회
+    // 이메일(아이디) 찾기
     // ─────────────────────────────────────────────
 
+    /** 이름 + 생년월일로 유저 조회 */
+    public Optional<User> findByNameAndBirthdate(String name, String birthdate) {
+        return userRepository.findByNameAndBirthdate(name, birthdate);
+    }
+
+    /** 전화번호로 유저 조회 */
+    public Optional<User> findByPhone(String phone) {
+        return userRepository.findByPhone(phone);
+    }
+
+    /** 이메일로 유저 조회 (기존) */
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
 
     // ─────────────────────────────────────────────
-    // 비밀번호 찾기 본인확인
-    // 이메일 + 이름 또는 이메일 + 전화번호 일치 시 true
+    // 비밀번호 찾기: 본인 확인
+    // verifyType: "name" → 이름 일치 확인
+    //             "phone" → 전화번호 일치 확인
     // ─────────────────────────────────────────────
 
     public boolean verifyUserForPasswordReset(String email, String verifyType, String verifyValue) {
-        return userRepository.findByEmail(email)
-                .map(user -> {
-                    if ("name".equals(verifyType)) {
-                        return user.getName().equals(verifyValue);
-                    } else if ("phone".equals(verifyType)) {
-                        return user.getPhone().equals(verifyValue);
-                    }
-                    return false;
-                })
-                .orElse(false);
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) return false;
+        User user = userOpt.get();
+
+        return switch (verifyType) {
+            case "name"  -> user.getName() != null && user.getName().equals(verifyValue);
+            case "phone" -> user.getPhone() != null && user.getPhone().equals(verifyValue);
+            default      -> false;
+        };
     }
 
     // ─────────────────────────────────────────────
@@ -102,25 +132,33 @@ public class UserService {
     @Transactional
     public void resetPassword(String email, String newPassword) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("해당 이메일로 가입된 계정이 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("가입된 이메일 정보가 없습니다."));
+
+        if (!newPassword.matches(PASSWORD_REGEX)) {
+            throw new IllegalArgumentException("비밀번호는 8~20자의 영문 대/소문자, 숫자, 특수문자 조합이어야 합니다.");
+        }
+
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
 
     // ─────────────────────────────────────────────
-    // 취향 설문 데이터 DB 저장
+    // 설문 저장
     // ─────────────────────────────────────────────
+
     @Transactional
     public void saveSurvey(String email, SurveyRequestDto dto) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        // 예시: User 엔티티나 별도 연관관계 테이블에 설문 정보를 매핑하여 저장합니다.
-        // String genres = String.join(",", dto.getGenres());
-        // String moods = String.join(",", dto.getMoods());
-        // String companion = dto.getCompanion();
-
-        // 예: user.updateSurvey(genres, moods, companion);
-        // userRepository.save(user);
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (dto.getGenres() != null && !dto.getGenres().isEmpty()) {
+                user.setPreferenceGenre(String.join(",", dto.getGenres()));
+            }
+            if (dto.getMoods() != null && !dto.getMoods().isEmpty()) {
+                user.setPreferenceMood(String.join(",", dto.getMoods()));
+            }
+            if (dto.getCompanion() != null && !dto.getCompanion().isBlank()) {
+                user.setPreferenceCompanion(dto.getCompanion());
+            }
+            userRepository.save(user);
+        });
     }
 }
