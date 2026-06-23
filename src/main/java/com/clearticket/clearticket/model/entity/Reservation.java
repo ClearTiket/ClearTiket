@@ -4,13 +4,14 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "reservations")
 @Getter
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
 public class Reservation {
 
     // Primary Key
@@ -30,6 +31,10 @@ public class Reservation {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "used_coupon_id")
     private Coupon usedCoupon;
+
+    @Setter(AccessLevel.NONE)
+    @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReservationSeat> reservationSeats = new ArrayList<>();
 
     // 일반 컬럼들
     @Column(nullable = false)
@@ -67,8 +72,3 @@ public class Reservation {
     }
 }
 
-enum ReservationStatus {
-    WAITING,
-    CONFIRMED,
-    CANCELED
-}

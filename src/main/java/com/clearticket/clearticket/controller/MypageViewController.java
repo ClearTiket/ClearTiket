@@ -11,7 +11,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/mypage")
-public class MypageController {
+public class MypageViewController {
 
     private UserSession getLoginUser(HttpSession session) {
         return (UserSession) session.getAttribute("loginUser");

@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "payments")
 @Getter
-@Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Setter
+@NoArgsConstructor
 @AllArgsConstructor
 public class Payment {
 
@@ -24,8 +24,8 @@ public class Payment {
     @JoinColumn(name = "reservation_id")
     Reservation reservation;
 
-    @Column(nullable = false, length = 50)
-    PaymentMethod paymentMethod;
+//    @Column(nullable = false, length = 50)
+//    PaymentMethod paymentMethod;
 
     @Column(length = 50)
     String bankName;
@@ -37,18 +37,12 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     PaymentStatus status;
 
+    @Column(nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    PaymentMethod method;
+
+
     @CreationTimestamp
     LocalDateTime paymentDate;
 }
 
-enum PaymentMethod {
-    CARD,
-    BANK_TRANSFER,
-    EASY_PAYMENT
-}
-
-enum PaymentStatus {
-    PENDING,
-    CONFIRMED,
-    CANCELED
-}

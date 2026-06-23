@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<div th:fragment="popupHeader(step)">
+
+  <style>
+    .tab-bar {
+      display: flex;
+      gap: 24px;
+      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 0;
+    }
+
+    .tab-item {
+      color: #ccc;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-block;
+      width: max-content;
+
+      padding: 0 6px 8px 6px;
+      margin-bottom: -1px;
+    }
+
+    .tab-item.active {
+      color: var(--primary, #2563eb);
+      border-bottom: 2px solid var(--primary, #2563eb);
+    }
+  </style>
+
+  <header class="popup-header" style="display: flex; justify-content: space-between; align-items: center; padding: 24px 32px 0 32px; margin-bottom: 20px;">
+
+    <h1 class="section-title" style="font-size: 22px; font-weight: 700; color: #111; margin: 0;"
+        th:text="${step == 1 ? '할인쿠폰/등급선택' : step == 2 ? '수령방법 및 주문자정보' : step == 3 ? '결제하기' : '예매완료'}">
+    </h1>
+
+    <div class="tab-bar">
+      <span class="tab-item" th:classappend="${step == 1} ? 'active' : ''">01 할인/등급</span>
+      <span class="tab-item" th:classappend="${step == 2} ? 'active' : ''">02 수령/주문자</span>
+      <span class="tab-item" th:classappend="${step == 3} ? 'active' : ''">03 결제</span>
+      <span class="tab-item" th:classappend="${step == 4} ? 'active' : ''">04 완료</span>
+    </div>
+
+  </header>
+</div>
+</html>
