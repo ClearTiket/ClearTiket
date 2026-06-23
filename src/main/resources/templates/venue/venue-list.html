@@ -115,9 +115,11 @@
 
     /* 활성화(선택) 상태 및 드롭다운이 열린 상태의 스타일 */
     .tab-btn.active,
+    .tab-btn.active a,
     .tab-item-container.open .tab-btn {
         background-color: #3971E7;
         color: #ffffff;
+        text-decoration: none;
     }
 
     .tab-item-container.open .arrow {
@@ -243,7 +245,7 @@
         <div class="tab-group">
 
             <div class="tab-item-container">
-                <button class="tab-btn active"><a href="#">전체</a></button>
+                <button class="tab-btn active"><a href="/venue/list">전체</a></button>
             </div>
 
             <div class="tab-item-container">
@@ -251,7 +253,7 @@
                     서울 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="#">서울</a></li>
+                    <li><a href="?region=서울">서울</a></li>
                 </ul>
             </div>
 
@@ -260,8 +262,8 @@
                     경기 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="#">인천</a></li>
-                    <li><a href="#">경기</a></li>
+                    <li><a href="?region=인천">인천</a></li>
+                    <li><a href="?region=경기">경기</a></li>
                 </ul>
             </div>
 
@@ -270,7 +272,7 @@
                     강원 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="#">강원</a></li>
+                    <li><a href="?region=강원">강원</a></li>
                 </ul>
             </div>
 
@@ -279,10 +281,10 @@
                     충청 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="#">충청</a></li>
-                    <li><a href="#">충북</a></li>
-                    <li><a href="#">충남</a></li>
-                    <li><a href="#">세종</a></li>
+                    <li><a href="?region=충청">충청</a></li>
+                    <li><a href="?region=충북">충북</a></li>
+                    <li><a href="?region=충남">충남</a></li>
+                    <li><a href="?region=세종">세종</a></li>
                 </ul>
             </div>
 
@@ -291,10 +293,10 @@
                     전라 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="#">전라</a></li>
-                    <li><a href="#">광주</a></li>
-                    <li><a href="#">전북</a></li>
-                    <li><a href="#">전남</a></li>
+                    <li><a href="?region=전라">전라</a></li>
+                    <li><a href="?region=광주">광주</a></li>
+                    <li><a href="?region=전북">전북</a></li>
+                    <li><a href="?region=전남">전남</a></li>
                 </ul>
             </div>
 
@@ -303,11 +305,11 @@
                     경상 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="#">경상</a></li>
-                    <li><a href="#">부산</a></li>
-                    <li><a href="#">울산</a></li>
-                    <li><a href="#">경북</a></li>
-                    <li><a href="#">경남</a></li>
+                    <li><a href="?region=경상">경상</a></li>
+                    <li><a href="?region=부산">부산</a></li>
+                    <li><a href="?region=울산">울산</a></li>
+                    <li><a href="?region=경북">경북</a></li>
+                    <li><a href="?region=경남">경남</a></li>
                 </ul>
             </div>
 
@@ -316,7 +318,7 @@
                     제주 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="#">제주</a></li>
+                    <li><a href="?region=제주">제주</a></li>
                 </ul>
             </div>
 
@@ -325,7 +327,7 @@
                     기타 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a href="#">해외</a></li>
+                    <li><a href="?region=해외">해외</a></li>
                 </ul>
             </div>
 
@@ -347,26 +349,6 @@
                     <td th:text="${venue.getAddress()}"></td>
                     <td th:text="${venue.getTelnum()}"></td>
                 </tr>
-<!--                <tr><td>지역1</td><td>A 시설</td><td>서울특별시 강남구 테헤란로 123</td><td>02-1234-5678</td></tr>-->
-<!--                <tr><td>지역2</td><td>B 시설</td><td>부산광역시 해운대구 우동 456</td><td>051-987-6543</td></tr>-->
-<!--                <tr><td>지역3</td><td>C 시설</td><td>대구광역시 중구 중앙대로 789</td><td>053-111-2222</td></tr>-->
-<!--                <tr><td>지역4</td><td>D 시설</td><td>인천광역시 부평구 부평대로 101</td><td>032-333-4444</td></tr>-->
-<!--                <tr><td>지역5</td><td>E 시설</td><td>광주광역시 동구 금남로 202</td><td>062-555-6666</td></tr>-->
-<!--                <tr><td>지역6</td><td>F 시설</td><td>대전광역시 서구 둔산로 303</td><td>042-777-8888</td></tr>-->
-<!--                <tr><td>지역7</td><td>G 시설</td><td>울산광역시 남구 삼산로 404</td><td>052-999-0000</td></tr>-->
-<!--                <tr><td>지역1</td><td>H 시설</td><td>경기도 수원시 팔달구 효원로 505</td><td>031-123-4567</td></tr>-->
-<!--                <tr><td>지역2</td><td>I 시설</td><td>강원도 춘천시 중앙로 606</td><td>033-234-5678</td></tr>-->
-<!--                <tr><td>지역3</td><td>J 시설</td><td>충청북도 청주시 상당구 사직대로 707</td><td>043-345-6789</td></tr>-->
-<!--                <tr><td>지역4</td><td>K 시설</td><td>충청남도 천안시 서북구 번영로 808</td><td>041-456-7890</td></tr>-->
-<!--                <tr><td>지역5</td><td>L 시설</td><td>전라북도 전주시 완산구 노송광장로 909</td><td>063-567-8901</td></tr>-->
-<!--                <tr><td>지역6</td><td>M 시설</td><td>전라남도 목포시 남악로 100</td><td>061-678-9012</td></tr>-->
-<!--                <tr><td>지역7</td><td>N 시설</td><td>경상북도 포항시 북구 시청로 200</td><td>054-789-0123</td></tr>-->
-<!--                <tr><td>지역1</td><td>O 시설</td><td>경상남도 창원시 의창구 중앙대로 300</td><td>055-890-1234</td></tr>-->
-<!--                <tr><td>지역2</td><td>P 시설</td><td>제주특별자치도 제주시 문연로 400</td><td>064-901-2345</td></tr>-->
-<!--                <tr><td>지역3</td><td>Q 시설</td><td>세종특별자치시 한누리대로 500</td><td>044-111-3333</td></tr>-->
-<!--                <tr><td>지역4</td><td>R 시설</td><td>서울특별시 서초구 반포대로 600</td><td>02-2222-4444</td></tr>-->
-<!--                <tr><td>지역5</td><td>S 시설</td><td>부산광역시 연제구 중앙대로 700</td><td>051-333-5555</td></tr>-->
-<!--                <tr><td>지역6</td><td>T 시설</td><td>대구광역시 수성구 달구벌대로 800</td><td>053-444-6666</td></tr>-->
             </tbody>
         </table>
 
