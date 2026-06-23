@@ -29,8 +29,8 @@ spring:
     import: optional:file:config.yaml
   datasource:
     url: jdbc:postgresql://localhost:5432/clearticket
-    username: ${db.username}
-    password: ${db.password}
+    username: postgres
+    password: clearticket
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -52,7 +52,7 @@ spring:
       data-locations: classpath:sql/data.sql
       mode: always
 lemonsqueezy:
-  api-key: ${LEMON_SQUEEZY_API_KEY}
+  api-key: ""
   store-id: "410829"
   variant-id: "1806370"
 

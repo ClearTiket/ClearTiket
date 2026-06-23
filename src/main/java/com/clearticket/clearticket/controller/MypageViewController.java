@@ -1,17 +1,31 @@
 package com.clearticket.clearticket.controller;
 
 import com.clearticket.clearticket.model.UserSession;
+import com.clearticket.clearticket.model.dto.MyPageAddressResponseDto;
+import com.clearticket.clearticket.model.entity.User;
+import com.clearticket.clearticket.repository.UserRepository;
+import com.clearticket.clearticket.service.MyPageService;
 import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Controller
 @RequestMapping("/mypage")
+@RequiredArgsConstructor
 public class MypageViewController {
+
+    private final MyPageService myPageService;
+    private final UserRepository userRepository; // 추가: 취향 데이터 조회용
 
     private UserSession getLoginUser(HttpSession session) {
         return (UserSession) session.getAttribute("loginUser");
@@ -59,23 +73,61 @@ public class MypageViewController {
     @GetMapping("/address")
     public String address(HttpSession session, Model model) {
         if (!checkLogin(session, model)) return "redirect:/login";
-        // TODO: 실제 주소 목록 조회 로직으로 교체 필요
-        model.addAttribute("addressList", List.of());
+
+        UserSession loginUser = getLoginUser(session);
+        Long userId = Long.parseLong(loginUser.getId());
+
+        List<MyPageAddressResponseDto> addressList = myPageService.getAddressList(userId);
+        model.addAttribute("addressList", addressList);
+
+        Map<String, Object> addressListJson = new HashMap<>();
+        for (MyPageAddressResponseDto a : addressList) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("alias", a.getAddressName());
+            item.put("name", a.getRecipientName());
+            item.put("phone", a.getRecipientPhone());
+            item.put("zip", a.getZonecode());
+            item.put("addr1", a.getRoadAddress());
+            item.put("addr2", a.getDetailAddress());
+            item.put("isDefault", a.isDefault());
+            addressListJson.put("addr-" + a.getAddressId(), item);
+        }
+        model.addAttribute("addressListJson", addressListJson);
+
         return "mypage/address";
     }
 
     @GetMapping("/survey")
     public String survey(HttpSession session, Model model) {
         if (!checkLogin(session, model)) return "redirect:/login";
+
         UserSession loginUser = getLoginUser(session);
-        model.addAttribute("currentUser", loginUser);
-        model.addAttribute("genreList",
-                List.of("뮤지컬", "콘서트", "연극", "오페라", "발레", "클래식", "팝페라", "기타"));
-        model.addAttribute("moodList",
-                List.of("#눈물폭발", "#유머충전", "#감동클라이맥스", "#스트레스해소",
-                        "#설렘충전", "#화려한볼거리", "#잔잔한위로", "#생각이많아지는"));
-        model.addAttribute("companionList",
-                List.of("혼자서", "연인과 함께", "친구와 함께", "가족과 함께", "아이와 함께"));
+        Long userId = Long.parseLong(loginUser.getId());
+
+        // DB에서 저장된 취향값 조회 후 model에 전달
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+
+            // 장르: "뮤지컬,콘서트" → List<String>
+            List<String> savedGenres = (user.getPreferenceGenre() != null && !user.getPreferenceGenre().isBlank())
+                    ? Arrays.asList(user.getPreferenceGenre().split(","))
+                    : Collections.emptyList();
+
+            // 분위기: "스토리/작품성" → List<String>
+            List<String> savedMoods = (user.getPreferenceMood() != null && !user.getPreferenceMood().isBlank())
+                    ? Arrays.asList(user.getPreferenceMood().split(","))
+                    : Collections.emptyList();
+
+            model.addAttribute("savedGenres", savedGenres);
+            model.addAttribute("savedMoods", savedMoods);
+            model.addAttribute("savedCompanion", user.getPreferenceCompanion()); // 단일값
+        } else {
+            model.addAttribute("savedGenres", Collections.emptyList());
+            model.addAttribute("savedMoods", Collections.emptyList());
+            model.addAttribute("savedCompanion", "");
+        }
+
         return "mypage/survey";
     }
 

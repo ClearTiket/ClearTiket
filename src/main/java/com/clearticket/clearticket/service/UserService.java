@@ -46,7 +46,7 @@ public class UserService {
     public Optional<UserSession> login(String email, String password) {
         return userRepository.findByEmail(email)
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
-                .map(user -> new UserSession(user.getEmail(), user.getName(), user.getEmail(), user.getPhone()));
+                .map(user -> new UserSession(String.valueOf(user.getUserId()), user.getName(), user.getEmail(), user.getPhone()));
     }
 
     // ─────────────────────────────────────────────

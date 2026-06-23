@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @Controller
@@ -90,7 +91,7 @@ public class AuthController {
             User user = userService.register(dto);
             session.removeAttribute(EmailVerificationController.SESSION_VERIFIED_EMAIL);
             session.setAttribute("loginUser",
-                    new UserSession(user.getEmail(), user.getName(), user.getEmail(), user.getPhone()));
+                    new UserSession(String.valueOf(user.getUserId()), user.getName(), user.getEmail(), user.getPhone()));
             return "redirect:/survey";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -98,21 +99,18 @@ public class AuthController {
         }
     }
 
-    // ─── 취향 설문 ─────────────────────────────────────────────────────────
+    // ─── 취향 설문 (회원가입 직후 / 신규 → 저장값 없음) ──────────────────
 
     @GetMapping("/survey")
     public String survey(HttpSession session, Model model) {
         UserSession loginUser = (UserSession) session.getAttribute("loginUser");
         if (loginUser == null) return "redirect:/login";
         model.addAttribute("loginUser", loginUser);
-        model.addAttribute("currentUser", loginUser);
-        model.addAttribute("genreList",
-                List.of("뮤지컬", "콘서트", "연극", "오페라", "발레", "클래식", "팝페라", "기타"));
-        model.addAttribute("moodList",
-                List.of("#눈물폭발", "#유머충전", "#감동클라이맥스", "#스트레스해소",
-                        "#설렘충전", "#화려한볼거리", "#잔잔한위로", "#생각이많아지는"));
-        model.addAttribute("companionList",
-                List.of("혼자서", "연인과 함께", "친구와 함께", "가족과 함께", "아이와 함께"));
+
+       model.addAttribute("savedGenres", Collections.emptyList());
+        model.addAttribute("savedMoods", Collections.emptyList());
+        model.addAttribute("savedCompanion", "");
+
         return "auth/survey";
     }
 
@@ -126,8 +124,6 @@ public class AuthController {
     }
 
     // ─── 아이디(이메일) 찾기 ───────────────────────────────────────────────
-    // GET /find-id  → 폼 페이지 (find-id.html에서 JS로 /api/auth/find-email 호출)
-    // POST /find-id 는 더 이상 사용하지 않음 (REST API로 대체)
 
     @GetMapping("/find-id")
     public String findIdForm(HttpSession session, Model model) {
