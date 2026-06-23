@@ -3,6 +3,7 @@ package com.clearticket.clearticket.controller;
 import com.clearticket.clearticket.model.entity.Venue;
 import com.clearticket.clearticket.service.VenueService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
@@ -20,24 +21,21 @@ public class VenueViewController {
 
     final VenueService venueService;
 
-    int defaultPageSize = 20;
+
 
     @GetMapping("/list")
     public String venueListView(String region, Integer page, Model model) {
 
-        List<Venue> venueList;
+        Page<Venue> venueList;
 
-        if (page == null || page <= 0) page = 1;
-        page--;
-
-        Pageable pageable = PageRequest.of(page, defaultPageSize);
         if (region == null) {
-            venueList = venueService.findAll(pageable);
+            venueList = venueService.findAll(page);
         } else {
-            venueList = venueService.findByRegion(region, pageable);
+            venueList = venueService.findByRegion(region, page);
         }
 
-        model.addAttribute("venueList", venueList);
+        model.addAttribute("venueList", venueList.getContent());
+        model.addAttribute("totalPage", venueList.getTotalPages());
         return "venue/venue-list";
     }
 

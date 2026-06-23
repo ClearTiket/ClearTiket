@@ -8,26 +8,44 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
 public class VenueService {
 
     final VenueRepository venueRepository;
+    int defaultPageSize = 20;
+
+    Pageable validPageable(Integer page) {
+        if (page == null || page <= 0) page = 1;
+        page--;
+        Pageable pageable = PageRequest.of(page, defaultPageSize);
+        return pageable;
+    }
 
     public Venue findById(long id) {
         return venueRepository.findByVenueId(id);
     }
 
-    public List<Venue> findAll(Pageable pageable) {
+    public Page<Venue> findAll(Integer page) {
 
-        Page<Venue> result = venueRepository.findAll(pageable);
-
-        return result.getContent();
+        return venueRepository.findAll(validPageable(page));
     }
 
-    public List<Venue> findByRegion(String region, Pageable pageable) {
-        return venueRepository.findAllByRegion(region, pageable);
+    public Page<Venue> findByRegion(String region, Integer page) {
+
+        List<String> regions = new ArrayList<>();
+        switch (region) {
+            case "충청" -> regions.addAll(Arrays.asList("충북", "충남", "세종"));
+            case "전라" -> regions.addAll(Arrays.asList("전북", "전남", "광주"));
+            case "경상" -> regions.addAll(Arrays.asList("경북", "경남", "부산", "울산"));
+            default -> regions.add(region);
+        }
+
+        return venueRepository.findAllByRegionIn(regions, validPageable(page));
     }
 }
