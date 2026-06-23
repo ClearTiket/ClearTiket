@@ -30,15 +30,7 @@
 <body>
 
 <div class="popup-wrap">
-    <header class="popup-header">
-        <h1 class="section-title">할인쿠폰/등급선택</h1>
-        <div class="tab-bar" style="width: 400px;">
-            <button class="tab-btn active">01 할인/등급</button>
-            <button class="tab-btn" style="pointer-events: none;">02 수령/주문자</button>
-            <button class="tab-btn" style="pointer-events: none;">03 결제</button>
-            <button class="tab-btn" style="pointer-events: none;">04 완료</button>
-        </div>
-    </header>
+    <div th:replace="~{fragments/reservation-header :: popupHeader(1)}"></div>
 
     <div class="popup-body">
         <div class="side-section">
