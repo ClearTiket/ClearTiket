@@ -20,6 +20,7 @@ pg_cursor = pg_conn.cursor()
 
 INDEX_NAME_PERFORMANCES = "performances"
 INDEX_NAME_VENUES = "venues"
+
 def create_es_index_with_nori():
     """Nori 분석기를 적용한 Elasticsearch 인덱스 생성"""
     print("인덱스 생성...")
@@ -34,7 +35,7 @@ def create_es_index_with_nori():
 
     # Nori Tokenizer 세팅
     index_performances_config = {
-        "settings": { # 설정
+        "settings": {  # 설정
             "analysis": {
                 "analyzer": {
                     "nori_korean_analyzer": {
@@ -45,14 +46,14 @@ def create_es_index_with_nori():
                 }
             }
         },
-        "mappings": { # DB 매핑
+        "mappings": {  # DB 매핑
             "properties": {
                 "performance_id": {"type": "long"},
                 "title": {
                     "type": "text",
-                    "analyzer": "nori_korean_analyzer" # 제목 검색에 nori 적용
+                    "analyzer": "nori_korean_analyzer"  # 제목 검색에 nori 적용
                 },
-                "genre": {"type": "keyword"}, # 장르, 지역, 공연 상태는 검색 시 키워드로 매핑
+                "genre": {"type": "keyword"},  # 장르, 지역, 공연 상태는 검색 시 키워드로 매핑
                 "region": {"type": "keyword"},
                 "status": {"type": "keyword"},
                 "start_date": {"type": "date"},
@@ -63,14 +64,14 @@ def create_es_index_with_nori():
                 },
                 "extracted_text": {
                     "type": "text",
-                    "analyzer": "nori_korean_analyzer" # 상세 설명 nori 적용
+                    "analyzer": "nori_korean_analyzer"  # 상세 설명 nori 적용
                 }
             }
         }
     }
 
     index_venues_config = {
-        "settings": { # 설정
+        "settings": {  # 설정
             "analysis": {
                 "analyzer": {
                     "nori_korean_analyzer": {
@@ -175,4 +176,3 @@ if __name__ == "__main__":
     finally:
         pg_cursor.close()
         pg_conn.close()
-
