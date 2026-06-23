@@ -91,7 +91,7 @@ public class AuthController {
             session.removeAttribute(EmailVerificationController.SESSION_VERIFIED_EMAIL);
             // 가입 후 바로 설문을 진행할 수 있도록 세션 생성 (ID나 Email 정보 세팅)
             session.setAttribute("loginUser",
-                    new UserSession(user.getEmail(), user.getName(), user.getEmail()));
+                    new UserSession(user.getEmail(), user.getName(), user.getEmail(), user.getPhone()));
             return "redirect:/survey";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());

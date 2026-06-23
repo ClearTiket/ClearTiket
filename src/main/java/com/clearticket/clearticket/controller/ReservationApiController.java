@@ -1,6 +1,8 @@
 package com.clearticket.clearticket.controller;
 
 //import com.clearticket.clearticket.model.entity.Reservation;
+import com.clearticket.clearticket.model.dto.CouponApplyRequestDto;
+import com.clearticket.clearticket.model.dto.ReservationBuyerInfoRequestDto;
 import com.clearticket.clearticket.model.dto.ReservationRequestDto;
 import com.clearticket.clearticket.model.dto.ReservationResponseDto;
 import com.clearticket.clearticket.service.ReservationService;
@@ -18,8 +20,9 @@ public class ReservationApiController {
     private final ReservationService reservationService;
 
     /**
-     * [결제 완료] 예매 및 결제 생성
-     * POST http://localhost:8080/api/reservations
+     * 예매 및 결제 생성
+     * @param requestDto
+     * @return
      */
     @PostMapping
     public ResponseEntity<ReservationResponseDto> createReservation(
@@ -29,8 +32,9 @@ public class ReservationApiController {
     }
 
     /**
-     * [상세 조회] 예매 상세 조회
-     * GET http://localhost:8080/api/reservations/{reservation_id}
+     * 예매 상세 조회
+     * @param reservationId 조회할 예약 ID
+     * @return
      */
     @GetMapping("/{reservation_id}")
     public ResponseEntity<ReservationResponseDto> getReservationById(
@@ -50,12 +54,54 @@ public class ReservationApiController {
     }
 
     /**
-     * [예매 취소] 예매 취소 실행
-     * POST http://localhost:8080/api/reservations/{reservation_id}/cancel
+     * 예매 취소 실행
+     * @param reservationId 취소할 예약 ID
+     * @return
      */
     @PostMapping("/{reservation_id}/cancel")
     public ResponseEntity<Void> cancelReservation(@PathVariable("reservation_id") Long reservationId) {
         reservationService.cancelReservationById(reservationId);
         return ResponseEntity.ok().build();
+    }
+
+
+    /**
+     * 예매 1단계 완료 : 선택한 쿠폰 및 최종 금액 임시 저장
+     * @param reservationId 현재 진행 중인 예약 ID
+     * @param dto 화면에서 전송된 쿠폰 ID 및 할인 적용 후 최종 결제 금액
+     * @return 성공/실패 메세지
+     */
+    @PutMapping("/{reservation_id}/coupon")
+    public ResponseEntity<String> applyCoupon(
+            @PathVariable("reservation_id") Long reservationId,
+            @RequestBody CouponApplyRequestDto dto) {
+
+        try {
+            Long couponId = "NONE".equals(dto.getCouponId()) ? null : Long.parseLong(dto.getCouponId());
+            reservationService.applyCouponToReservation(reservationId, couponId, dto.getTotalPrice());
+            return ResponseEntity.ok("쿠폰 정보가 성공적으로 반영되었습니다.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("쿠폰 반영 실패: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * 예매 2단계 : 수령/주문자 정보 저장
+     * @param reservationId 현재 진행 중인 예약 ID
+     * @param requestDto 화면에서 JSON 으로 넘어온 주문자 정보 데이터
+     * @return
+     */
+    @PutMapping("/{reservation_id}/buyer-info")
+    public ResponseEntity<String> updateBuyerInfo(
+            @PathVariable("reservation_id") Long reservationId,
+            @RequestBody ReservationBuyerInfoRequestDto requestDto) {
+
+        try {
+            reservationService.updateBuyerInfo(reservationId, requestDto);
+            return ResponseEntity.ok("주문자 정보가 성공적으로 저장되었습니다.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

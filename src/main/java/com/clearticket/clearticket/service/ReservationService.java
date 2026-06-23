@@ -1,5 +1,6 @@
 package com.clearticket.clearticket.service;
 
+import com.clearticket.clearticket.model.dto.ReservationBuyerInfoRequestDto;
 import com.clearticket.clearticket.model.dto.ReservationRequestDto;
 import com.clearticket.clearticket.model.dto.ReservationResponseDto;
 //import com.clearticket.clearticket.model.entity.Performance;
@@ -159,15 +160,12 @@ public class ReservationService {
         summary.put("reservation", reservation);
         summary.put("performance", performance);
 
-        // [★ 새로 추가] HTML의 th:each가 한 줄씩 뽑아 쓸 수 있도록 등급별 리스트 바구니 생성
         List<Map<String, Object>> selectedGrades = new ArrayList<>();
 
-        // 우리가 위에서 구한 등급 세트(gradeSet)를 돌면서 등급별 정보를 맵으로 포장합니다.
         for (String grade : gradeSet) {
             Map<String, Object> gradeInfo = new HashMap<>();
             gradeInfo.put("grade", grade); // 예: "R석"
 
-            // 등급별 정확한 개수와 가격 합산을 구하기 위해 필터링을 해줍니다.
             int count = 0;
             int priceSum = 0;
 
@@ -178,15 +176,77 @@ public class ReservationService {
                 }
             }
 
-            gradeInfo.put("count", count);    // 해당 등급의 매수 (예: 1)
-            gradeInfo.put("price", priceSum); // 해당 등급의 가격 (예: 154000)
+            gradeInfo.put("count", count);
+            gradeInfo.put("price", priceSum);
 
-            selectedGrades.add(gradeInfo);    // 바구니에 차곡차곡 담기
+            selectedGrades.add(gradeInfo);
         }
 
         summary.put("selectedGrades", selectedGrades);
         summary.put("seatPriceSum", seatPriceSum);
 
+        // 할인 금액 계산 후 맵에 주입
+        int discountAmount = 0;
+        Coupon usedCoupon = reservation.getUsedCoupon();
+
+        if (usedCoupon != null) {
+            String type = String.valueOf(usedCoupon.getDiscountType()); // "AMOUNT" 또는 "PERCENT"
+            int val = usedCoupon.getDiscountValue(); // 쿠폰에 지정된 할인 수치
+
+            if ("PERCENT".equals(type)) {
+                // 퍼센트 할인 계산
+                discountAmount = (int) Math.floor(seatPriceSum * (val / 100.0));
+            } else if ("AMOUNT".equals(type)) {
+                // 정액 할인
+                discountAmount = val;
+            }
+        }
+
+        summary.put("discountAmount", discountAmount);
+        // ==========================================
+
         return summary;
+    }
+
+
+    /**
+     * 예매 1단계 완료 : 선택한 쿠폰 정보를 예매 내역에 임시 저장, 총금액 갱신
+     * @param reservationId 현재 진행 중인 예약 ID
+     * @param couponId 적용할 쿠폰 ID
+     * @param totalPrice 쿠폰이 적용되어 화면에서 계산된 최종 결제 금액
+     */
+    @Transactional
+    public void applyCouponToReservation(Long reservationId, Long couponId, int totalPrice) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예매 내역입니다."));
+
+        if (couponId != null) {
+            Coupon coupon = new Coupon();
+            coupon.setCouponId(couponId);
+            reservation.setUsedCoupon(coupon);
+        } else {
+            reservation.setUsedCoupon(null);
+        }
+
+        reservation.setTotalPrice(totalPrice);
+    }
+
+
+    /**
+     * 예매 2단계 : 티켓 수령 방식 및 수령인(주문자) 정보 업데이트
+     * @param reservationId 수령 정보를 업데이트할 예약 ID
+     * @param requestDto 화면에서 넘어온 수령 방식, 배송비, 주문자 정보, 총 금액
+     */
+    @Transactional
+    public void updateBuyerInfo(Long reservationId, ReservationBuyerInfoRequestDto requestDto) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예매 내역입니다. ID: " + reservationId));
+
+        reservation.setTicketType(requestDto.getTicketType());
+        reservation.setShippingFee(requestDto.getShippingFee());
+        reservation.setRecipientName(requestDto.getRecipientName());
+        reservation.setRecipientPhone(requestDto.getRecipientPhone());
+
+        reservation.setTotalPrice(requestDto.getTotalPrice());
     }
 }

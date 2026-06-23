@@ -1,10 +1,162 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>클리어티켓 - 수령방법 및 주문자정보</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
+  <style>
+    body { min-height: auto; height: 700px; overflow: hidden; background: var(--bg); }
+    .popup-wrap { width: 1000px; height: 700px; margin: 0 auto; background: var(--white); display: flex; flex-direction: column; }
+    .popup-header { padding: 24px 32px 0 32px; display: flex; justify-content: space-between; align-items: center; }
+    .popup-body { flex: 1; display: flex; padding: 24px 32px; gap: 28px; overflow: hidden; }
+
+    .side-section { width: 350px; display: flex; flex-direction: column; gap: 20px; }
+    .main-section { flex: 1; display: flex; flex-direction: column; gap: 24px; }
+
+    .select-card { background: transparent; border: none; padding: 0; margin-bottom: 20px;}
+
+    .btn-group { display: flex; gap: 12px; margin-top: auto; width: 100%; }
+    .btn-prev { width: 140px; }
+    .btn-next { flex: 1; height: 52px; font-size: 15px; font-weight: 700; }
+
+    /* 1단계의 coupon-item 디자인 틀을 그대로 가져와 수령방법 카드 스타일로 유지 */
+    .receipt-item { display: flex; align-items: flex-start; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: var(--radius); cursor: pointer; gap: 12px; margin-bottom: 12px; }
+    .receipt-item.active { border-color: var(--primary, #2563eb); } /* 선택 시 파란 테두리 */
+
+    /* 주문자 정보 입력 폼 레이아웃 */
+    .form-row { display: flex; align-items: center; font-size: 14px;}
+    .form-label { width: 80px; font-weight: 500; color: var(--text-main, #111); }
+    .form-input { flex: 1; height: 44px; padding: 0 14px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 14px; outline: none; }
+    .form-input:focus { border-color: var(--primary, #2563eb); }
+  </style>
 </head>
 <body>
 
+<div class="popup-wrap">
+  <div th:replace="~{fragments/reservation-header :: popupHeader(2)}"></div>
+
+  <div class="popup-body">
+    <div class="side-section">
+      <div class="card">
+        <div style="display: flex; gap: 16px; align-items: flex-start;">
+          <img th:src="${performance?.posterUrl}" class="img-placeholder" style="width: 90px; height: 120px;">
+          <div>
+            <h2 class="section-title" style="font-size: 15px; margin-bottom: 4px;" th:text="${performance?.title}"></h2>
+            <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 2px;" th:text="|${performance?.startDate} ~ ${performance?.endDate}|"></p>
+            <p style="font-size: 13px; color: var(--text-muted);" th:text="${performance?.venue?.name}"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <table class="fee-table" style="min-height: 250px;">
+          <tr><td>상품금액</td><td th:text="|${#numbers.formatInteger(seatPriceSum ?: 0, 0, 'COMMA')} 원|"></td></tr>
+          <tr>
+            <td>할인금액</td>
+            <td id="sidebar-discount" style="color: var(--error);"
+                th:text="${discountAmount != null && discountAmount > 0} ? |-${#numbers.formatInteger(discountAmount, 0, 'COMMA')} 원| : '0 원'">
+            </td>
+          </tr>
+          <tr><td>배송비</td><td id="sidebar-shipping">4,000 원</td></tr>
+          <tr style="color: var(--primary); font-weight: 700;">
+            <td>총결제금액</td>
+            <td id="sidebar-total"></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="main-section">
+      <div class="select-card">
+        <h3 class="section-title" style="font-size: 15px; margin-bottom: 12px;">수령방법</h3>
+        <div class="receipt-list">
+          <label class="receipt-item active">
+            <input type="radio" name="receiptMethod" value="DELIVERY" checked style="margin-top: 3px;" onchange="changeShippingFee(this)">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <div style="font-size: 14px; font-weight: 700; color: #111;">배송</div>
+              <div style="font-size: 12px; color: #999;">배송받을 주소로 티켓을 보내드려요.</div>
+            </div>
+          </label>
+
+          <label class="receipt-item">
+            <input type="radio" name="receiptMethod" value="VENUE" style="margin-top: 3px;" onchange="changeShippingFee(this)">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <div style="font-size: 14px; font-weight: 700; color: #111;">현장수령</div>
+              <div style="font-size: 12px; color: #999;">공연당일 당일 현장 매표소에서 수령</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="select-card" style="flex: 1; display: flex; flex-direction: column;">
+        <h3 class="section-title" style="font-size: 15px; margin-bottom: 2px;">주문자정보</h3>
+        <div style="display: flex; flex-direction: column;">
+          <div class="form-row">
+            <span class="form-label">이름</span>
+            <input type="text" class="form-input" th:value="${user?.name}">
+          </div>
+          <div class="form-row">
+            <span class="form-label">연락처</span>
+            <input type="text" class="form-input" th:value="${user?.phone}">
+          </div>
+          <div class="form-row">
+            <span class="form-label">이메일</span>
+            <input type="email" class="form-input" th:value="${user?.email}">
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <a th:href="@{/coupons(reservationId=${reservation?.reservationId})}" class="btn btn-outline-gray btn-prev">이전</a>
+        <button type="button" id="next-btn" class="btn btn-primary btn-next">다음단계</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  // 백엔드 타임리프 데이터를 안전하게 자바스크립트 변수로 파싱
+  const seatPriceSum = /*[[${seatPriceSum ?: 0}]]*/ 0;
+  const discountAmount = /*[[${discountAmount ?: 0}]]*/ 0; // 1단계에서 넘어온 할인쿠폰 금액
+
+  let currentShippingFee = 4000; // 초기 상태는 시안에 맞춰 '배송(4,000원)'으로 설정
+
+  document.addEventListener("DOMContentLoaded", function() {
+    // 첫 화면 진입 시 총결제금액을 계산해서 띄웁니다.
+    updateTotalPrice();
+  });
+
+  // 라디오 버튼 체인지 이벤트 함수
+  function changeShippingFee(radio) {
+    const items = document.querySelectorAll('.receipt-item');
+
+    // 시안처럼 선택된 라디오박스에 테두리 효과(active) 토글링
+    items.forEach(item => item.classList.remove('active'));
+    radio.closest('.receipt-item').classList.add('active');
+
+    // 선택값에 따라 배송비 변수 갱신
+    if (radio.value === 'VENUE') {
+      currentShippingFee = 0;
+    } else if (radio.value === 'DELIVERY') {
+      currentShippingFee = 4000;
+    }
+
+    // 화면 금액 정보 리렌더링
+    updateTotalPrice();
+  }
+
+  // 금액 최종 합산 및 화면 렌더링 함수
+  function updateTotalPrice() {
+    // 1. 영수증 영역 배송비 텍스트 변경
+    document.getElementById('sidebar-shipping').innerText = `${currentShippingFee.toLocaleString()} 원`;
+
+    // 2. 총결제금액 계산 (상품금액 - 할인금액 + 배송비)
+    const finalTotal = seatPriceSum - discountAmount + currentShippingFee;
+
+    // 3. 영수증 영역 총결제금액 텍스트 변경
+    document.getElementById('sidebar-total').innerText = `${finalTotal.toLocaleString()} 원`;
+  }
+</script>
 </body>
 </html>
