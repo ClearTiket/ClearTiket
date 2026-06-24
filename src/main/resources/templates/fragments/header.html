@@ -47,10 +47,29 @@
             <div class="nav-right">
                 <a href="#" th:classappend="${navActive == 'ranking'} ? 'active'" class="nav-link">랭킹</a>
                 <a href="#" th:classappend="${navActive == 'region'} ? 'active'" class="nav-link">지역</a>
-                <a href="#" th:classappend="${navActive == 'venue'} ? 'active'" class="nav-link">공연장</a>
+                <a href="/venue/list" th:classappend="${navActive == 'venue'} ? 'active'" class="nav-link">공연장</a>
             </div>
         </div>
     </nav>
+
+    <script th:inline="javascript">
+
+        const searchKeywordInput = document.querySelector(".search-wrap").children[0];
+        const searchBtn = document.querySelector(".search-btn");
+
+        function search() {
+            const keyword = searchKeywordInput.value;
+            window.location.href = "/search/result?keyword=" + keyword;
+        }
+
+        searchBtn.addEventListener("click", search)
+        searchKeywordInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                search()
+            }
+        });
+
+    </script>
 </header>
 </body>
 </html>
