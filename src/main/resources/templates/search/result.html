@@ -335,7 +335,6 @@
     async function getSearchData(keyword) {
         try {
             const fetchUrl = "/api/search/performance?keyword=" + keyword
-            console.log(fetchUrl);
             const response = await fetch(fetchUrl, {
                 method: 'GET',
                 headers: {
@@ -344,7 +343,6 @@
             });
 
             const resultJson = await response.json();
-            console.log(resultJson);
 
             // card-grid 요소 선택
             const cardGrid = document.querySelector('.card-grid');
