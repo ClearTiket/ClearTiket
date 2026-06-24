@@ -106,7 +106,7 @@
     }
 
     /* [기존 스타일 수정] 세 번째 컨테이너 내부 빈 공간 수정 */
-    .empty-space {
+    .card-slot-space {
         width: 100%;
         flex: 1;                   /* 남은 전체 영역 차지 (약 950px) */
         background-color: #ffffff;
@@ -153,11 +153,18 @@
         height: 160px;             /* 조건: 높이 160px */
         background-color: #f1f5f9; /* 영역 식별용 임시 배경색 */
         border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        /*display: flex;*/
+        /*align-items: center;*/
+        /*justify-content: center;*/
         flex-shrink: 0;            /* 카드가 줄어들어도 이미지 크기 고정 */
         box-sizing: border-box;
+    }
+
+    .card-image-place img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     .thumb-text {
@@ -216,29 +223,17 @@
 
         <section class="info-card card-long">
             <h3 class="card-title-fixed">예매 가능 공연</h3>
-            <div class="empty-space">
+            <div class="card-slot-space">
                 <div class="card-slot">
-
-                    <div class="info-sub-card">
-                        <div class="card-image-place">
-                            <p class="thumb-text">이미지<br>120 x 160</p>
-                        </div>
-                        <div class="card-content">
-                            <h4>Title 1</h4>
-                            <p class="card-desc">설명 1</p>
-                        </div>
-                    </div>
-
-                    <div class="info-sub-card">
-                        <div class="card-image-place">
-                            <p class="thumb-text">이미지<br>120 x 160</p>
-                        </div>
-                        <div class="card-content">
-                            <h4>Title 2</h4>
-                            <p class="card-desc">설명 2</p>
-                        </div>
-                    </div>
-
+<!--                    <div class="info-sub-card">-->
+<!--                        <div class="card-image-place">-->
+<!--                            <img src="" alt="...">-->
+<!--                        </div>-->
+<!--                        <div class="card-content">-->
+<!--                            <h4>Title 1</h4>-->
+<!--                            <p class="card-desc">설명 1</p>-->
+<!--                        </div>-->
+<!--                    </div>-->
                 </div>
             </div>
         </section>
@@ -247,4 +242,66 @@
 
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
 </body>
+
+<script>
+    async function getPerformancesData(venueId) {
+        try {
+
+            const fetchUrl = "/api/venue/performances?venueId=" + venueId;
+            const response = await fetch(fetchUrl, {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            const resultJson = await response.json();
+
+            const cardSlot = document.querySelector(".card-slot");
+            resultJson.forEach(item => {
+                const infoSubCard = document.createElement("div");
+                infoSubCard.classList.add("info-sub-card");
+
+                const cardImagePlace = document.createElement("div");
+                cardImagePlace.classList.add("card-image-place");
+
+                const img = document.createElement("img");
+                img.src = item.posterUrl;
+                img.alt = item.title;
+
+                cardImagePlace.appendChild(img);
+
+                const textArea = document.createElement("div");
+                textArea.classList.add("card-content");
+
+                const title = document.createElement("h4");
+                title.textContent = item.title;
+
+                const desc = document.createElement("p");
+                desc.classList.add("card-desc");
+                desc.textContent = "description";
+
+                textArea.appendChild(title);
+                textArea.appendChild(desc);
+
+                infoSubCard.appendChild(cardImagePlace);
+                infoSubCard.appendChild(textArea);
+
+                cardSlot.appendChild(infoSubCard);
+            })
+
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const path = window.location.pathname;
+    const segments = path.split('/');
+    const venueId = segments.at(-1);
+    if (venueId) {
+        getPerformancesData(venueId);
+
+    }
+</script>
+
 </html>
