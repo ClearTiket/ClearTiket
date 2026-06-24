@@ -207,6 +207,11 @@
         gap: 5px;
     }
 
+    .pagination a {
+        text-decoration: none;
+        color: #333;
+    }
+
     .page-btn {
         min-width: 35px;
         height: 35px;
@@ -282,6 +287,7 @@
                 </button>
                 <ul class="dropdown-menu">
                     <li><a href="?region=충청">충청</a></li>
+                    <li><a href="?region=대전">대전</a></li>
                     <li><a href="?region=충북">충북</a></li>
                     <li><a href="?region=충남">충남</a></li>
                     <li><a href="?region=세종">세종</a></li>
@@ -307,6 +313,7 @@
                 <ul class="dropdown-menu">
                     <li><a href="?region=경상">경상</a></li>
                     <li><a href="?region=부산">부산</a></li>
+                    <li><a href="?region=대구">대구</a></li>
                     <li><a href="?region=울산">울산</a></li>
                     <li><a href="?region=경북">경북</a></li>
                     <li><a href="?region=경남">경남</a></li>
@@ -353,13 +360,13 @@
         </table>
 
         <div class="pagination">
-            <button class="page-btn prev">&lt;</button>
-            <button class="page-btn active">1</button>
-            <button class="page-btn">2</button>
-            <button class="page-btn">3</button>
-            <button class="page-btn">4</button>
-            <button class="page-btn">5</button>
-            <button class="page-btn next">&gt;</button>
+            <a href="#"><button class="page-btn prev">&lt;</button></a>
+            <a th:href="@{''(region=${param.region}, page=${1})}"><button class="page-btn active">1</button></a>
+            <a th:href="@{''(region=${param.region}, page=${2})}"><button class="page-btn">2</button></a>
+            <a th:href="@{''(region=${param.region}, page=${3})}"><button class="page-btn">3</button></a>
+            <a th:href="@{''(region=${param.region}, page=${4})}"><button class="page-btn">4</button></a>
+            <a th:href="@{''(region=${param.region}, page=${5})}"><button class="page-btn">5</button></a>
+            <a href="#"><button class="page-btn next">&gt;</button></a>
         </div>
 
     </main>
