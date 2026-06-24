@@ -19,3 +19,24 @@ INSERT INTO tags (tag_id, tag_name, display_name, tag_category) VALUES
     (304, 'friends', '친구와 함께', 'WITH'),
     (305, 'kids', '아이와 함께', 'WITH')
 ON CONFLICT (tag_id) DO NOTHING;
+
+-- seat_id 1~100 : VIP
+INSERT INTO seats (seat_id, row_num, seat_num, price, seat_grade, section_name)
+SELECT ((r-1)*10 + s) AS seat_id,
+       r::varchar, s::varchar, 160000, 'VIP', 'A'
+FROM generate_series(1,10) r, generate_series(1,10) s
+ON CONFLICT (seat_id) DO NOTHING;
+
+-- seat_id 101~200 : R
+INSERT INTO seats (seat_id, row_num, seat_num, price, seat_grade, section_name)
+SELECT 100 + ((r-1)*10 + s) AS seat_id,
+       r::varchar, s::varchar, 140000, 'R', 'B'
+FROM generate_series(1,10) r, generate_series(1,10) s
+ON CONFLICT (seat_id) DO NOTHING;
+
+-- seat_id 201~300 : S
+INSERT INTO seats (seat_id, row_num, seat_num, price, seat_grade, section_name)
+SELECT 200 + ((r-1)*10 + s) AS seat_id,
+       r::varchar, s::varchar, 110000, 'S', 'C'
+FROM generate_series(1,10) r, generate_series(1,10) s
+ON CONFLICT (seat_id) DO NOTHING;
