@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>클리어티켓 - 검색 결과</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+
+<style>
+    /* 기본 스타일 초기화 */
+    body {
+        font-family: 'Noto Sans KR', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #ffffff;
+    }
+
+    /* 1, 5. 전체 레이아웃 (너비 1200px, 사이드바와 메인 사이 간격 25px) */
+    .content-wrapper {
+        width: 1200px;
+        margin: 40px auto;
+        display: flex;
+        gap: 25px; /* 조건: 간격 25px */
+        box-sizing: border-box;
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    /* 2, 3. 좌측 사이드바 스타일 (너비 300px) */
+    .sidebar {
+        width: 300px;
+        flex-shrink: 0;
+        box-sizing: border-box;
+
+        border: 2px solid #4154FF;  /* 테두리 2px, #4154FF */
+        border-radius: 10px;        /* 모서리 반경 10px */
+
+        /* [디자인 보완] 테두리 추가에 따른 내부 여백 설정 */
+        padding: 20px;
+        background-color: #ffffff;
+    }
+
+    /* 사이드바 내부 첫 번째 섹션의 상단 패딩 조절 (시각적 균형용) */
+    .sidebar .filter-section:first-child {
+        padding-top: 0;
+    }
+
+    .filter-section {
+        padding: 10px 0;
+    }
+
+    .sidebar h5 {
+        font-size: 16px;
+        color: #333;
+        margin: 0 0 15px 0;
+        font-weight: 600;
+    }
+
+    /* 사이드바 구분선 */
+    .sidebar hr {
+        border: none;
+        border-top: 1px solid #eef2f8;
+        margin: 15px 0;
+    }
+
+    /* 4. 필터링 토글 버튼 그룹 */
+    .toggle-group {
+        display: flex;
+        flex-wrap: wrap; /* 넘칠 경우 다음 줄 표시 */
+        gap: 8px;        /* 버튼 간 간격 */
+    }
+
+    .toggle-btn {
+        width: auto;                /* 조건: 내부 텍스트에 따라 유동적 */
+        height: 35px;               /* 조건: 높이 35px */
+        border: 1px solid #4076FF;  /* 조건: 테두리 1px #4076FF */
+        border-radius: 25px;        /* 조건: 모서리 반경 25px */
+        background-color: #ffffff;
+        color: #4076FF;
+        padding: 0 16px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+    }
+
+    /* 토글 선택된 상태 스타일 */
+    .toggle-btn.active {
+        background-color: #6E96EA;  /* 조건: 배경색 #6E96EA */
+        border-color: #6E96EA;
+        color: #ffffff;
+    }
+
+    /* 5. 우측 메인 콘텐츠 영역 (자동 너비 계산: 1200 - 300 - 25 = 875px) */
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+
+    /* 6. 최상단 우측 정렬 바 (높이 30px) */
+    .sort-bar {
+        height: 30px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .sort-btn {
+        height: 30px;
+        border: none; /* 조건: 테두리 없음 */
+        background: none;
+        font-size: 14px;
+        color: #888;
+        cursor: pointer;
+        padding: 0;
+        font-weight: 500;
+    }
+
+    .sort-btn.active {
+        color: #333;
+        font-weight: 700;
+    }
+
+    /* 7, 10. 메인 카드 그리드 틀 (세로 간격 24px, 가로 균등) */
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 1줄에 3개 */
+        row-gap: 24px;                          /* 조건: 세로 간격 24px */
+        column-gap: 24px;                       /* 가로 균등 배치를 위한 동일 간격 설정 */
+        width: 100%;
+    }
+
+    /* 8, 9. 개별 상품 카드 스타일 */
+    .prod-card {
+        height: 350px;              /* 조건: 높이 350px */
+        border: 1px solid #D9D9D9;  /* 조건: 테두리 1px #D9D9D9 */
+        padding: 16px;              /* 조건: 내부 padding 16px */
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        background-color: #ffffff;
+        border-radius: 8px;         /* 자연스러운 카드 마감을 위한 반경(선택) */
+    }
+
+    /* 9. 카드 내부 상단 이미지 영역 스케일러 */
+    .card-img-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+
+    /* 고정 높이 350px 내에서 텍스트 공간을 확보하며 3:4 비율을 채우는 최적 크기 계산 */
+    .card-img-placeholder {
+        height: 220px;              /* 카드 높이 한계에 맞춘 가로세로 유지용 베이스 */
+        aspect-ratio: 3 / 4;        /* 조건: 가로 3, 세로 4의 비율 */
+        background-color: #f1f5f9;  /* 임시 회색 배경 */
+        color: #94a3b8;
+        font-size: 14px;
+        font-weight: 600;
+        /*display: flex;*/
+        /*align-items: center;*/
+        /*justify-content: center;*/
+        border-radius: 4px;
+        width: auto;
+    }
+
+    /* 2. [새로 추가] 부모 틀을 꽉 채우는 실제 이미지 스타일 */
+    .card-img-placeholder img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;          /* 핵심: 이미지 비율을 유지하면서 공백 없이 꽉 채움 */
+        display: block;
+    }
+
+    /* 9. 하단 설명을 위한 텍스트 영역 (좌측 정렬 기본) */
+    .card-text-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        overflow: hidden;
+    }
+
+    .prod-title {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        color: #222;
+        font-weight: 600;
+
+        /*white-space: nowrap;*/
+        /*overflow: hidden;*/
+        /*text-overflow: ellipsis; !* 제목 길어지면 말줄임 *!*/
+
+        /* 1. 한 줄 강제 속성(nowrap)을 지우고, 단어 단위 줄바꿈 허용 */
+        white-space: normal;
+        word-break: break-all;     /* 영문 텍스트나 공백 없는 긴 문자열도 카드 밖으로 안 터지게 깨뜨려줌 */
+        overflow-wrap: break-word;
+
+        /* 2. 고정 높이(350px) 카드를 위한 안전장치: 최대 2줄까지 줄바꿈 허용 */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;     /* 텍스트가 길면 2줄까지 아래로 내려가고, 3줄째부터 ... 처리 */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .prod-desc {
+        margin: 0;
+        font-size: 13px;
+        color: #666;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* 설명문 최대 2줄 표시 후 말줄임 */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+
+<body>
+<th:block th:replace="~{fragments/header :: header}"></th:block>
+
+    <main class="content-wrapper">
+
+        <aside class="sidebar">
+            <section class="filter-section">
+                <h5>장르</h5>
+                <div class="toggle-group">
+                    <button class="toggle-btn">뮤지컬</button>
+                    <button class="toggle-btn">콘서트</button>
+                    <button class="toggle-btn">클래식</button>
+                </div>
+            </section>
+            <hr>
+
+            <section class="filter-section">
+                <h5>지역</h5>
+                <div class="toggle-group">
+                    <button class="toggle-btn">서울</button>
+                    <button class="toggle-btn">경기</button>
+                    <button class="toggle-btn">강원</button>
+                    <button class="toggle-btn">충청</button>
+                    <button class="toggle-btn">전라</button>
+                    <button class="toggle-btn">경상</button>
+                    <button class="toggle-btn">제주</button>
+                    <button class="toggle-btn">해외</button>
+                </div>
+            </section>
+            <hr>
+
+            <section class="filter-section">
+                <h5>판매 상태</h5>
+                <div class="toggle-group">
+                    <button class="toggle-btn">판매 종료</button>
+                    <button class="toggle-btn active">공연중</button>
+                    <button class="toggle-btn active">공연 예정</button>
+                </div>
+            </section>
+            <hr>
+
+            <section class="filter-section">
+                <h5>분위기</h5>
+                <div class="toggle-group">
+                    <button class="toggle-btn">로맨틱</button>
+                    <button class="toggle-btn">활기찬</button>
+                    <button class="toggle-btn">감동적인</button>
+                    <button class="toggle-btn">신나는</button>
+                    <button class="toggle-btn">편안한</button>
+                </div>
+            </section>
+            <hr>
+
+            <section class="filter-section">
+                <h5>동행</h5>
+                <div class="toggle-group">
+                    <button class="toggle-btn">혼자</button>
+                    <button class="toggle-btn">친구와</button>
+                    <button class="toggle-btn">연인과</button>
+                    <button class="toggle-btn">가족과</button>
+                </div>
+            </section>
+        </aside>
+
+        <div class="main-content">
+
+            <div class="sort-bar">
+                <button class="sort-btn active">판매량</button>
+                <button class="sort-btn">예매율</button>
+                <button class="sort-btn">가까운 날짜</button>
+            </div>
+
+            <div class="card-grid">
+
+<!--                <div class="prod-card">-->
+<!--                    <div class="card-img-wrapper">-->
+<!--                        <div class="card-img-placeholder">-->
+<!--                            <img src="" alt="...">-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="card-text-area">-->
+<!--                        <h4 class="prod-title">title</h4>-->
+<!--                        <p class="prod-desc">description</p>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+            </div>
+        </div>
+
+    </main>
+
+<th:block th:replace="~{fragments/footer :: footer}"></th:block>
+</body>
+
+<script>
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+    });
+
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    async function getSearchData(keyword) {
+        try {
+            const fetchUrl = "/api/search/performance?keyword=" + keyword
+            console.log(fetchUrl);
+            const response = await fetch(fetchUrl, {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            const resultJson = await response.json();
+            console.log(resultJson);
+
+            // card-grid 요소 선택
+            const cardGrid = document.querySelector('.card-grid');
+
+            // 데이터 반복 처리
+            resultJson.forEach(item => {
+                // prod-card 생성
+                const prodCard = document.createElement('div');
+                prodCard.classList.add('prod-card');
+
+                // 이미지 영역
+                const imgWrapper = document.createElement('div');
+                imgWrapper.classList.add('card-img-wrapper');
+
+                const imgPlaceholder = document.createElement('div');
+                imgPlaceholder.classList.add('card-img-placeholder');
+
+                const img = document.createElement('img');
+                img.src = item.posterUrl;
+                img.alt = item.title;
+
+                imgPlaceholder.appendChild(img);
+                imgWrapper.appendChild(imgPlaceholder);
+
+                // 텍스트 영역
+                const textArea = document.createElement('div');
+                textArea.classList.add('card-text-area');
+
+                const title = document.createElement('h4');
+                title.classList.add('prod-title');
+                title.textContent = item.title;
+
+                const desc = document.createElement('p');
+                desc.classList.add('prod-desc');
+                desc.textContent = "description";//item.description;
+
+                textArea.appendChild(title);
+                textArea.appendChild(desc);
+
+                // prod-card에 추가
+                prodCard.appendChild(imgWrapper);
+                prodCard.appendChild(textArea);
+
+                // card-grid에 추가
+                cardGrid.appendChild(prodCard);
+            });
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const keyword = urlParams.get('keyword');
+    if (keyword) {
+        getSearchData(keyword);
+    }
+
+</script>
+
+</html>
