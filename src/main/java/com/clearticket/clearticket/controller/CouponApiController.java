@@ -7,6 +7,7 @@ import com.clearticket.clearticket.service.CouponService;
 import com.clearticket.clearticket.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/coupons")
 @RequiredArgsConstructor
@@ -34,19 +36,20 @@ public class CouponApiController {
         UserSession loginUser = (UserSession) session.getAttribute("loginUser");
 
         if (loginUser == null) {
-            System.out.println("★ 쿠폰디버깅: 세션에 로그인 유저가 없습니다! (미로그인 상태)");
+            log.warn("★ 쿠폰디버깅: 세션에 로그인 유저가 없습니다! (미로그인 상태)");
             return ResponseEntity.status(401).build();
         }
 
         String userEmail = loginUser.getEmail();
         Optional<User> user = userRepository.findByEmail(userEmail);
-        System.out.println("★ 쿠폰디버깅: 서비스에 요청할 유저 이메일 = " + userEmail);
 
-        System.out.println("★ 쿠폰디버깅: 이 ID로 서비스에 쿠폰 조회를 요청합니다...");
+        log.info("★ 쿠폰디버깅: 서비스에 요청할 유저 이메일 = {}", userEmail);
+        log.info("★ 쿠폰디버깅: 이 ID로 서비스에 쿠폰 조회를 요청합니다...");
+
         List<CouponResponseDto> coupons = couponService.getAvailableCoupons(userEmail);
 
-        System.out.println("★ 쿠폰디버깅: 서비스가 최종 리턴한 쿠폰 리스트 개수 = " + (coupons != null ? coupons.size() : "null"));
-        System.out.println("★ 쿠폰디버깅: 리스트 내용물 = " + coupons);
+        log.info("★ 쿠폰디버깅: 서비스가 최종 리턴한 쿠폰 리스트 개수 = {}", (coupons != null ? coupons.size() : "null"));
+        log.info("★ 쿠폰디버깅: 리스트 내용물 = {}", coupons);
 
         return ResponseEntity.ok(coupons);
     }
