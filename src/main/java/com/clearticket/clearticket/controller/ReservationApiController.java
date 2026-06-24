@@ -108,7 +108,7 @@ public class ReservationApiController {
 
 
     /**
-     * 최종 결제 요청 처리 API (무통장입금 정보 저장 및 예매 상태 확정)
+     * 예매 3단계 : 최종 결제 요청 처리 API
      * @param reservationId 현재 진행 중인 예매 고유 번호
      * @param paymentRequestDto 프론트엔드 화면에서 전송된 결제 수단 및 금액 정보 주머니
      * @return 성공 시 저장된 영수증 정보 데이터 반환
@@ -122,7 +122,6 @@ public class ReservationApiController {
                 reservationId, paymentRequestDto.getPaymentMethod(), paymentRequestDto.getAmount());
 
         paymentRequestDto.setReservationId(reservationId);
-
         PaymentResponseDto responseDto = paymentService.createPayment(paymentRequestDto);
 
         return ResponseEntity.ok(responseDto);

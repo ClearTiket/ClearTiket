@@ -9,6 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 @RequestMapping("/reservations")
@@ -123,4 +124,43 @@ public class ReservationViewController {
             return "redirect:/main";
         }
     }
+
+
+    /**
+     * 예매 4단계 : 예매 및 결제 최종 완료 화면
+     * @param reservationId 예매 완료된 고유 예약 번호
+     * @param model 화면에 예매 완료 정보를 전달하기 위한 Model 객체
+     * @return 최종 완료 뷰 경로
+     */
+    @GetMapping("/{reservation_id}/complete")
+    public String showCompletePage(
+            @PathVariable("reservation_id") Long reservationId,
+            Model model) {
+
+        try {
+            java.util.Map<String, Object> summary = reservationService.getReservationSummary(reservationId);
+            model.addAllAttributes(summary);
+
+            return "reservation/complete";
+
+        } catch (IllegalArgumentException e) {
+            return "redirect:/main";
+        }
+    }
+
+    /**
+     * 레몬스퀴지 카드 결제 성공 후 팝업창이 리다이렉트되어 돌아오는 임시페이지
+     * @param reservationId
+     * @param model
+     * @return 임시 페이지
+     */
+    @GetMapping("/payment/complete/success")
+    public String paymentSuccess(
+            @RequestParam("reservationId") Long reservationId,
+            Model model) {
+        model.addAttribute("reservationId", reservationId);
+        return "reservation/popup-callback";
+    }
+
+
 }

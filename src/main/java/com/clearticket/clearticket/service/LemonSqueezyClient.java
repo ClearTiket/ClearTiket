@@ -61,6 +61,8 @@ public class LemonSqueezyClient {
 
         // 상품명 주입
         productOptions.put("name", checkoutName);
+
+        productOptions.put("redirect_url", "http://localhost:8080/api/payments/success");
         attributes.put("product_options", productOptions);
 
         // 예약 ID 주입 (문자열로 변환)
@@ -71,7 +73,7 @@ public class LemonSqueezyClient {
         // attributes를 data에 등록
         data.put("attributes", attributes);
 
-        // [핵심 2] 상점 및 상품 관계(relationships) 정석 구조 조립
+        // 상점 및 상품 관계(relationships) 정석 구조 조립
         Map<String, Object> relationships = new HashMap<>();
 
         // store 구조 세팅
