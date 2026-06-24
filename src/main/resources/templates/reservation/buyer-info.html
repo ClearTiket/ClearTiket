@@ -114,9 +114,11 @@
   </div>
 </div>
 
+
+
 <script th:inline="javascript">
   const seatPriceSum = /*[[${seatPriceSum ?: 0}]]*/ 0;
-  const discountAmount = /*[[${discountAmount ?: 0}]]*/ 0; // 1단계에서 넘어온 할인쿠폰 금액
+  const discountAmount = /*[[${discountAmount ?: 0}]]*/ 0;
 
   let currentShippingFee = 4000;
 
@@ -147,8 +149,8 @@
   }
 
 
+  // 다음 단계 이동시 값이 저장되어 넘어감 (쿠폰 및 배송비)
   document.getElementById('next-btn').addEventListener('click', function() {
-    // 타임리프 변수로 현재 예약 ID 가져오기
     const reservationId = /*[[${reservation?.reservationId}]]*/ null;
 
     if (!reservationId) {
@@ -156,12 +158,36 @@
       return;
     }
 
-    // 💡 2단계 주문자 입력 정보나 수령방법을 별도로 서버에 임시저장하는 API가 없다면,
-    // 바로 아까 뷰 컨트롤러에 만들어 둔 3단계 결제 화면 주소로 쏴줍니다!
-    location.href = `/reservations/${reservationId}/payment`;
+    const selectedRadio = document.querySelector('input[name="receiptMethod"]:checked');
+    const ticketType = selectedRadio ? selectedRadio.value : 'DELIVERY';
+
+    const finalTotal = seatPriceSum - discountAmount + currentShippingFee;
+
+    fetch(`/api/reservations/${reservationId}/buyer-info`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ticketType: ticketType,
+        shippingFee: currentShippingFee,
+        recipientName: /*[[${user?.name}]]*/ '',
+        recipientPhone: /*[[${user?.phone}]]*/ '',
+        totalPrice: finalTotal
+      })
+    })
+            .then(res => {
+              if (res.ok) {
+                location.href = `/reservations/${reservationId}/payment`;
+              } else {
+                alert("주문 정보 저장에 실패했습니다. 다시 시도해 주세요.");
+              }
+            })
+            .catch(err => {
+              console.error("통신 에러:", err);
+              alert("서버 연결에 실패했습니다.");
+            });
   });
-
-
 </script>
 </body>
 </html>

@@ -191,7 +191,7 @@ public class PaymentService {
      * @return 결제 정보 및 연관 공연 제목이 포함된 최종 응답 DTO 객체
      */
     private PaymentResponseDto toResponseDto(Payment payment) {
-        Reservation reservation = new Reservation();
+        Reservation reservation = payment.getReservation();
 
         Schedule schedule = (reservation != null) ? reservation.getSchedule() : null;
         Performance performance = (schedule != null) ? schedule.getPerformance() : null;

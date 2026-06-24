@@ -81,4 +81,27 @@ public class PaymentApiController {
         PaymentResponseDto response = paymentService.cancelPayment(paymentId);
         return ResponseEntity.ok(response);
     }
+
+
+    /**
+     * 최종 결제 요청 처리 및 예약 상태 연동 API
+     * 선택된 결제 수단(BANK_TRANSFER)에 따라 결제 내역을 저장하고
+     * 무통장 입금일 경우 해당 예약의 상태를 즉시 확정(CONFIRMED) 상태로 업데이트합니다.
+     * @param paymentRequestDto 결제 수단, 입금 은행명, 결제 금액 및 예약 고유 ID를 포함한 요청 데이터 객체
+     * @return 결제 완료 처리 정보 및 영수증 상세 데이터를 포함한 {@link ResponseEntity} 객체
+     */
+    @PostMapping("/bank-transfer")
+    public ResponseEntity<PaymentResponseDto> processPayment(
+            @RequestBody PaymentRequestDto paymentRequestDto) {
+
+        log.info("무통장 입금(BANK_TRANSFER) 결제 요청 수신 - 예약 ID: {}, 결제 방식: {}, 금액: {}원",
+                paymentRequestDto.getReservationId(),
+                paymentRequestDto.getPaymentMethod(),
+                paymentRequestDto.getAmount());
+
+        PaymentResponseDto responseDto = paymentService.createPayment(paymentRequestDto);
+
+        return ResponseEntity.ok(responseDto);
+    }
+
 }
