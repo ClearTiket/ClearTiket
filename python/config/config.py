@@ -4,7 +4,7 @@ import yaml
 
 # 경로 설정
 BASE_DIR = Path(__file__).resolve().parent.parent  # 현재 파일(config.py)이 위치한 디렉토리
-YAML_FILE_PATH = Path.joinpath(BASE_DIR, "config.yaml")
+YAML_FILE_PATH = Path.joinpath(BASE_DIR.parent, "config.yaml")
 CACHE_DIR = Path.joinpath(BASE_DIR, ".data_cache")
 
 # 캐시 폴더 생성
