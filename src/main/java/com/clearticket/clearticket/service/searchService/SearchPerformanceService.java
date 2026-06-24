@@ -1,12 +1,8 @@
 package com.clearticket.clearticket.service.searchService;
 
-import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.Time;
-import co.elastic.clients.elasticsearch._types.query_dsl.DistanceFeatureQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
-import co.elastic.clients.json.JsonData;
 import com.clearticket.clearticket.model.document.PerformanceDocument;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
@@ -26,7 +22,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class PerformanceSearchService {
+public class SearchPerformanceService {
 
     final ElasticsearchOperations elasticsearchOperations;
 
@@ -41,7 +37,7 @@ public class PerformanceSearchService {
         // 공백 기준 검색어를 키워드로 부리
         List<String> keywords = Arrays.stream(searchText.split("\\s+"))
                 .filter(word -> !word.isEmpty())
-                .collect(Collectors.toList());
+                .toList();
 
         // 검색어가 없거나 공백만 존재하는 경우 빈 List 반환
         if (keywords.isEmpty()) return new ArrayList<>();
