@@ -36,6 +36,9 @@ public class PerformanceDocument {
     @Field(type = FieldType.Text, analyzer = "nori_korean_analyzer")
     String castings;
 
+    @Field(name = "poster_url", type = FieldType.Text)
+    String posterUrl;
+
     @Field(name = "extracted_text", type = FieldType.Text, analyzer = "nori_korean_analyzer")
     String extractedText;
 }

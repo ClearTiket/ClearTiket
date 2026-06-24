@@ -62,6 +62,10 @@ def create_es_index_with_nori():
                     "type": "text",
                     "analyzer": "nori_korean_analyzer"
                 },
+                "poster_url": {
+                    "type": "keyword",
+                    "index": False
+                },
                 "extracted_text": {
                     "type": "text",
                     "analyzer": "nori_korean_analyzer"  # 상세 설명 nori 적용
@@ -113,7 +117,7 @@ def migrate_data_to_es():
     print("DB 데이터 -> ES")
 
     print("  DB 데이터 조회...")
-    query_performances = "SELECT performance_id, title, start_date, end_date, genre, region, status, castings, extracted_text FROM performances"
+    query_performances = "SELECT performance_id, title, start_date, end_date, genre, region, status, castings, poster_url, extracted_text FROM performances"
     pg_cursor.execute(query_performances)
     rows_performances = pg_cursor.fetchall()
 
@@ -141,7 +145,8 @@ def migrate_data_to_es():
                     "region": row[5],
                     "status": row[6],
                     "castings": row[7],
-                    "extracted_text": row[8]
+                    "poster_url": row[8],
+                    "extracted_text": row[9]
                 }
             }
 
