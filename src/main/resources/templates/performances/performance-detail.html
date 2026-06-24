@@ -201,8 +201,9 @@
             margin-top: 20px;
             font-size: 0.9rem;
         }
-
-        /* 6. 우측 사이드바 달력 & 회차 컴포넌트 */
+    /* ==========================================================================
+       6. 우측 사이드바 달력 & 회차 컴포넌트 (보완 완료)
+    ========================================================================== */
         .ct-panel-section {
             margin-bottom: 24px;
             border-bottom: 1px solid #f3f4f6;
@@ -229,12 +230,16 @@
             margin-bottom: 12px;
             font-size: 0.95rem;
         }
+
+        /* 달력 전체 레이아웃 구역 */
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
             gap: 6px;
             text-align: center;
         }
+
+        /* 요일 헤더 (일~토) */
         .calendar-header {
             font-size: 0.8rem;
             font-weight: 600;
@@ -242,43 +247,71 @@
             padding-bottom: 6px;
         }
 
-        /* 날짜 데이터 원형 셀 컴포넌트 */
+        /* 개별 날짜 공통 컴포넌트 */
         .day {
             font-size: 0.85rem;
-            padding: 10px 0;
-            cursor: pointer;
             font-weight: 600;
-            border-radius: 6px;
+            border-radius: 50%;
             transition: all 0.15s;
+            aspect-ratio: 1 / 1;        /* 가로세로 1:1 고정 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: default;            /* 🌟 기본 포인터는 화살표로 제한 */
+            box-sizing: border-box;     /* 패딩이나 보더로 인한 크기 왜곡 방지 */
+            width: 100%;                /* 그리드 너비에 맞춤 */
         }
-        .available {
+
+        /* ❌ 1일 시작 전 공백 칸 */
+        .day.empty {
+            background-color: transparent;
+            pointer-events: none;
+        }
+
+        /* ❌ 예매 불가능한 날짜 */
+        .day.unavailable {
+            color: #cbd5e1;
+            background-color: transparent;
+            pointer-events: none;
+        }
+
+        /* 🌟 JPA 연동으로 활성화된 날짜 */
+        .day.available {
             background-color: #ffffff;
             color: #2563eb;
             border: 1px solid #cbd5e1;
-        }
-        .available:hover {
-            background-color: #2563eb;
-            color: #ffffff;
-            border-color: #2563eb;
-        }
-        .unavailable {
-            color: #cbd5e1;
-            cursor: not-allowed;
-            background-color: transparent;
+            cursor: pointer;            /* 🌟 예매 가능한 날에만 손가락 모양 표시 */
         }
 
-        /* 회차 리스트 및 버튼 포맷 */
+        /* 활성화 날짜 호버 효과 */
+        .day.available:hover {
+            background-color: #f3f4f6;
+            color: #2563eb;
+        }
+
+        /* 🔵 최종 선택된 날짜 (우선순위 스코어 매칭) */
+        .day.selected {
+            background-color: #2563eb;
+            color: #ffffff;
+            border: 1px solid #2563eb;
+        }
+
+        /* ----------------------------------------- */
+
+        /* 회차 리스트 레이아웃 박스 */
         .ct-schedule-list-box {
             display: flex;
             flex-direction: column;
             gap: 8px;
         }
+
+        /* 회차 선택 버튼 */
         .schedule-btn {
             width: 100%;
             padding: 14px;
-            border: 1px solid #3b82f6;
-            background-color: #eff6ff;
-            color: #1d4ed8;
+            border: 1px solid #e5e7eb;
+            background-color: #ffffff;
+            color: #374151;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
@@ -286,8 +319,16 @@
             font-size: 0.9rem;
             transition: all 0.2s;
         }
+
         .schedule-btn:hover {
-            background-color: #dbeafe;
+            background-color: #f9fafb;
+        }
+
+        /* 🔵 선택된 회차 활성화 상태 */
+        .schedule-btn.active {
+            border: 1px solid #3b82f6;   /* 선 스타일 명시적 유지 */
+            background-color: #eff6ff;
+            color: #1d4ed8;
         }
 
         /* 와이어프레임 최종 예매하기 대형 버튼 */
@@ -752,7 +793,12 @@
                     <input type="hidden" id="venueKopisId" th:value="${venueKopisId}">
 
                     <div class="ct-calendar-wrapper">
-                        <div class="ct-cal-nav">2026. 06</div>
+                        <div class="ct-cal-nav" style="display: flex; justify-content: space-between; align-items: center; padding: 0 4px;">
+                            <button type="button" id="prev-month-btn" style="background: none; border: none; cursor: pointer; font-weight: bold; color: #4b5563; padding: 4px 8px;">◀</button>
+                            <span id="calendar-title">2026. 06</span>
+                            <button type="button" id="next-month-btn" style="background: none; border: none; cursor: pointer; font-weight: bold; color: #4b5563; padding: 4px 8px;">▶</button>
+                        </div>
+
                         <div class="calendar-grid">
                             <div class="calendar-header" style="color:#ef4444;">일</div>
                             <div class="calendar-header">월</div>
@@ -834,13 +880,21 @@
 
     </div>
 </div>
+
 <div th:replace="~{fragments/footer :: footer}"></div>
 
 <script>
     let currentSort = "latest";
-    let editReviewId = null; // 현재 수정 중인 글 ID를 저장할 전역 변수
+    let editReviewId = null;
+    let selectedScheduleId = null; // 선택된 회차 ID 저장용
+    // [1] DB PK(정수)를 뽑아내는 함수
+    function getPerformanceId() {
+        const pathSegments = window.location.pathname.split('/');
+        // 주소 구조가 /hall/{id}/detail 이므로 [2]번 인덱스가 id입니다.
+        return pathSegments[2];
+    }
 
-    // 🌟 1. 탭 전환 기능 (전역 함수)
+    // [2] 탭 전환 기능 (전역)
     function switchTab(event, tabId) {
         const tabContents = document.querySelectorAll('.ct-tab-content');
         tabContents.forEach(content => content.style.display = 'none');
@@ -851,11 +905,13 @@
         const targetContent = document.getElementById(tabId);
         if (targetContent) targetContent.style.display = 'block';
 
-        event.currentTarget.classList.add('active');
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
+        }
 
         currentSort = "latest";
+        const mt10id = getPerformanceId();
 
-        const mt10id = document.getElementById("venueKopisId").value;
         if (tabId === 'ct-tab-reviews') {
             loadReviews(mt10id, 'REVIEW', 1);
         } else if (tabId === 'ct-tab-expectations') {
@@ -869,7 +925,7 @@
         }
     }
 
-    // 🌟 2. 관람후기 / 기대평 통합 실시간 비동기 로드 함수 (전역 함수로 분리)
+    // [3] 관람후기 / 기대평 통합 로드 함수 (전역)
     function loadReviews(mt10id, type, page) {
         fetch(`/api/reviews?performanceId=${mt10id}&type=${type}&page=${page}&sort=${currentSort}`)
             .then(response => response.json())
@@ -915,38 +971,38 @@
                         const isMyReview = (writerId !== null && currentUserId === writerId);
 
                         card.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                            <div style="display: flex; gap: 8px; align-items: center; color: #9ca3af; font-size: 0.8rem;">
-                                <span style="font-weight: 600; color: #4b5563;">${review.nickname || 'abc****'}</span>
-                                <span style="background-color: #eff6ff; color: #2563eb; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
-                                    ${type === 'REVIEW' ? '예매자' : '작성자'}
-                                </span>
-                                <span>|</span>
-                                <span>${review.createdAt ? review.createdAt.split('T')[0] : '2026-06-19'}</span>
-                                <span>|</span>
-                                <span>조회 <span id="views-count-${review.reviewId}">${review.views || 0}</span></span>
-                            </div>
-                            ${isMyReview ? `
-                                <div style="font-size: 0.8rem; color: #9ca3af;">
-                                    <span onclick="openEditModal(${review.reviewId}, '${review.title}', \`${review.content}\`, ${review.rating || 0}, '${type}')" style="cursor: pointer; color: #4b5563; font-weight: 500;">수정</span>
-                                    <span style="margin: 0 4px;">|</span>
-                                    <span onclick="executeDelete(${review.reviewId})" style="cursor: pointer; color: #ef4444; font-weight: 500;">삭제</span>
-                                </div>
-                            ` : ''}
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div style="display: flex; gap: 8px; align-items: center; color: #9ca3af; font-size: 0.8rem;">
+                            <span style="font-weight: 600; color: #4b5563;">${review.nickname || 'abc****'}</span>
+                            <span style="background-color: #eff6ff; color: #2563eb; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
+                                ${type === 'REVIEW' ? '예매자' : '작성자'}
+                            </span>
+                            <span>|</span>
+                            <span>${review.createdAt ? review.createdAt.split('T')[0] : '2026-06-19'}</span>
+                            <span>|</span>
+                            <span>조회 <span id="views-count-${review.reviewId}">${review.views || 0}</span></span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div style="flex: 1; padding-right: 20px;">
-                                <div style="font-weight: bold; font-size: 1rem; margin-bottom: 6px; color: #111827;">${review.title || '제목 없음'}</div>
-                                <div id="review-content-${review.reviewId}" class="review-content" style="color: #4b5563; font-size: 0.9rem; line-height: 1.5;">
-                                    ${review.content}
-                                </div>
-                                ${type === 'REVIEW' ? `<div class="review-rating" style="color: #ffcc00; font-size: 0.9rem; margin-top: 8px;">${stars}</div>` : ''}
+                        ${isMyReview ? `
+                            <div style="font-size: 0.8rem; color: #9ca3af;">
+                                <span onclick="openEditModal(${review.reviewId}, '${review.title}', \`${review.content}\`, ${review.rating || 0}, '${type}')" style="cursor: pointer; color: #4b5563; font-weight: 500;">수정</span>
+                                <span style="margin: 0 4px;">|</span>
+                                <span onclick="executeDelete(${review.reviewId})" style="cursor: pointer; color: #ef4444; font-weight: 500;">삭제</span>
                             </div>
-                            <button type="button" onclick="toggleExpand(${review.reviewId})" style="background: none; border: none; color: #2563eb; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; white-space: nowrap;">
-                                더보기 <span id="arrow-${review.reviewId}" style="font-size: 0.6rem;">▼</span>
-                            </button>
+                        ` : ''}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div style="flex: 1; padding-right: 20px;">
+                            <div style="font-weight: bold; font-size: 1rem; margin-bottom: 6px; color: #111827;">${review.title || '제목 없음'}</div>
+                            <div id="review-content-${review.reviewId}" class="review-content" style="color: #4b5563; font-size: 0.9rem; line-height: 1.5;">
+                                ${review.content}
+                            </div>
+                            ${type === 'REVIEW' ? `<div class="review-rating" style="color: #ffcc00; font-size: 0.9rem; margin-top: 8px;">${stars}</div>` : ''}
                         </div>
-                    `;
+                        <button type="button" onclick="toggleExpand(${review.reviewId})" style="background: none; border: none; color: #2563eb; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold; white-space: nowrap;">
+                            더보기 <span id="arrow-${review.reviewId}" style="font-size: 0.6rem;">▼</span>
+                        </button>
+                    </div>
+                `;
                         reviewListBox.appendChild(card);
                     });
                 }
@@ -954,15 +1010,15 @@
             .catch(err => console.error(`${type} 로드 에러:`, err));
     }
 
-    // 🌟 3. 더보기 토글 및 조회수 증가 (전역 함수)
+    // [4] 더보기 토글 (전역)
     function toggleExpand(reviewId) {
         const contentEl = document.getElementById(`review-content-${reviewId}`);
         const arrowEl = document.getElementById(`arrow-${reviewId}`);
         const viewsEl = document.getElementById(`views-count-${reviewId}`);
 
-        if (contentEl.classList.contains("expanded")) {
+        if (contentEl && contentEl.classList.contains("expanded")) {
             contentEl.classList.remove("expanded");
-            arrowEl.innerText = "▼";
+            if (arrowEl) arrowEl.innerText = "▼";
             return;
         }
 
@@ -973,13 +1029,13 @@
             })
             .then(data => {
                 if (viewsEl) viewsEl.innerText = data.views;
-                contentEl.classList.add("expanded");
-                arrowEl.innerText = "▲";
+                if (contentEl) contentEl.classList.add("expanded");
+                if (arrowEl) arrowEl.innerText = "▲";
             })
             .catch(err => console.error("조회수 증가 통신 오류:", err));
     }
 
-    // 🌟 4. 후기 정렬 처리 (전역 함수)
+    // [5] 정렬 핸들러 함수들 (전역)
     function sortReviews(sortType) {
         currentSort = sortType;
         const sortSpans = document.querySelectorAll("span[onclick^='sortReviews']");
@@ -993,13 +1049,12 @@
             }
         });
 
-        const isExpectTab = document.getElementById("ct-tab-expectations").style.display === "block";
+        const isExpectTab = document.getElementById("ct-tab-expectations") && document.getElementById("ct-tab-expectations").style.display === "block";
         const currentType = isExpectTab ? "EXPECT" : "REVIEW";
         const mt10id = document.getElementById("venueKopisId").value;
         loadReviews(mt10id, currentType, 1);
     }
 
-    // 🌟 5. 기대평 정렬 처리 (전역 함수)
     function sortExpectReviews(sortType) {
         currentSort = sortType;
         const latestBtn = document.getElementById("expect-sort-latest");
@@ -1017,14 +1072,20 @@
         loadReviews(mt10id, 'EXPECT', 1);
     }
 
-    // 🌟 6. 수정 모달 핸들러 및 API 요청 구역 (전역 함수)
+    // [6] 수정 / 삭제 핸들러 함수들 (전역)
     function openEditModal(reviewId, title, content, rating, type) {
         editReviewId = reviewId;
-        openReviewModal(type);
+        if (typeof window._openReviewModal === "function") {
+            window._openReviewModal(type);
+        }
 
-        document.getElementById('modalTitle').innerText = type === 'REVIEW' ? '관람후기 수정' : '기대평 수정';
-        document.getElementById('reviewTitle').value = title;
-        document.getElementById('reviewContent').value = content;
+        const modalTitle = document.getElementById('modalTitle');
+        if (modalTitle) modalTitle.innerText = type === 'REVIEW' ? '관람후기 수정' : '기대평 수정';
+
+        const titleInput = document.getElementById('reviewTitle');
+        const contentInput = document.getElementById('reviewContent');
+        if (titleInput) titleInput.value = title;
+        if (contentInput) contentInput.value = content;
 
         if (type === 'REVIEW' && rating > 0) {
             const ratingRadio = document.querySelector(`input[name="rating"][value="${rating}"]`);
@@ -1068,7 +1129,7 @@
                     closeReviewModal();
                     location.reload();
                 } else if (data.result === 'BLINDED') {
-                    alert("⚠️ 안내: 금칙어가 포함되어 자동 블라인드 처리되었습니다.");
+                    alert("안내: 금칙어가 포함되어 자동 블라인드 처리되었습니다.");
                     closeReviewModal();
                     location.reload();
                 } else {
@@ -1094,37 +1155,49 @@
             .catch(err => console.error("삭제 통신 에러:", err));
     }
 
-    // 전역에서 모달 제어가 가능하도록 래핑 바인딩 처리
-    function openReviewModal(type) {
-        window._openReviewModal(type);
-    }
     function closeReviewModal() {
-        window._closeReviewModal();
+        if (typeof window._closeReviewModal === "function") {
+            window._closeReviewModal();
+        }
     }
 
-    // 🌟 7. DOMContentLoaded (순수 초기화 및 페이지 내 리스너 바인딩 전용)
+    // [7] 예매하기 버튼 클릭 이벤트 (전역 함수)
+    function openSeatSelection() {
+        if (!selectedScheduleId) {
+            alert("관람 회차를 먼저 선택해 주세요!");
+            return;
+        }
+
+        const popupUrl = `/seat/selection?scheduleId=${selectedScheduleId}`;
+        const popupName = "ClearTicket_SeatSelection";
+        const popupOptions = "width=1000, height=700, resizable=no, scrollbars=yes, status=no, location=no";
+
+        window.open(popupUrl, popupName, popupOptions);
+    }
+
+    // [8] DOMContentLoaded 초기화 블록
     document.addEventListener("DOMContentLoaded", function() {
-        const mt10id = document.getElementById("venueKopisId").value;
+        const mt10id = getPerformanceId();
         const calendarDays = document.getElementById("calendar-days");
 
-        // 공연장 정보 API 호출
+        // 공연장 정보 로드
         fetch(`/hall/${mt10id}/info`)
             .then(response => response.json())
             .then(venue => {
                 const infoBox = document.getElementById("venue-info-box");
                 if (infoBox) {
                     infoBox.innerHTML = `
-                    <div class="info-item"><span class="info-label">공연장명:</span> ${venue.venueName}</div>
-                    <div class="info-item"><span class="info-label">총 좌석 수:</span> ${venue.totalSeats}석</div>
-                    <div class="info-item"><span class="info-label">주소:</span> ${venue.address}</div>
-                    <div class="info-item"><span class="info-label">전화번호:</span> ${venue.telnum || '정보없음'}</div>
-                `;
+                <div class="info-item"><span class="info-label">공연장명:</span> ${venue.venueName}</div>
+                <div class="info-item"><span class="info-label">총 좌석 수:</span> ${venue.totalSeats}석</div>
+                <div class="info-item"><span class="info-label">주소:</span> ${venue.address}</div>
+                <div class="info-item"><span class="info-label">전화번호:</span> ${venue.telnum || '정보없음'}</div>
+            `;
                 }
                 const topName = document.getElementById("venue-name-top");
                 if (topName) topName.innerText = venue.venueName;
             });
 
-        // 출연진 정보 API 호출
+        // 출연진 정보 로드
         fetch(`/hall/${mt10id}/casting`)
             .then(response => response.json())
             .then(castingList => {
@@ -1141,63 +1214,119 @@
                     const actorCard = document.createElement("div");
                     actorCard.classList.add("ct-actor-card");
                     actorCard.innerHTML = `
-                    <div class="ct-actor-circle-img"></div>
-                    <div class="ct-actor-name">${casting.actorName}</div>
-                    <div style="font-size:0.75rem; color:#9ca3af;">출연 배우</div>
-                `;
+                <div class="ct-actor-circle-img"></div>
+                <div class="ct-actor-name">${casting.actorName}</div>
+                <div style="font-size:0.75rem; color:#9ca3af;">출연 배우</div>
+            `;
                     castingBox.appendChild(actorCard);
                 });
             });
 
-        // 관람 가능 날짜 API 호출 (CSS Grid 달력 활성화)
+        // 🌟 [추가] 동적 달력 페이징 상태 관리를 위한 변수 정의
+        const today = new Date();
+        let currentCalYear = today.getFullYear();
+        let currentCalMonth = today.getMonth() + 1;
+        let globalScheduleData = []; // 서버에서 준 6~8월 전역 캐싱 배열
+
+        // 🌟 [수정 및 확장] 달력 로드 및 무한 이동 렌더링 시스템
         fetch(`/hall/${mt10id}/dates`)
             .then(response => response.json())
             .then(data => {
-                console.log("서버가 보내준 날짜 데이터 목록:", data);
-                if (!calendarDays) return;
-                calendarDays.innerHTML = "";
-
-                data.forEach(item => {
-                    const dayDiv = document.createElement("div");
-                    const dayNum = item.date.split("-")[2];
-                    dayDiv.innerText = parseInt(dayNum);
-
-                    const isSelectable = item.isAvailable === true ||
-                        item.isAvailable === "Y" ||
-                        item.available === true ||
-                        item.available === "Y";
-
-                    if (isSelectable) {
-                        dayDiv.classList.add("day", "available");
-                        dayDiv.style.cursor = "pointer";
-                        dayDiv.addEventListener("click", () => {
-                            document.querySelectorAll(".day.available").forEach(d => d.classList.remove("selected"));
-                            dayDiv.classList.add("selected");
-                            loadSchedules(mt10id, item.date);
-                        });
-                    } else {
-                        dayDiv.classList.add("day", "unavailable");
-                        dayDiv.style.color = "#d1d5db";
-                        dayDiv.style.pointerEvents = "none";
-                    }
-                    calendarDays.appendChild(dayDiv);
-                });
+                globalScheduleData = data; // JPA 데이터셋 전체 캐싱
+                updateCalendar();          // 초기 달력 렌더링 구동
             })
             .catch(err => console.error("날짜 로드 중 장애 발생:", err));
 
-        // 특정 날짜 클릭 시 스케줄 선택 API 호출
+        // 🌟 [신규 함수] 월 변경 버튼 처리를 위한 전역 핸들러 함수
+        function updateCalendar() {
+            if (!calendarDays) return;
+            calendarDays.innerHTML = "";
+
+            // 1. 네비게이션 중앙 타이틀 연/월 업데이트
+            const calTitle = document.getElementById("calendar-title");
+            if (calTitle) {
+                calTitle.innerText = `${currentCalYear}. ${String(currentCalMonth).padStart(2, '0')}`;
+            }
+
+            // 2. 현재 선택된 달의 1일 시작 요일 및 전체 일수 도출
+            const firstDayIndex = new Date(currentCalYear, currentCalMonth - 1, 1).getDay();
+            const totalDays = new Date(currentCalYear, currentCalMonth, 0).getDate();
+
+            // 3. 1일 시작 전 공백 칸 메우기
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyDiv = document.createElement("div");
+                emptyDiv.classList.add("day", "empty");
+                calendarDays.appendChild(emptyDiv);
+            }
+
+            // 4. 1일부터 말일까지 루프 돌리며 전역 데이터셋 내 연/월 일치 검사 후 바인딩
+            for (let day = 1; day <= totalDays; day++) {
+                const dayDiv = document.createElement("div");
+                dayDiv.innerText = day;
+
+                const formattedMonth = String(currentCalMonth).padStart(2, '0');
+                const formattedDay = String(day).padStart(2, '0');
+                const targetDateStr = `${currentCalYear}-${formattedMonth}-${formattedDay}`;
+
+                // 전체 리스트 중 현재 돌고 있는 날짜 객체 탐색
+                const matchedDateItem = globalScheduleData.find(item => item.date === targetDateStr);
+
+                if (matchedDateItem) {
+                    const isSelectable = matchedDateItem.isAvailable === true ||
+                        matchedDateItem.isAvailable === "Y" ||
+                        matchedDateItem.available === true ||
+                        matchedDateItem.available === "Y";
+
+                    if (isSelectable) {
+                        dayDiv.classList.add("day", "available");
+                        dayDiv.addEventListener("click", () => {
+                            document.querySelectorAll("#calendar-days .day").forEach(d => d.classList.remove("selected"));
+                            dayDiv.classList.add("selected");
+                            loadSchedules(mt10id, matchedDateItem.date);
+                        });
+                    } else {
+                        dayDiv.classList.add("day", "unavailable");
+                    }
+                } else {
+                    // 서버 데이터에 잡혀있지 않은 날짜는 모두 예매 불가능 처리
+                    dayDiv.classList.add("day", "unavailable");
+                }
+                calendarDays.appendChild(dayDiv);
+            }
+        }
+
+        // 🌟 [신규 이벤트 핸들러] 화살표 내비게이션 바인딩
+        document.getElementById("prev-month-btn")?.addEventListener("click", () => {
+            currentCalMonth--;
+            if (currentCalMonth < 1) {
+                currentCalMonth = 12;
+                currentCalYear--;
+            }
+            updateCalendar();
+        });
+
+        document.getElementById("next-month-btn")?.addEventListener("click", () => {
+            currentCalMonth++;
+            if (currentCalMonth > 12) {
+                currentCalMonth = 1;
+                currentCalYear++;
+            }
+            updateCalendar();
+        });
+
+        // 상영 회차 로드 (내부 함수 수정)
         function loadSchedules(mt10id, selectedDate) {
             const scheduleList = document.getElementById("schedule-list");
             if (!scheduleList) return;
+
+            selectedScheduleId = null; // 날짜 변경 시 선택된 ID 초기화
             scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#6b7280;'>회차 정보를 불러오는 중...</p>";
 
             fetch(`/hall/${mt10id}/schedules?date=${selectedDate}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log("백엔드에서 보내준 스케줄 데이터:", data);
                     scheduleList.innerHTML = "";
-
-                    if (data.length === 0) {
+                    if (!data || data.length === 0) {
                         scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>해당 날짜에는 상영 스케줄이 없습니다.</p>";
                         return;
                     }
@@ -1205,21 +1334,29 @@
                         const btn = document.createElement("button");
                         btn.classList.add("schedule-btn");
 
-                        const round = schedule.roundNumber || schedule.roundNum || schedule.round || "X";
-                        const time = schedule.showTime || schedule.time || schedule.startTime || schedule.playTime || "00:00";
-                        const sId = schedule.scheduleId || schedule.id;
+                        // 🌟 [수정] 서버의 Response 필드명("scheduleId", "round", "startTime")과 정확히 일치시킴
+                        const sId = schedule.scheduleId;
+                        const round = schedule.round;
+                        const time = schedule.startTime;
 
                         btn.innerText = `${round}회차 (${time})`;
 
                         btn.addEventListener("click", () => {
-                            alert(`선택하신 스케줄 ID는 [${sId}] 입니다. 우측 하단의 [예매하기] 버튼을 눌러 좌석을 선택해 주세요!`);
+                            document.querySelectorAll(".schedule-btn").forEach(b => b.classList.remove("active"));
+                            btn.classList.add("active");
+                            selectedScheduleId = sId;
+                            console.log("선택된 실제 DB 스케줄 ID:", selectedScheduleId);
                         });
                         scheduleList.appendChild(btn);
                     });
+                })
+                .catch(err => {
+                    console.error("회차 로드 에러:", err);
+                    scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>회차 정보를 불러오는데 실패했습니다.</p>";
                 });
         }
 
-        // 내부 모달 제어용 실제 로직 스코프 바인딩
+        // 창 내부 제어용 바인딩 정의
         window._openReviewModal = function(type) {
             const modalTitle = document.getElementById('modalTitle');
             const modalType = document.getElementById('modalType');
@@ -1250,26 +1387,20 @@
             }
         };
 
-        // 최초 뷰 로드시 리뷰 데이터 바인딩 실행
+        // 초기 화면 진입시 후기 탭 기본 로딩
         loadReviews(mt10id, 'REVIEW', 1);
     });
 
-    // 백엔드로 데이터 전송 (POST - DOMContentLoaded 바깥으로 이동)
+    // [9] 새 후기 작성 처리 (전역)
     function submitReview() {
-        const performanceId = document.getElementById("venueKopisId").value;
+        const performanceId = getPerformanceId();
         const type = document.getElementById("modalType").value;
         const title = document.getElementById("reviewTitle").value.trim();
         const content = document.getElementById("reviewContent").value.trim();
         const userId = document.getElementById("sessionUserId")?.value || 1;
 
-        if (!title) {
-            alert("제목을 입력해주세요.");
-            document.getElementById("reviewTitle").focus();
-            return;
-        }
-        if (!content) {
-            alert("내용을 입력해주세요.");
-            document.getElementById("reviewContent").focus();
+        if (!title || !content) {
+            alert("제목과 내용을 모두 입력해 주세요.");
             return;
         }
 
@@ -1277,7 +1408,7 @@
         if (type === 'REVIEW') {
             const selectedRating = document.querySelector('input[name="rating"]:checked');
             if (!selectedRating) {
-                alert("평점을 고르고 등록을 눌러주세요!");
+                alert("평점을 선택해 주세요!");
                 return;
             }
             rating = parseInt(selectedRating.value);
@@ -1290,27 +1421,21 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         })
-            .then(response => {
-                if (!response.ok) throw new Error("서버 에러 발생");
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
                 if (data.status === 'SUCCESS' || data.result === 'SUCCESS') {
-                    alert(`${type === 'REVIEW' ? '관람후기' : '기대평'}가 성공적으로 등록되었습니다!`);
+                    alert("성공적으로 등록되었습니다!");
                     closeReviewModal();
                     location.reload();
                 } else if (data.status === 'BLIND' || data.result === 'BLINDED') {
-                    alert("⚠️ 안내: 작성하신 글에 금칙어가 포함되어 있어 자동으로 블라인드 처리되었습니다.");
+                    alert("안내: 금칙어가 포함되어 자동 블라인드 처리되었습니다.");
                     closeReviewModal();
                     location.reload();
                 } else {
                     alert("등록 실패: " + (data.message || "다시 시도해 주세요."));
                 }
             })
-            .catch(err => {
-                console.error("통신 장애 발생:", err);
-                alert("네트워크 통신 중 오류가 발생했습니다.");
-            });
+            .catch(err => console.error("통신 장애 발생:", err));
     }
 </script>
 </body>
