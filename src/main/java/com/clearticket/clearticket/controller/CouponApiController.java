@@ -38,9 +38,8 @@ public class CouponApiController {
             return ResponseEntity.status(401).build();
         }
 
-        Optional<User> user = userRepository.findByEmail(loginUser.getId());
-
-        String userEmail = loginUser.getId();
+        String userEmail = loginUser.getEmail();
+        Optional<User> user = userRepository.findByEmail(userEmail);
         System.out.println("★ 쿠폰디버깅: 서비스에 요청할 유저 이메일 = " + userEmail);
 
         System.out.println("★ 쿠폰디버깅: 이 ID로 서비스에 쿠폰 조회를 요청합니다...");
