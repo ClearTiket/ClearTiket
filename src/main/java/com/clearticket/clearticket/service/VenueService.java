@@ -40,9 +40,9 @@ public class VenueService {
 
         List<String> regions = new ArrayList<>();
         switch (region) {
-            case "충청" -> regions.addAll(Arrays.asList("충북", "충남", "세종"));
+            case "충청" -> regions.addAll(Arrays.asList("충북", "충남", "대전", "세종"));
             case "전라" -> regions.addAll(Arrays.asList("전북", "전남", "광주"));
-            case "경상" -> regions.addAll(Arrays.asList("경북", "경남", "부산", "울산"));
+            case "경상" -> regions.addAll(Arrays.asList("경북", "경남", "부산", "대구", "울산"));
             default -> regions.add(region);
         }
 
