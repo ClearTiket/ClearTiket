@@ -21,14 +21,12 @@ public class VenueViewController {
 
     final VenueService venueService;
 
-
-
     @GetMapping("/list")
     public String venueListView(String region, Integer page, Model model) {
 
         Page<Venue> venueList;
 
-        if (region == null) {
+        if (region == null || region.isEmpty()) {
             venueList = venueService.findAll(page);
         } else {
             venueList = venueService.findByRegion(region, page);
@@ -36,13 +34,13 @@ public class VenueViewController {
 
         model.addAttribute("venueList", venueList.getContent());
         model.addAttribute("totalPage", venueList.getTotalPages());
-        return "venue/venue-list";
+        return "venues/venue-list";
     }
 
     @GetMapping("/{venueId}")
     public String venueDetailView(@PathVariable Long venueId, Model model) {
         Venue venue = venueService.findById(venueId);
         model.addAttribute("venue", venue);
-        return "venue/venue-detail";
+        return "venues/venue-detail";
     }
 }
