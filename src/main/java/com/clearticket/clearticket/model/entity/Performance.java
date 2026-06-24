@@ -69,9 +69,3 @@ public class Performance {
     @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", updatable = false)
     LocalDateTime createdAt;
 }
-
-enum PerformanceStatus {
-    PREPARING,
-    ON_SALE,
-    CLOSED
-}
