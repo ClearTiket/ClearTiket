@@ -1,6 +1,9 @@
 package com.clearticket.clearticket.service;
 
+import com.clearticket.clearticket.model.entity.Performance;
+import com.clearticket.clearticket.model.entity.PerformanceStatus;
 import com.clearticket.clearticket.model.entity.Venue;
+import com.clearticket.clearticket.repository.PerformanceRepository;
 import com.clearticket.clearticket.repository.VenueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,6 +21,7 @@ import java.util.Objects;
 public class VenueService {
 
     final VenueRepository venueRepository;
+    final PerformanceRepository performanceRepository;
     int defaultPageSize = 20;
 
     Pageable validPageable(Integer page) {
@@ -47,5 +51,14 @@ public class VenueService {
         }
 
         return venueRepository.findAllByRegionIn(regions, validPageable(page));
+    }
+
+    public List<Performance> findAllByVenueIdAndStatusIn(Long venueId) {
+        List<PerformanceStatus> statuses = new ArrayList<>();
+        statuses.add(PerformanceStatus.PREPARING);
+        statuses.add(PerformanceStatus.ON_SALE);
+
+        List<Performance> canReservePerformances = performanceRepository.findAllByVenueVenueIdAndStatusIn(venueId, statuses);
+        return canReservePerformances;
     }
 }
