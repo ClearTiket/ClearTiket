@@ -36,13 +36,6 @@
         background-color: #ffffff;
     }
 
-    /* [새로 추가] 8개 영역을 균등 분할하기 위한 컨테이너 */
-    .tab-item-container {
-        flex: 1;
-        height: 100%;
-        position: relative; /* 드롭다운 메뉴의 기준점이 됨 */
-    }
-
     /* [새로 추가] 탭 버튼 스타일 */
     .tab-btn {
         width: 100%;
@@ -61,15 +54,15 @@
         transition: background-color 0.2s, color 0.2s;
     }
 
-    .tab-item-container:last-child .tab-btn {
-        border-right: none; /* 마지막 버튼 테두리 제거 */
-    }
-
     /* [새로 추가] 8개 영역을 균등 분할하기 위한 컨테이너 */
     .tab-item-container {
         flex: 1;
         height: 100%;
         position: relative; /* 드롭다운 메뉴의 기준점이 됨 */
+    }
+
+    .tab-item-container:last-child .tab-btn {
+        border-right: none; /* 마지막 버튼 테두리 제거 */
     }
 
     /* [새로 추가] 탭 버튼 스타일 */
@@ -88,10 +81,6 @@
         justify-content: center;
         gap: 6px;
         transition: background-color 0.2s, color 0.2s;
-    }
-
-    .tab-item-container:last-child .tab-btn {
-        border-right: none; /* 마지막 버튼 테두리 제거 */
     }
 
     /* 화살표 아이콘 스타일 */
@@ -422,8 +411,6 @@
                     "Content-Type": "application/json"
                 }
             });
-
-            console.log(fetchUrl);
 
             const resultJson = await response.json();
 
