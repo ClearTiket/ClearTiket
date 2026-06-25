@@ -40,12 +40,12 @@
     <nav class="site-nav">
         <div class="nav-inner">
             <div class="nav-left">
-                <a href="#" th:classappend="${navActive == 'concert'} ? 'active'" class="nav-link">콘서트</a>
-                <a href="#" th:classappend="${navActive == 'musical'} ? 'active'" class="nav-link">뮤지컬</a>
-                <a href="#" th:classappend="${navActive == 'classic'} ? 'active'" class="nav-link">클래식</a>
+                <a href="/performances/ranking?genre=콘서트" th:classappend="${navActive == 'concert'} ? 'active'" class="nav-link">콘서트</a>
+                <a href="/performances/ranking?genre=뮤지컬" th:classappend="${navActive == 'musical'} ? 'active'" class="nav-link">뮤지컬</a>
+                <a href="/performances/ranking?genre=클래식" th:classappend="${navActive == 'classic'} ? 'active'" class="nav-link">클래식</a>
             </div>
             <div class="nav-right">
-                <a href="#" th:classappend="${navActive == 'ranking'} ? 'active'" class="nav-link">랭킹</a>
+                <a href="/performances/ranking" th:classappend="${navActive == 'ranking'} ? 'active'" class="nav-link">랭킹</a>
                 <a href="/performances/region" th:classappend="${navActive == 'region'} ? 'active'" class="nav-link">지역</a>
                 <a href="/venue/list" th:classappend="${navActive == 'venue'} ? 'active'" class="nav-link">공연장</a>
             </div>
