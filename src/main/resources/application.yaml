@@ -23,6 +23,8 @@ spring:
           writetimeout: 5000
   thymeleaf:
     cache: false
+  elasticsearch:
+    uris: http://localhost:9200
   application:
     name: ClearTicket
   config:
