@@ -9,8 +9,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${mail.username}
-    password: ${mail.password}
+    username: "${mail.username}"
+    password: "${mail.password}"
     properties:
       mail:
         smtp:
@@ -24,8 +24,8 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/clearticket
-    username: ${db.username}
-    password: ${db.password}
+    username: postgres
+    password: clearticket
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -49,10 +49,10 @@ spring:
       data-locations: classpath:sql/data.sql
       mode: always
 lemonsqueezy:
-  api-key: ${LEMON_SQUEEZY_API_KEY}
+  api-key: "${LEMON_SQUEEZY_API_KEY}"
   store-id: "410829"
   variant-id: "1806370"
-
+LEMON_SQUEEZY_API_KEY: ""
 app:
   dummy-user:
     id: hong123

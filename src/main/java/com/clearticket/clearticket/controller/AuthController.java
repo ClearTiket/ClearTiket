@@ -89,9 +89,9 @@ public class AuthController {
         try {
             User user = userService.register(dto);
             session.removeAttribute(EmailVerificationController.SESSION_VERIFIED_EMAIL);
-            // 가입 후 바로 설문을 진행할 수 있도록 세션 생성 (ID나 Email 정보 세팅)
+            // userId 포함한 UserSession 생성
             session.setAttribute("loginUser",
-                    new UserSession(user.getEmail(), user.getName(), user.getEmail()));
+                    new UserSession(user.getUserId(), user.getEmail(), user.getName(), user.getEmail()));
             return "redirect:/survey";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -121,11 +121,7 @@ public class AuthController {
     @ResponseBody
     public String saveSurvey(@RequestBody SurveyRequestDto dto, HttpSession session) {
         UserSession loginUser = (UserSession) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return "FAIL";
-        }
-
-        // 현재 로그인된 사용자의 이메일(혹은 ID)과 함께 설문 데이터 저장
+        if (loginUser == null) return "FAIL";
         userService.saveSurvey(loginUser.getEmail(), dto);
         return "SUCCESS";
     }
@@ -169,9 +165,7 @@ public class AuthController {
         String resetVerifiedEmail = (String) session.getAttribute(
                 EmailVerificationController.SESSION_RESET_VERIFIED_EMAIL);
 
-        if (resetVerifiedEmail == null) {
-            return "redirect:/find-password";
-        }
+        if (resetVerifiedEmail == null) return "redirect:/find-password";
 
         addLoginUser(session, model);
         model.addAttribute("step", "form");

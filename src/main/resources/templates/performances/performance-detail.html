@@ -1168,7 +1168,12 @@
             return;
         }
 
-        const popupUrl = `/seat/selection?scheduleId=${selectedScheduleId}`;
+        // 수정 전
+        // const popupUrl = `/seat/selection?scheduleId=${selectedScheduleId}`;
+
+// 수정 후
+        const performanceId = getPerformanceId();
+        const popupUrl = `/seats?performanceId=${performanceId}&scheduleId=${selectedScheduleId}`;
         const popupName = "ClearTicket_SeatSelection";
         const popupOptions = "width=1000, height=700, resizable=no, scrollbars=yes, status=no, location=no";
 

@@ -1,730 +1,737 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>클리어티켓 - 좌석 선택</title>
-  <style>
-    /* 전체 창 레이아웃 분할 */
-    .booking-container {
-      display: flex;
-      width: 100vw;
-      height: 100vh;
-      min-height: 700px;
-      background-color: #f3f4f6;
-      font-family: 'Pretendard', sans-serif;
-      overflow: hidden;
-    }
-
-    /* 좌측 메인 섹션 */
-    .seat-main-section {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      padding: 35px 40px;
-      position: relative;
-      background-color: #e5e7eb;
-      overflow-y: auto;
-    }
-
-    /* 상단 헤더 구조 (타이틀, 범례, 예매대기 세 줄/열 레이아웃 최적화) */
-    .perf-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 20px;
-      flex-shrink: 0;
-    }
-
-    .perf-title-area h2 {
-      margin: 0 0 6px 0;
-      font-size: 1.6rem;
-      font-weight: bold;
-      color: #111827;
-      letter-spacing: -0.5px;
-    }
-    .perf-title-area .perf-date-sub {
-      margin: 0;
-      font-size: 1rem;
-      color: #4b5563;
-      font-weight: 500;
-    }
-
-    .perf-control-area {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 12px;
-    }
-
-    /* 범례 디자인 (선택불가 제거) */
-    .seat-legend {
-      display: flex;
-      gap: 16px;
-      background: #ffffff;
-      padding: 10px 18px;
-      border-radius: 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .legend-badge {
-      width: 14px;
-      height: 14px;
-      border-radius: 4px;
-    }
-    .badge-vip, .pop-badge-vip, .seat-grid-container .seat-circle.grade-vip { background-color: #a855f7; }
-    .badge-r,   .pop-badge-r,   .seat-grid-container .seat-circle.grade-r   { background-color: #3b82f6; }
-    .badge-s,   .pop-badge-s,   .seat-grid-container .seat-circle.grade-s   { background-color: #10b981; }
-
-    /* 예매대기 버튼 복구 */
-    .btn-waiting-trigger {
-      background-color: #ffffff;
-      border: 1px solid #d1d5db;
-      border-radius: 20px;
-      padding: 8px 16px;
-      font-size: 0.85rem;
-      font-weight: bold;
-      color: #374151;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: background-color 0.2s;
-    }
-    .btn-waiting-trigger:hover {
-      background-color: #f9fafb;
-    }
-
-    /* 무대 스타일 */
-    .stage-wrapper {
-      display: flex;
-      justify-content: center;
-      margin: 15px 0 30px 0;
-      flex-shrink: 0;
-    }
-    .stage-box {
-      width: 380px;
-      background-color: #1f2937;
-      text-align: center;
-      padding: 12px 0;
-      font-size: 0.95rem;
-      font-weight: bold;
-      color: #ffffff;
-      border-radius: 6px;
-      letter-spacing: 6px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-
-    /* 구역 컨테이너 */
-    .zone-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 45px;
-      flex: 1;
-      padding: 10px 0;
-    }
-
-    /* 구역 블록 스타일 */
-    .zone-block {
-      width: 190px;
-      height: 330px;
-      flex-shrink: 0;
-      background-color: #6366f1;
-      color: #ffffff;
-      font-size: 4rem;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 12px;
-      cursor: pointer;
-      box-shadow: 0 10px 25px rgba(99, 102, 241, 0.25);
-      transition: transform 0.25s, background-color 0.25s, box-shadow 0.25s;
-    }
-    .zone-block:hover {
-      transform: translateY(-8px);
-      background-color: #4f46e5;
-      box-shadow: 0 15px 30px rgba(79, 70, 229, 0.4);
-    }
-
-    /* 상세 좌석 맵 전체 래퍼 */
-    .seat-map-wrapper {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      flex: 1;
-      padding-bottom: 40px;
-    }
-
-    /* 10행 10열 좌석 Grid 판 */
-    .seat-grid-container {
-      display: grid;
-      grid-template-columns: repeat(10, 42px);
-      grid-template-rows: repeat(10, 42px);
-      gap: 10px;
-      justify-content: center;
-      background-color: #ffffff;
-      padding: 35px;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
-      margin-top: 10px;
-    }
-
-    /* 개별 좌석 기본 공통 스타일 */
-    .seat-grid-container .seat-circle {
-      width: 100%;
-      height: 100%;
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.75rem;
-      color: #ffffff;
-      font-weight: 600;
-      user-select: none;
-      transition: all 0.15s ease-in-out;
-    }
-
-    /* 등급별 기본 색상 일치 */
-    .seat-grid-container .seat-circle.grade-vip { background-color: #a855f7; }
-    .seat-grid-container .seat-circle.grade-r { background-color: #3b82f6; }
-    .seat-grid-container .seat-circle.grade-s { background-color: #10b981; }
-
-    .seat-grid-container .seat-circle:hover {
-      filter: brightness(0.85);
-      transform: scale(1.08);
-    }
-
-    /* 좌석 선택 시 활성화 상태 */
-    .seat-grid-container .seat-circle.selected {
-      background-color: #1e2937;
-      color: #ffffff;
-      font-weight: bold;
-      box-shadow: 0 0 0 3px #111827, inset 0 2px 4px rgba(0,0,0,0.4);
-    }
-
-    /* 예약 불가능 좌석 스타일 */
-    .seat-grid-container .seat-circle.sold-out {
-      background-color: #d1d5db;
-      color: #9ca3af;
-      cursor: not-allowed;
-    }
-    .seat-grid-container .seat-circle.sold-out:hover {
-      background-color: #d1d5db;
-      transform: none;
-      filter: none;
-    }
-
-    /* 하단 유틸리티 버튼 구역 */
-    .util-footer {
-      margin-top: auto;
-      flex-shrink: 0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      position: relative;
-    }
-
-    .btn-util {
-      background-color: #ffffff;
-      border: 1px solid #d1d5db;
-      padding: 12px 28px;
-      border-radius: 30px;
-      font-size: 0.95rem;
-      color: #6b7280;
-      cursor: pointer;
-      font-weight: 500;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-    .btn-util:hover {
-      background-color: #f9fafb;
-      border-color: #9ca3af;
-    }
-
-    /* 말풍선 가격 미니 팝업 (디자인 싱크로율 100% 보정) */
-    .price-popup-card {
-      position: absolute;
-      bottom: 60px;
-      left: 0;
-      width: 210px;
-      background-color: #ffffff;
-      border-radius: 20px;
-      padding: 20px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-      border: 1px solid #f3f4f6;
-      z-index: 100;
-      display: none;
-      flex-direction: column;
-    }
-
-    .price-popup-card.active {
-      display: flex;
-    }
-
-    .pop-close-btn {
-      position: absolute;
-      top: 14px;
-      right: 16px;
-      background: none;
-      border: none;
-      font-size: 1.1rem;
-      color: #d1d5db;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-    }
-    .pop-close-btn:hover {
-      color: #9ca3af;
-    }
-
-    .pop-item-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 0;
-    }
-    .pop-item-row.has-border {
-      border-bottom: 1px solid #f3f4f6;
-    }
-
-    /* 메인 테마 색상과 완벽 동기화 */
-    .pop-circle-badge {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .pop-badge-vip { background-color: #a855f7; }
-    .pop-badge-r { background-color: #3b82f6; }
-    .pop-badge-s { background-color: #10b981; }
-
-    .pop-text-info {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-    .pop-text-info .grade-title {
-      font-size: 0.8rem;
-      color: #4b5563;
-      font-weight: 500;
-    }
-    .pop-text-info .grade-price {
-      font-size: 0.95rem;
-      font-weight: bold;
-      color: #111827;
-    }
-
-    /* 우측 사이드바 여백 부여 */
-    .seat-sidebar {
-      width: 350px;
-      background-color: #ffffff;
-      border-left: 1px solid #e5e7eb;
-      display: flex;
-      flex-direction: column;
-      padding: 35px 28px;
-      justify-content: space-between;
-      box-sizing: border-box;
-      flex-shrink: 0;
-    }
-    .sidebar-top-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .sidebar-top-header h3 {
-      margin: 0;
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #111827;
-    }
-
-    .btn-clear-all {
-      background: none;
-      border: none;
-      color: #9ca3af;
-      font-size: 0.8rem;
-      cursor: pointer;
-      text-decoration: underline;
-      font-weight: 500;
-    }
-    .btn-clear-all:hover {
-      color: #ef4444;
-    }
-
-    .ticket-limit-notice {
-      font-size: 0.8rem;
-      color: #ef4444;
-      margin-bottom: 20px;
-      font-weight: 500;
-      line-height: 1.4;
-    }
-    .empty-msg {
-      color: #9ca3af;
-      font-size: 0.95rem;
-      padding: 40px 0;
-      text-align: center;
-    }
-
-    /* 실시간 요약 창 */
-    .summary-box {
-      border-top: 1px dashed #e5e7eb;
-      padding-top: 20px;
-      margin-top: 20px;
-    }
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.95rem;
-      margin-bottom: 12px;
-      color: #4b5563;
-    }
-    .summary-row.total {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #111827;
-      border-top: 1px solid #e5e7eb;
-      padding-top: 15px;
-      margin-top: 10px;
-    }
-
-    .btn-complete {
-      width: 100%;
-      padding: 18px 0;
-      background-color: #d1d5db;
-      color: #9ca3af;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      font-size: 1.05rem;
-      cursor: not-allowed;
-      transition: background-color 0.2s;
-    }
-    .btn-complete.active {
-      background-color: #2563eb;
-      color: #ffffff;
-      cursor: pointer;
-    }
-    .btn-complete.active:hover {
-      background-color: #1d4ed8;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>클리어티켓 - 좌석 선택</title>
+    <style>
+        .booking-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            min-height: 700px;
+            background-color: #f3f4f6;
+            font-family: 'Pretendard', sans-serif;
+            overflow: hidden;
+        }
+        .seat-main-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 35px 40px;
+            position: relative;
+            background-color: #e5e7eb;
+            overflow-y: auto;
+        }
+        .perf-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+        .perf-title-area h2 {
+            margin: 0 0 6px 0;
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #111827;
+            letter-spacing: -0.5px;
+        }
+        .perf-title-area .perf-date-sub {
+            margin: 0;
+            font-size: 1rem;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        .perf-control-area {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+        .seat-legend {
+            display: flex;
+            gap: 16px;
+            background: #ffffff;
+            padding: 10px 18px;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .legend-badge {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+        }
+        .badge-vip, .pop-badge-vip, .seat-grid-container .seat-circle.grade-vip { background-color: #a855f7; }
+        .badge-r,   .pop-badge-r,   .seat-grid-container .seat-circle.grade-r   { background-color: #3b82f6; }
+        .badge-s,   .pop-badge-s,   .seat-grid-container .seat-circle.grade-s   { background-color: #10b981; }
+        .btn-waiting-trigger {
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #374151;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.2s;
+        }
+        .btn-waiting-trigger:hover { background-color: #f9fafb; }
+        .stage-wrapper {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0 30px 0;
+            flex-shrink: 0;
+        }
+        .stage-box {
+            width: 380px;
+            background-color: #1f2937;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #ffffff;
+            border-radius: 6px;
+            letter-spacing: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .zone-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 45px;
+            flex: 1;
+            padding: 10px 0;
+        }
+        .zone-block {
+            width: 190px;
+            height: 330px;
+            flex-shrink: 0;
+            background-color: #6366f1;
+            color: #ffffff;
+            font-size: 4rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.25);
+            transition: transform 0.25s, background-color 0.25s, box-shadow 0.25s;
+        }
+        .zone-block:hover {
+            transform: translateY(-8px);
+            background-color: #4f46e5;
+            box-shadow: 0 15px 30px rgba(79, 70, 229, 0.4);
+        }
+        .seat-map-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            flex: 1;
+            padding-bottom: 40px;
+        }
+        .seat-grid-container {
+            display: grid;
+            gap: 10px;
+            justify-content: center;
+            background-color: #ffffff;
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+            margin-top: 10px;
+        }
+        .seat-grid-container .seat-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #ffffff;
+            font-weight: 600;
+            user-select: none;
+            transition: all 0.15s ease-in-out;
+        }
+        .seat-grid-container .seat-circle.grade-vip { background-color: #a855f7; }
+        .seat-grid-container .seat-circle.grade-r   { background-color: #3b82f6; }
+        .seat-grid-container .seat-circle.grade-s   { background-color: #10b981; }
+        .seat-grid-container .seat-circle:hover {
+            filter: brightness(0.85);
+            transform: scale(1.08);
+        }
+        .seat-grid-container .seat-circle.selected {
+            background-color: #1e2937;
+            color: #ffffff;
+            font-weight: bold;
+            box-shadow: 0 0 0 3px #111827, inset 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .seat-grid-container .seat-circle.sold-out {
+            background-color: #d1d5db;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        .seat-grid-container .seat-circle.sold-out:hover {
+            background-color: #d1d5db;
+            transform: none;
+            filter: none;
+        }
+        .util-footer {
+            margin-top: auto;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            position: relative;
+        }
+        .btn-util {
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            color: #6b7280;
+            cursor: pointer;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-util:hover {
+            background-color: #f9fafb;
+            border-color: #9ca3af;
+        }
+        .price-popup-card {
+            position: absolute;
+            bottom: 60px;
+            left: 0;
+            width: 210px;
+            background-color: #ffffff;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            border: 1px solid #f3f4f6;
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+        }
+        .price-popup-card.active { display: flex; }
+        .pop-close-btn {
+            position: absolute;
+            top: 14px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            color: #d1d5db;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        .pop-close-btn:hover { color: #9ca3af; }
+        .pop-item-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+        }
+        .pop-item-row.has-border { border-bottom: 1px solid #f3f4f6; }
+        .pop-circle-badge {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .pop-badge-vip { background-color: #a855f7; }
+        .pop-badge-r   { background-color: #3b82f6; }
+        .pop-badge-s   { background-color: #10b981; }
+        .pop-text-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .pop-text-info .grade-title {
+            font-size: 0.8rem;
+            color: #4b5563;
+            font-weight: 500;
+        }
+        .pop-text-info .grade-price {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #111827;
+        }
+        .seat-sidebar {
+            width: 350px;
+            background-color: #ffffff;
+            border-left: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            padding: 35px 28px;
+            justify-content: space-between;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+        .sidebar-top-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .sidebar-top-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #111827;
+        }
+        .btn-clear-all {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-decoration: underline;
+            font-weight: 500;
+        }
+        .btn-clear-all:hover { color: #ef4444; }
+        .ticket-limit-notice {
+            font-size: 0.8rem;
+            color: #ef4444;
+            margin-bottom: 20px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        .empty-msg {
+            color: #9ca3af;
+            font-size: 0.95rem;
+            padding: 40px 0;
+            text-align: center;
+        }
+        .summary-box {
+            border-top: 1px dashed #e5e7eb;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            color: #4b5563;
+        }
+        .summary-row.total {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #111827;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 15px;
+            margin-top: 10px;
+        }
+        .btn-complete {
+            width: 100%;
+            padding: 18px 0;
+            background-color: #d1d5db;
+            color: #9ca3af;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.05rem;
+            cursor: not-allowed;
+            transition: background-color 0.2s;
+        }
+        .btn-complete.active {
+            background-color: #2563eb;
+            color: #ffffff;
+            cursor: pointer;
+        }
+        .btn-complete.active:hover { background-color: #1d4ed8; }
+    </style>
 </head>
 <body>
+
+<!-- Thymeleaf → JS 데이터 브릿지 -->
+<input type="hidden" id="current-user-id"        th:value="${loginUser.userId}" />
+<input type="hidden" id="current-performance-id"  th:value="${performanceId}" />
+<input type="hidden" id="current-schedule-id"     th:value="${scheduleId}" />
+
 <div class="booking-container">
-  <div class="seat-main-section">
-    <div class="perf-header">
-      <div class="perf-title-area">
-        <h2 id="perf-title-display">뮤지컬 〈지킬앤하이드〉</h2>
-        <p id="perf-schedule-display" class="perf-date-sub">2026.06.24(수) 07:30 PM (1회차)</p>
-      </div>
+    <div class="seat-main-section">
+        <div class="perf-header">
+            <div class="perf-title-area">
+                <!-- 서버에서 주입 -->
+                <h2 id="perf-title-display" th:text="${performanceTitle}"></h2>
+                <p id="perf-schedule-display" class="perf-date-sub" th:text="${scheduleLabel}"></p>
+            </div>
 
-      <div class="perf-control-area">
-        <button type="button" class="btn-waiting-trigger" onclick="openWaitingPopup()">
-          <span></span> 예매대기 신청
-        </button>
-
-        <div class="seat-legend">
-          <div class="legend-item"><span class="legend-badge badge-vip"></span>VIP석</div>
-          <div class="legend-item"><span class="legend-badge badge-r"></span>R석</div>
-          <div class="legend-item"><span class="legend-badge badge-s"></span>S석</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="stage-wrapper">
-      <div class="stage-box">STAGE</div>
-    </div>
-
-    <div id="section-view" class="zone-container">
-      <div class="zone-block" onclick="selectZone('A')">A</div>
-      <div class="zone-block" onclick="selectZone('B')">B</div>
-      <div class="zone-block" onclick="selectZone('C')">C</div>
-    </div>
-
-    <div id="seat-detail-view" class="seat-map-wrapper" style="display: none;">
-      <h3 id="selected-zone-title" style="text-align: center; margin-bottom: 20px; color: #111827; font-weight: bold; font-size: 1.2rem;"></h3>
-      <div id="seat-grid" class="seat-grid-container"></div>
-    </div>
-
-    <div class="util-footer">
-      <div id="price-popup" class="price-popup-card">
-        <button type="button" class="pop-close-btn" onclick="closePricePopup(event)">&times;</button>
-
-        <div class="pop-item-row has-border">
-          <div class="pop-circle-badge pop-badge-vip"></div>
-          <div class="pop-text-info">
-            <span class="grade-title">VIP석</span>
-            <span class="grade-price">160,000원</span>
-          </div>
+            <div class="perf-control-area">
+                <button type="button" class="btn-waiting-trigger" onclick="openWaitingPopup()">
+                    <span>⏰</span> 예매대기 신청
+                </button>
+                <div class="seat-legend">
+                    <div class="legend-item"><span class="legend-badge badge-vip"></span>VIP석</div>
+                    <div class="legend-item"><span class="legend-badge badge-r"></span>R석</div>
+                    <div class="legend-item"><span class="legend-badge badge-s"></span>S석</div>
+                </div>
+            </div>
         </div>
 
-        <div class="pop-item-row has-border">
-          <div class="pop-circle-badge pop-badge-r"></div>
-          <div class="pop-text-info">
-            <span class="grade-title">R석</span>
-            <span class="grade-price">140,000원</span>
-          </div>
+        <div class="stage-wrapper">
+            <div class="stage-box">STAGE</div>
         </div>
 
-        <div class="pop-item-row">
-          <div class="pop-circle-badge pop-badge-s"></div>
-          <div class="pop-text-info">
-            <span class="grade-title">S석</span>
-            <span class="grade-price">110,000원</span>
-          </div>
+        <div id="section-view" class="zone-container">
+            <div class="zone-block" onclick="selectZone('A')">A</div>
+            <div class="zone-block" onclick="selectZone('B')">B</div>
+            <div class="zone-block" onclick="selectZone('C')">C</div>
         </div>
-      </div>
 
-      <button type="button" class="btn-util" onclick="togglePricePopup(event)">등급 별 가격 ⓘ</button>
-      <button type="button" id="btn-back-to-zone" class="btn-util" style="display: none; background-color: #1f2937; color: #fff;" onclick="backToZoneView()">◀ 다른 구역 선택</button>
-    </div>
-  </div> <div class="seat-sidebar">
-  <div class="selected-seats-info">
-    <div class="sidebar-top-header">
-      <h3>선택 좌석</h3>
-      <button type="button" class="btn-clear-all" onclick="clearAllSeats()">전체삭제</button>
-    </div>
-    <div class="ticket-limit-notice">※ 본 공연은 1인 최대 2매까지 예매 가능합니다.</div>
+        <div id="seat-detail-view" class="seat-map-wrapper" style="display: none;">
+            <h3 id="selected-zone-title"
+                style="text-align:center;margin-bottom:20px;color:#111827;font-weight:bold;font-size:1.2rem;"></h3>
+            <div id="seat-grid" class="seat-grid-container"></div>
+        </div>
 
-    <div id="selected-seats-list">
-      <div class="empty-msg">선택 좌석이 없습니다.</div>
+        <div class="util-footer">
+            <div id="price-popup" class="price-popup-card">
+                <button type="button" class="pop-close-btn" onclick="closePricePopup(event)">&times;</button>
+
+                <div class="pop-item-row has-border">
+                    <div class="pop-circle-badge pop-badge-vip"></div>
+                    <div class="pop-text-info">
+                        <span class="grade-title">VIP석</span>
+                        <span class="grade-price" id="price-vip"></span>
+                    </div>
+                </div>
+
+                <div class="pop-item-row has-border">
+                    <div class="pop-circle-badge pop-badge-r"></div>
+                    <div class="pop-text-info">
+                        <span class="grade-title">R석</span>
+                        <span class="grade-price" id="price-r"></span>
+                    </div>
+                </div>
+
+                <div class="pop-item-row">
+                    <div class="pop-circle-badge pop-badge-s"></div>
+                    <div class="pop-text-info">
+                        <span class="grade-title">S석</span>
+                        <span class="grade-price" id="price-s"></span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="btn-util" onclick="togglePricePopup(event)">등급 별 가격 ⓘ</button>
+            <button type="button" id="btn-back-to-zone" class="btn-util"
+                    style="display:none;background-color:#1f2937;color:#fff;" onclick="backToZoneView()">
+                ◀ 다른 구역 선택
+            </button>
+        </div>
     </div>
 
-    <div class="summary-box">
-      <div class="summary-row">
-        <span>선택 수량</span>
-        <span id="total-count-display">0좌석</span>
-      </div>
-      <div class="summary-row total">
-        <span>총 결제 금액</span>
-        <span id="total-price-display">0원</span>
-      </div>
-    </div>
-  </div>
+    <div class="seat-sidebar">
+        <div class="selected-seats-info">
+            <div class="sidebar-top-header">
+                <h3>선택 좌석</h3>
+                <button type="button" class="btn-clear-all" onclick="clearAllSeats()">전체삭제</button>
+            </div>
+            <div class="ticket-limit-notice">※ 본 공연은 1인 최대 2매까지 예매 가능합니다.</div>
 
-  <button id="btn-submit" class="btn-complete" disabled>선택 완료</button>
+            <div id="selected-seats-list">
+                <div class="empty-msg">선택 좌석이 없습니다.</div>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-row">
+                    <span>선택 수량</span>
+                    <span id="total-count-display">0좌석</span>
+                </div>
+                <div class="summary-row total">
+                    <span>총 결제 금액</span>
+                    <span id="total-price-display">0원</span>
+                </div>
+            </div>
+        </div>
+
+        <button id="btn-submit" class="btn-complete" disabled>선택 완료</button>
+    </div>
 </div>
-</div>
+
 <script>
-  let currentActiveZone = null;
-  let selectedSeatList = [];
+    let currentActiveZone = null;
+    let selectedSeatList  = [];
+    let allSeatsFromServer = [];
 
-  const PRICE_POLICY = {
-    'VIP': { name: 'VIP석', price: 160000 },
-    'R':   { name: 'R석',   price: 140000 },
-    'S':   { name: 'S석',   price: 110000 }
-  };
+    // Thymeleaf 숨김 필드에서 서버 데이터 읽기
+    const performanceId = document.getElementById('current-performance-id').value;
+    const scheduleId    = document.getElementById('current-schedule-id').value;
 
-  // [1] 행(Row)별 등급 판정
-  function getSeatGrade(rowLabel) {
-    if (['A', 'B'].includes(rowLabel)) return 'VIP';
-    if (['C', 'D', 'E', 'F'].includes(rowLabel)) return 'R';
-    return 'S';
-  }
-
-  // [2] 예매대기 기능 매핑
-  function openWaitingPopup() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const scheduleId = urlParams.get('scheduleId') || '501';
-    alert(`해당 회차 [스케줄 번호: ${scheduleId}]의 예매대기 신청 페이지로 연결합니다.`);
-  }
-
-  // [3] 등급별 가격 미니 팝업 토글 로직
-  function togglePricePopup(event) {
-    // 이벤트 전파를 막아서 버튼 누르자마자 바깥 클릭 판정으로 닫히는 현상 방지
-    event.stopPropagation();
-
-    const popup = document.getElementById("price-popup");
-    if (popup) popup.classList.toggle("active");
-  }
-
-  function closePricePopup(event) {
-    if (event) event.stopPropagation();
-    const popup = document.getElementById("price-popup");
-    if (popup) popup.classList.remove("active");
-  }
-
-  // 사용자가 화면의 다른 곳(바깥쪽 아무 데나)을 클릭하면 자연스럽게 팝업이 닫히도록 개선
-  document.addEventListener("click", function (event) {
-    const popup = document.getElementById("price-popup");
-    const btn = document.querySelector(".btn-util");
-
-    if (popup && popup.classList.contains("active")) {
-      // 클릭된 곳이 팝업 내부도 아니고, 버튼 내부도 아니라면 닫기
-      if (!popup.contains(event.target) && event.target !== btn) {
-        closePricePopup();
-      }
-    }
-  });
-
-  // [4] 구역 선택 진입
-  function selectZone(zoneName) {
-    currentActiveZone = zoneName;
-
-    document.getElementById("section-view").style.display = "none";
-    document.getElementById("seat-detail-view").style.display = "flex";
-    document.getElementById("btn-back-to-zone").style.display = "block";
-
-    let directionGuide = "";
-    if (zoneName === 'A') directionGuide = "A 구역 [ 왼쪽 사이드 ]";
-    else if (zoneName === 'B') directionGuide = "B 구역 [ 중앙 무대 정면 ]";
-    else if (zoneName === 'C') directionGuide = "C 구역 [ 오른쪽 사이드 ]";
-
-    document.getElementById("selected-zone-title").innerText = directionGuide;
-
-    createSeatGrid(zoneName);
-  }
-
-  // [5] 동적 좌석 격자 생성
-  function createSeatGrid(zoneName) {
-    const gridContainer = document.getElementById("seat-grid");
-    if (!gridContainer) return;
-    gridContainer.innerHTML = "";
-
-    const rows = 10;
-    const cols = 10;
-
-    for (let r = 1; r <= rows; r++) {
-      const rowLabel = String.fromCharCode(64 + r);
-      const grade = getSeatGrade(rowLabel);
-
-      for (let c = 1; c <= cols; c++) {
-        const seat = document.createElement("div");
-        seat.classList.add("seat-circle");
-
-        const seatCode = `${zoneName}-${rowLabel}${c}`;
-        seat.innerText = `${rowLabel}${c}`;
-        seat.setAttribute("data-seat-id", seatCode);
-        seat.classList.add(`grade-${grade.toLowerCase()}`);
-
-        // 가상 매진 데이터셋 매핑 (3번, 7번 열 매진)
-        if (c === 3 || c === 7) {
-          seat.classList.add("sold-out");
-          seat.innerText = "X";
-        }
-
-        // 타 구역 교차 예매 선택 상태 동기화 유지
-        const isAlreadySelected = selectedSeatList.some(item => item.code === seatCode);
-        if (isAlreadySelected) {
-          seat.classList.add("selected");
-        }
-
-        seat.onclick = function() {
-          toggleSeatSelection(seat, seatCode, zoneName, rowLabel, c, grade);
-        };
-
-        gridContainer.appendChild(seat);
-      }
-    }
-  }
-
-  // [6] 좌석 클릭 토글
-  function toggleSeatSelection(seatElement, seatCode, zone, row, col, grade) {
-    if (seatElement.classList.contains("sold-out")) {
-      alert("이미 예매가 완료된 좌석입니다.");
-      return;
-    }
-
-    const isSelected = seatElement.classList.contains("selected");
-
-    if (isSelected) {
-      seatElement.classList.remove("selected");
-      selectedSeatList = selectedSeatList.filter(item => item.code !== seatCode);
-    } else {
-      if (selectedSeatList.length >= 2) {
-        alert("티켓은 1인당 최대 2매까지만 선택할 수 있습니다.");
-        return;
-      }
-      seatElement.classList.add("selected");
-      selectedSeatList.push({
-        code: seatCode,
-        zone: zone,
-        label: `${row}열 ${col}번`,
-        gradeName: PRICE_POLICY[grade].name,
-        price: PRICE_POLICY[grade].price
-      });
-    }
-
-    updateSidebarSummary();
-  }
-
-  // [7] 우측 사이드바 데이터 동기화 및 요약 금액 계산
-  function updateSidebarSummary() {
-    const listContainer = document.getElementById("selected-seats-list");
-    const countDisplay = document.getElementById("total-count-display");
-    const priceDisplay = document.getElementById("total-price-display");
-    const submitBtn = document.getElementById("btn-submit");
-
-    if (selectedSeatList.length === 0) {
-      listContainer.innerHTML = '<div class="empty-msg">선택 좌석이 없습니다.</div>';
-      countDisplay.innerText = "0좌석";
-      priceDisplay.innerText = "0원";
-      submitBtn.disabled = true;
-      submitBtn.classList.remove("active");
-      return;
-    }
-
-    let totalPrice = 0;
-    let htmlContent = "";
-
-    selectedSeatList.forEach(seat => {
-      totalPrice += seat.price;
-      htmlContent += `
-    <div style="padding: 14px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <span style="font-weight:bold; color:#111827; font-size:0.95rem;">${seat.zone}구역 ${seat.label}</span>
-        <div style="font-size:0.75rem; color:#6b7280; margin-top:3px; font-weight:500;">${seat.gradeName}</div>
-      </div>
-      <span style="font-weight:bold; color:#2563eb; font-size:0.9rem;">${seat.price.toLocaleString()}원</span>
-    </div>
-  `;
+    // ─── 초기화 ───────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadSeats();
     });
 
-    listContainer.innerHTML = htmlContent;
-    countDisplay.innerText = `${selectedSeatList.length}좌석`;
-    priceDisplay.innerText = `${totalPrice.toLocaleString()}원`;
-
-    submitBtn.disabled = false;
-    submitBtn.classList.add("active");
-  }
-
-  // [8] 전체 삭제 기능
-  function clearAllSeats() {
-    if (selectedSeatList.length === 0) return;
-
-    if (confirm("선택하신 모든 좌석을 취소하시겠습니까?")) {
-      selectedSeatList = [];
-
-      const activeSelectedSeats = document.querySelectorAll(".seat-grid-container .seat-circle.selected");
-      activeSelectedSeats.forEach(seat => seat.classList.remove("selected"));
-
-      updateSidebarSummary();
+    // [1] 서버에서 좌석 목록 + 상태 로드
+    async function loadSeats() {
+        try {
+            const res = await fetch(`/api/seats?performanceId=${performanceId}&scheduleId=${scheduleId}`);
+            if (!res.ok) throw new Error('좌석 정보를 불러오는데 실패했습니다.');
+            allSeatsFromServer = await res.json();
+            updatePricePopup(allSeatsFromServer);
+        } catch (err) {
+            console.error(err);
+            alert('좌석 정보를 불러오는데 문제가 발생했습니다.');
+        }
     }
-  }
 
-  // [9] 구역 선택 화면으로 컴백
-  function backToZoneView() {
-    currentActiveZone = null;
-    document.getElementById("seat-detail-view").style.display = "none";
-    document.getElementById("section-view").style.display = "flex";
-    document.getElementById("btn-back-to-zone").style.display = "none";
-  }
+    // [2] 등급별 가격 팝업을 DB 데이터 기준으로 업데이트
+    function updatePricePopup(seats) {
+        const priceMap = {};
+        seats.forEach(seat => {
+            const grade = seat.seatGrade.toUpperCase();
+            if (priceMap[grade] === undefined) priceMap[grade] = seat.price;
+        });
+        if (priceMap['VIP'] !== undefined)
+            document.getElementById('price-vip').innerText = priceMap['VIP'].toLocaleString() + '원';
+        if (priceMap['R'] !== undefined)
+            document.getElementById('price-r').innerText = priceMap['R'].toLocaleString() + '원';
+        if (priceMap['S'] !== undefined)
+            document.getElementById('price-s').innerText = priceMap['S'].toLocaleString() + '원';
+    }
+
+    // [3] 예매대기
+    function openWaitingPopup() {
+        alert(`해당 회차 [스케줄 번호: ${scheduleId}]의 예매대기 신청 페이지로 연결합니다.`);
+    }
+
+    // [4] 가격 팝업 토글
+    function togglePricePopup(event) {
+        event.stopPropagation();
+        const popup = document.getElementById('price-popup');
+        if (popup) popup.classList.toggle('active');
+    }
+
+    function closePricePopup(event) {
+        if (event) event.stopPropagation();
+        const popup = document.getElementById('price-popup');
+        if (popup) popup.classList.remove('active');
+    }
+
+    document.addEventListener('click', function(event) {
+        const popup = document.getElementById('price-popup');
+        const btn   = document.querySelector('.btn-util');
+        if (popup && popup.classList.contains('active')) {
+            if (!popup.contains(event.target) && event.target !== btn) {
+                closePricePopup();
+            }
+        }
+    });
+
+    // [5] 구역 선택
+    function selectZone(zoneName) {
+        currentActiveZone = zoneName;
+        document.getElementById('section-view').style.display    = 'none';
+        document.getElementById('seat-detail-view').style.display = 'flex';
+        document.getElementById('btn-back-to-zone').style.display = 'block';
+
+        const labels = {
+            A: 'A 구역 [ 왼쪽 사이드 ]',
+            B: 'B 구역 [ 중앙 무대 정면 ]',
+            C: 'C 구역 [ 오른쪽 사이드 ]'
+        };
+        document.getElementById('selected-zone-title').innerText =
+            labels[zoneName] || zoneName + ' 구역';
+
+        createSeatGrid(zoneName);
+    }
+
+    // [6] DB 데이터 기반 좌석 그리드 생성 (더미 완전 제거)
+    function createSeatGrid(zoneName) {
+        const gridContainer = document.getElementById('seat-grid');
+        if (!gridContainer) return;
+        gridContainer.innerHTML = '';
+
+        const zoneSeats = allSeatsFromServer.filter(s => s.sectionName === zoneName);
+
+        if (zoneSeats.length === 0) {
+            gridContainer.innerHTML = '<p style="color:#9ca3af;grid-column:1/-1;">해당 구역의 좌석 정보가 없습니다.</p>';
+            return;
+        }
+
+        // 행/열 고유값 추출 후 정렬
+        const rows = [...new Set(zoneSeats.map(s => s.rowNum))].sort();
+        const cols = [...new Set(zoneSeats.map(s => Number(s.seatNum)))].sort((a, b) => a - b);
+
+        // grid 크기 동적 설정
+        gridContainer.style.gridTemplateColumns = `repeat(${cols.length}, 42px)`;
+        gridContainer.style.gridTemplateRows    = `repeat(${rows.length}, 42px)`;
+
+        rows.forEach(rowLabel => {
+            cols.forEach(colNum => {
+                const seat = zoneSeats.find(
+                    s => s.rowNum === rowLabel && Number(s.seatNum) === colNum
+                );
+                const el = document.createElement('div');
+                el.classList.add('seat-circle');
+
+                if (!seat) {
+                    el.style.visibility = 'hidden';
+                    gridContainer.appendChild(el);
+                    return;
+                }
+
+                const grade = seat.seatGrade.toUpperCase();
+                el.classList.add(`grade-${grade.toLowerCase()}`);
+                el.setAttribute('data-seat-id', seat.seatId);
+                el.innerText = `${rowLabel}${colNum}`;
+
+                if (seat.status === 'BOOKED') {
+                    el.classList.add('sold-out');
+                    el.innerText = 'X';
+                }
+
+                // 타 구역 이동 후 복귀 시 선택 상태 복원
+                if (selectedSeatList.some(item => item.seatId === seat.seatId)) {
+                    el.classList.add('selected');
+                }
+
+                el.onclick = () => toggleSeatSelection(el, seat, zoneName, rowLabel, colNum, grade);
+                gridContainer.appendChild(el);
+            });
+        });
+    }
+
+    // [7] 좌석 클릭 토글 + 서버 선점 API 호출
+    async function toggleSeatSelection(seatElement, seat, zone, row, col, grade) {
+        if (seatElement.classList.contains('sold-out')) {
+            alert('이미 예매가 완료된 좌석입니다.');
+            return;
+        }
+
+        const isSelected = seatElement.classList.contains('selected');
+
+        if (isSelected) {
+            // 선점 해제는 로컬 처리 (서버 BookingSeat는 5분 후 자동 만료)
+            seatElement.classList.remove('selected');
+            selectedSeatList = selectedSeatList.filter(item => item.seatId !== seat.seatId);
+        } else {
+            if (selectedSeatList.length >= 2) {
+                alert('티켓은 1인당 최대 2매까지만 선택할 수 있습니다.');
+                return;
+            }
+
+            // Thymeleaf 숨김 필드에서 userId 읽기
+            const userId = document.getElementById('current-user-id').value;
+
+            try {
+                const res = await fetch(
+                    `/api/seats/book?seatId=${seat.seatId}&scheduleId=${scheduleId}&userId=${userId}`,
+                    { method: 'POST' }
+                );
+                const msg = await res.text();
+                if (!res.ok) {
+                    alert(msg);
+                    // 선점 실패 시 해당 좌석을 즉시 BOOKED 처리
+                    seatElement.classList.add('sold-out');
+                    seatElement.innerText = 'X';
+                    return;
+                }
+            } catch (err) {
+                alert('좌석 선점 중 오류가 발생했습니다.');
+                return;
+            }
+
+            seatElement.classList.add('selected');
+            selectedSeatList.push({
+                seatId:    seat.seatId,
+                zone:      zone,
+                label:     `${row}열 ${col}번`,
+                gradeName: seat.seatGrade,
+                price:     seat.price
+            });
+        }
+
+        updateSidebarSummary();
+    }
+
+    // [8] 사이드바 요약 업데이트
+    function updateSidebarSummary() {
+        const listContainer = document.getElementById('selected-seats-list');
+        const countDisplay  = document.getElementById('total-count-display');
+        const priceDisplay  = document.getElementById('total-price-display');
+        const submitBtn     = document.getElementById('btn-submit');
+
+        if (selectedSeatList.length === 0) {
+            listContainer.innerHTML = '<div class="empty-msg">선택 좌석이 없습니다.</div>';
+            countDisplay.innerText  = '0좌석';
+            priceDisplay.innerText  = '0원';
+            submitBtn.disabled = true;
+            submitBtn.classList.remove('active');
+            return;
+        }
+
+        let totalPrice  = 0;
+        let htmlContent = '';
+
+        selectedSeatList.forEach(seat => {
+            totalPrice += seat.price;
+            htmlContent += `
+        <div style="padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;
+                    margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <span style="font-weight:bold;color:#111827;font-size:0.95rem;">
+              ${seat.zone}구역 ${seat.label}
+            </span>
+            <div style="font-size:0.75rem;color:#6b7280;margin-top:3px;font-weight:500;">
+              ${seat.gradeName}
+            </div>
+          </div>
+          <span style="font-weight:bold;color:#2563eb;font-size:0.9rem;">
+            ${seat.price.toLocaleString()}원
+          </span>
+        </div>`;
+        });
+
+        listContainer.innerHTML = htmlContent;
+        countDisplay.innerText  = `${selectedSeatList.length}좌석`;
+        priceDisplay.innerText  = `${totalPrice.toLocaleString()}원`;
+        submitBtn.disabled = false;
+        submitBtn.classList.add('active');
+    }
+
+    // [9] 전체 삭제
+    function clearAllSeats() {
+        if (selectedSeatList.length === 0) return;
+        if (confirm('선택하신 모든 좌석을 취소하시겠습니까?')) {
+            selectedSeatList = [];
+            document.querySelectorAll('.seat-grid-container .seat-circle.selected')
+                .forEach(s => s.classList.remove('selected'));
+            updateSidebarSummary();
+        }
+    }
+
+    // [10] 구역 선택 화면으로 복귀
+    function backToZoneView() {
+        currentActiveZone = null;
+        document.getElementById('seat-detail-view').style.display = 'none';
+        document.getElementById('section-view').style.display     = 'flex';
+        document.getElementById('btn-back-to-zone').style.display = 'none';
+    }
 </script>
 </body>
 </html>

@@ -42,7 +42,7 @@ public class UserService {
     public Optional<UserSession> login(String email, String password) {
         return userRepository.findByEmail(email)
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
-                .map(user -> new UserSession(user.getEmail(), user.getName(), user.getEmail()));
+                .map(user -> new UserSession(user.getUserId(), user.getEmail(), user.getName(), user.getEmail()));
     }
 
     // ─────────────────────────────────────────────
@@ -79,7 +79,6 @@ public class UserService {
 
     // ─────────────────────────────────────────────
     // 비밀번호 찾기 본인확인
-    // 이메일 + 이름 또는 이메일 + 전화번호 일치 시 true
     // ─────────────────────────────────────────────
 
     public boolean verifyUserForPasswordReset(String email, String verifyType, String verifyValue) {
@@ -110,17 +109,11 @@ public class UserService {
     // ─────────────────────────────────────────────
     // 취향 설문 데이터 DB 저장
     // ─────────────────────────────────────────────
+
     @Transactional
     public void saveSurvey(String email, SurveyRequestDto dto) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-
-        // 예시: User 엔티티나 별도 연관관계 테이블에 설문 정보를 매핑하여 저장합니다.
-        // String genres = String.join(",", dto.getGenres());
-        // String moods = String.join(",", dto.getMoods());
-        // String companion = dto.getCompanion();
-
-        // 예: user.updateSurvey(genres, moods, companion);
-        // userRepository.save(user);
+        // 필요 시 설문 저장 로직 추가
     }
 }
