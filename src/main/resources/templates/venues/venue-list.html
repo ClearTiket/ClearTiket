@@ -127,6 +127,10 @@
         transform: rotate(180deg); /* 열렸을 때 화살표 뒤집기 */
     }
 
+    .tab-item-container a {
+        text-decoration: none;
+    }
+
     /* [새로 추가] 세부 지역 드롭다운 메뉴 스타일 */
     .dropdown-menu {
         position: absolute;
@@ -250,7 +254,7 @@
         <div class="tab-group">
 
             <div class="tab-item-container">
-                <button class="tab-btn active"><a href="/venue/list">전체</a></button>
+                <a href="?"><button class="tab-btn active">전체</button></a>
             </div>
 
             <div class="tab-item-container">
