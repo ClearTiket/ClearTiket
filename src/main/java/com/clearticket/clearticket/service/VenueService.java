@@ -2,15 +2,17 @@ package com.clearticket.clearticket.service;
 
 import com.clearticket.clearticket.model.dto.performance.*;
 import com.clearticket.clearticket.model.entity.Performance;
+import com.clearticket.clearticket.model.entity.Review;
+import com.clearticket.clearticket.model.entity.Venue;
 import com.clearticket.clearticket.repository.PerformanceRepository;
+import com.clearticket.clearticket.repository.ReviewRepository;
 import com.clearticket.clearticket.repository.ScheduleRepository;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.format.TextStyle;
-import java.util.ArrayList;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -18,36 +20,99 @@ import java.util.Locale;
 @Service
 @RequiredArgsConstructor
 public class VenueService {
-    private final PerformanceService performanceService;
     private final ScheduleRepository scheduleRepository;
     private final PerformanceRepository performanceRepository;
+    private final ReviewRepository reviewRepository;
 
-    // 1. 공연 가능 날짜 조회 (DB 데이터 기반)
     public List<AvailableDateResponse> calculateAvailableDates(String kopisId) {
         Performance perf = performanceRepository.findByKopisId(kopisId)
-                .orElseThrow(() -> new IllegalArgumentException("공연 없음"));
+                .orElseThrow(() -> new IllegalArgumentException("공연 없음: " + kopisId));
 
-        // 실제 DB의 schedule 테이블에서 날짜 목록을 뽑아오거나,
-        // performance 테이블의 시작일~종료일 사이의 모든 날짜를 리스트화
-        return scheduleRepository.findDistinctDatesByPerformanceId(perf.getPerformanceId());
-    }
+        List<LocalDate> dates = scheduleRepository.findDistinctDatesByPerformanceId(perf.getPerformanceId());
 
-    // 2. 특정 날짜 회차 조회 (DB 데이터 기반)
-    public List<ScheduleResponse> getSchedulesByDate(Long performanceId, LocalDate date) {
-        return scheduleRepository.findByPerformanceIdAndDate(performanceId, date)
-                .stream()
-                .map(s -> new ScheduleResponse(s.getId(), s.getRound(), s.getStartTime()))
+        return dates.stream()
+                .map(date -> new AvailableDateResponse(
+                        date.format(java.time.format.DateTimeFormatter.ISO_DATE),
+                        date.getDayOfWeek().getDisplayName(java.time.format.TextStyle.FULL, Locale.KOREAN),
+                        true))
                 .toList();
     }
 
+    public List<ScheduleResponse> getSchedulesByDate(Long performanceId, LocalDate date) {
+        return scheduleRepository.findByPerformance_PerformanceIdAndShowDateOrderByRoundNumberAsc(performanceId, date)
+                .stream()
+                .map(s -> new ScheduleResponse(s.getScheduleId(), s.getRoundNumber(), s.getShowTime().format(DateTimeFormatter.ofPattern("HH:mm"))))
+                .toList();
+    }
+
+    public VenueInfoResponse getVenueInfoByPerformanceId(Long id) {
+        Performance perf = performanceRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("공연 없음"));
+
+        Venue venue = perf.getVenue();
+
+        // Performance 엔티티의 title을 가져와서 DTO에 넣습니다.
+        return new VenueInfoResponse(
+                perf.getTitle(), 
+                venue != null ? venue.getName() : "정보 없음",
+                300,
+                venue != null ? venue.getAddress() : "주소 없음",
+                venue != null ? venue.getTelnum() : "000-0000",
+                venue != null ? venue.getRelateurl() : "#"
+        );
+    }
+
+
     public VenueLayoutResponse getVenueLayout(Long venueId) {
         List<SeatGradeInfo> gradeList = Arrays.asList(
-                new SeatGradeInfo("VIP", 150000),
-                new SeatGradeInfo("R", 120000),
-                new SeatGradeInfo("S", 90000)
+                new SeatGradeInfo("VIP", 160000),
+                new SeatGradeInfo("R", 140000),
+                new SeatGradeInfo("S", 110000)
         );
 
         // 10행 12열 숫자를 담아 정석대로 반환!
-        return new VenueLayoutResponse(venueId, 10, 12, gradeList);
+        return new VenueLayoutResponse(venueId, 10, 30, gradeList);
+    }
+
+    // 1. 캐스팅 정보 (Performance 엔티티의 castings 문자열 활용)
+    public List<CastingResponse> getCastingInfo(Long performanceId) {
+        Performance perf = performanceRepository.findById(performanceId)
+                .orElseThrow(() -> new IllegalArgumentException("공연 없음"));
+
+        if (perf.getCastings() == null || perf.getCastings().isEmpty()) {
+            return List.of();
+        }
+
+        // String을 CastingResponse 객체로 변환
+        return Arrays.stream(perf.getCastings().split(","))
+                .map(String::trim)
+                .map(CastingResponse::new)
+                .toList();
+    }
+
+    // 2. 리뷰 정보 (ReviewRepository 활용)
+    public ReviewListResponse getReviews(Long performanceId, int page) {
+        // 1. 최신순 정렬
+        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
+
+        // 2. 리포지토리 조회 (Type="REVIEW", Status="Y" 조건 적용)
+        List<Review> reviews = reviewRepository.findByPerformance_PerformanceIdAndTypeAndStatus(
+                performanceId, "REVIEW", "Y", sort);
+
+        // 3. 평균 평점 계산 (Double 계산)
+        Double avgRating = reviewRepository.getAverageRatingByPerformanceId(performanceId).orElse(0.0);
+
+        // 4. DTO 변환 (Review 엔티티 필드명에 맞게 매핑)
+        List<ReviewItem> reviewItems = reviews.stream()
+                .map(r -> new ReviewItem(
+                        r.getReviewId(),
+                        r.getUser() != null ? r.getUser().getName() : "익명",
+                        r.getContent(),
+                        r.getRating(),
+                        r.getCreatedAt().toString()
+                ))
+                .toList();
+
+        return new ReviewListResponse(avgRating, reviews.size(), reviewItems);
     }
 }

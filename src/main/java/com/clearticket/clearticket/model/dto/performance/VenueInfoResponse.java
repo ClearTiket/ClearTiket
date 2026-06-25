@@ -6,6 +6,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class VenueInfoResponse {
+    private String title;
     private String venueName;
     private int totalSeats;
     private String address;
