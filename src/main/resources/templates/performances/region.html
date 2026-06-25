@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>클리어티켓 - 지역별 공연</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+
+<style>
+    /* 기본 스타일 초기화 및 폰트 적용 */
+    body {
+        font-family: 'Noto Sans KR', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9fa;
+        color: #333;
+    }
+
+    .container {
+        width: 1200px;
+        margin: 40px auto; /* 상하 여백은 임의 지정, 좌우 정렬 center */
+        box-sizing: border-box;
+    }
+
+    .tab-group {
+        display: flex;
+        width: 1200px;          /* 조건: 너비 1200px */
+        height: 60px;           /* 조건: 높이 70px */
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        margin-bottom: 30px;    /* 테이블과의 간격 */
+        box-sizing: border-box;
+        background-color: #ffffff;
+    }
+
+    /* [새로 추가] 8개 영역을 균등 분할하기 위한 컨테이너 */
+    .tab-item-container {
+        flex: 1;
+        height: 100%;
+        position: relative; /* 드롭다운 메뉴의 기준점이 됨 */
+    }
+
+    /* [새로 추가] 탭 버튼 스타일 */
+    .tab-btn {
+        width: 100%;
+        height: 100%;
+        background-color: #ffffff;
+        border: none;
+        border-right: 1px solid #dee2e6;
+        font-size: 16px;
+        font-weight: 500;
+        color: #495057;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    .tab-item-container:last-child .tab-btn {
+        border-right: none; /* 마지막 버튼 테두리 제거 */
+    }
+
+    /* [새로 추가] 8개 영역을 균등 분할하기 위한 컨테이너 */
+    .tab-item-container {
+        flex: 1;
+        height: 100%;
+        position: relative; /* 드롭다운 메뉴의 기준점이 됨 */
+    }
+
+    /* [새로 추가] 탭 버튼 스타일 */
+    .tab-btn {
+        width: 100%;
+        height: 100%;
+        background-color: #ffffff;
+        border: none;
+        border-right: 1px solid #dee2e6;
+        font-size: 16px;
+        font-weight: 500;
+        color: #495057;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    .tab-item-container:last-child .tab-btn {
+        border-right: none; /* 마지막 버튼 테두리 제거 */
+    }
+
+    /* 화살표 아이콘 스타일 */
+    .arrow {
+        font-size: 10px;
+        color: #adb5bd;
+        transition: transform 0.2s;
+    }
+
+    /* 활성화(선택) 상태 및 드롭다운이 열린 상태의 스타일 */
+    .tab-btn.active,
+    .tab-btn.active a,
+    .tab-item-container.open .tab-btn {
+        background-color: #3971E7;
+        color: #ffffff;
+        text-decoration: none;
+    }
+
+    .tab-item-container.open .arrow {
+        color: #ffffff;
+        transform: rotate(180deg); /* 열렸을 때 화살표 뒤집기 */
+    }
+
+    /* [새로 추가] 세부 지역 드롭다운 메뉴 스타일 */
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;               /* 메인 탭 바로 아래에 붙음 */
+        left: -1px;              /* 좌우 테두리 정렬 정밀 조정 */
+        width: calc(100% + 2px); /* 부모 너비를 꽉 채우도록 설정 */
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 6px 6px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: none;           /* 기본 상태는 숨김 */
+        z-index: 100;            /* 테이블 등 다른 요소 위로 띄움 */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 드롭다운이 열렸을 때 표시 */
+    .tab-item-container.open .dropdown-menu {
+        display: block;
+    }
+
+    .tab-item-container a {
+        text-decoration: none;
+    }
+
+    /* 세부 지역 개별 아이템 스타일 */
+    .dropdown-menu li a {
+        display: block;
+        padding: 12px 0;
+        text-align: center;
+        text-decoration: none;
+        color: #495057;
+        font-size: 14px;
+        border-bottom: 1px solid #f1f3f5;
+        transition: background-color 0.2s;
+    }
+
+    .dropdown-menu li:last-child a {
+        border-bottom: none;
+    }
+
+    /* 세부 지역 마우스 호버 효과 */
+    .dropdown-menu li a:hover {
+        background-color: #f1f5f9;
+        color: #3971E7;
+        font-weight: 500;
+    }
+
+    .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+
+    /* 7, 10. 메인 카드 그리드 틀 (세로 간격 24px, 가로 균등) */
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr); /* 1줄에 3개 */
+        row-gap: 24px;                          /* 조건: 세로 간격 24px */
+        column-gap: 24px;                       /* 가로 균등 배치를 위한 동일 간격 설정 */
+        width: 100%;
+    }
+
+    /* 8, 9. 개별 상품 카드 스타일 */
+    .prod-card {
+        height: 350px;              /* 조건: 높이 350px */
+        border: 1px solid #D9D9D9;  /* 조건: 테두리 1px #D9D9D9 */
+        padding: 16px;              /* 조건: 내부 padding 16px */
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        background-color: #ffffff;
+        border-radius: 8px;         /* 자연스러운 카드 마감을 위한 반경(선택) */
+    }
+
+    /* 9. 카드 내부 상단 이미지 영역 스케일러 */
+    .card-img-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+
+    /* 고정 높이 350px 내에서 텍스트 공간을 확보하며 3:4 비율을 채우는 최적 크기 계산 */
+    .card-img-placeholder {
+        height: 220px;              /* 카드 높이 한계에 맞춘 가로세로 유지용 베이스 */
+        aspect-ratio: 3 / 4;        /* 조건: 가로 3, 세로 4의 비율 */
+        background-color: #f1f5f9;  /* 임시 회색 배경 */
+        color: #94a3b8;
+        font-size: 14px;
+        font-weight: 600;
+        /*display: flex;*/
+        /*align-items: center;*/
+        /*justify-content: center;*/
+        border-radius: 4px;
+        width: auto;
+    }
+
+    /* 2. [새로 추가] 부모 틀을 꽉 채우는 실제 이미지 스타일 */
+    .card-img-placeholder img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;          /* 핵심: 이미지 비율을 유지하면서 공백 없이 꽉 채움 */
+        display: block;
+    }
+
+    /* 9. 하단 설명을 위한 텍스트 영역 (좌측 정렬 기본) */
+    .card-text-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        overflow: hidden;
+    }
+
+    .prod-title {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        color: #222;
+        font-weight: 600;
+
+        /*white-space: nowrap;*/
+        /*overflow: hidden;*/
+        /*text-overflow: ellipsis; !* 제목 길어지면 말줄임 *!*/
+
+        /* 1. 한 줄 강제 속성(nowrap)을 지우고, 단어 단위 줄바꿈 허용 */
+        white-space: normal;
+        word-break: break-all;     /* 영문 텍스트나 공백 없는 긴 문자열도 카드 밖으로 안 터지게 깨뜨려줌 */
+        overflow-wrap: break-word;
+
+        /* 2. 고정 높이(350px) 카드를 위한 안전장치: 최대 2줄까지 줄바꿈 허용 */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;     /* 텍스트가 길면 2줄까지 아래로 내려가고, 3줄째부터 ... 처리 */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .prod-desc {
+        margin: 0;
+        font-size: 13px;
+        color: #666;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2; /* 설명문 최대 2줄 표시 후 말줄임 */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+</style>
+<body>
+<th:block th:replace="~{fragments/header :: header}"></th:block>
+
+    <main class="container">
+        <div class="tab-group">
+
+            <div class="tab-item-container">
+                <a href="?"><button class="tab-btn active">전체</button></a>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    서울 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=서울">서울</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    경기 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=인천">인천</a></li>
+                    <li><a href="?region=경기">경기</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    강원 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=강원">강원</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    충청 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=충청">충청</a></li>
+                    <li><a href="?region=대전">대전</a></li>
+                    <li><a href="?region=충북">충북</a></li>
+                    <li><a href="?region=충남">충남</a></li>
+                    <li><a href="?region=세종">세종</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    전라 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=전라">전라</a></li>
+                    <li><a href="?region=광주">광주</a></li>
+                    <li><a href="?region=전북">전북</a></li>
+                    <li><a href="?region=전남">전남</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    경상 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=경상">경상</a></li>
+                    <li><a href="?region=부산">부산</a></li>
+                    <li><a href="?region=대구">대구</a></li>
+                    <li><a href="?region=울산">울산</a></li>
+                    <li><a href="?region=경북">경북</a></li>
+                    <li><a href="?region=경남">경남</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    제주 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=제주">제주</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    기타 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=해외">해외</a></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="main-content">
+
+            <div class="card-grid">
+
+                <!--                <div class="prod-card">-->
+                <!--                    <div class="card-img-wrapper">-->
+                <!--                        <div class="card-img-placeholder">-->
+                <!--                            <img src="" alt="...">-->
+                <!--                        </div>-->
+                <!--                    </div>-->
+                <!--                    <div class="card-text-area">-->
+                <!--                        <h4 class="prod-title">title</h4>-->
+                <!--                        <p class="prod-desc">description</p>-->
+                <!--                    </div>-->
+                <!--                </div>-->
+
+            </div>
+        </div>
+    </main>
+
+<th:block th:replace="~{fragments/footer :: footer}"></th:block>
+</body>
+
+<script>
+    function toggleDropdown(button) {
+        const currentContainer = button.parentElement;
+        const allContainers = document.querySelectorAll('.tab-item-container');
+
+        // 클릭한 버튼 외에 이미 열려있는 다른 드롭다운은 모두 닫기
+        allContainers.forEach(container => {
+            if (container !== currentContainer) {
+                container.classList.remove('open');
+            }
+        });
+
+        // 현재 클릭한 탭의 드롭다운 상태를 토글(열기/닫기)
+        currentContainer.classList.toggle('open');
+    }
+
+    // 드롭다운 바깥 영역을 클릭하면 열려있는 드롭다운 닫기
+    window.addEventListener('click', function(e) {
+        if (!e.target.matches('.tab-btn') && !e.target.closest('.dropdown-menu')) {
+            document.querySelectorAll('.tab-item-container').forEach(container => {
+                container.classList.remove('open');
+            });
+        }
+    });
+
+    let page = 1
+    async function getPerformancesData(region, page) {
+        try {
+            const fetchUrl = "/api/performances/region?region=" + (region == null ? "" : region) + "&page=" + page;
+            const response = await fetch(fetchUrl, {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            console.log(fetchUrl);
+
+            const resultJson = await response.json();
+
+            // card-grid 요소 선택
+            const cardGrid = document.querySelector('.card-grid');
+
+            // 데이터 반복 처리
+            resultJson.forEach(item => {
+                // prod-card 생성
+                const prodCard = document.createElement('div');
+                prodCard.classList.add('prod-card');
+
+                // 이미지 영역
+                const imgWrapper = document.createElement('div');
+                imgWrapper.classList.add('card-img-wrapper');
+
+                const imgPlaceholder = document.createElement('div');
+                imgPlaceholder.classList.add('card-img-placeholder');
+
+                const img = document.createElement('img');
+                img.src = item.posterUrl;
+                img.alt = item.title;
+
+                imgPlaceholder.appendChild(img);
+                imgWrapper.appendChild(imgPlaceholder);
+
+                // 텍스트 영역
+                const textArea = document.createElement('div');
+                textArea.classList.add('card-text-area');
+
+                const title = document.createElement('h4');
+                title.classList.add('prod-title');
+                title.textContent = item.title;
+
+                const desc = document.createElement('p');
+                desc.classList.add('prod-desc');
+                desc.textContent = "description";//item.description;
+
+                textArea.appendChild(title);
+                textArea.appendChild(desc);
+
+                // prod-card에 추가
+                prodCard.appendChild(imgWrapper);
+                prodCard.appendChild(textArea);
+
+                // card-grid에 추가
+                cardGrid.appendChild(prodCard);
+            });
+
+            page++;
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const region = urlParams.get('region');
+    getPerformancesData(region, page);
+
+</script>
+
+</html>
