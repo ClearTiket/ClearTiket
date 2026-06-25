@@ -12,4 +12,5 @@ import java.util.List;
 public interface PerformanceRepository extends JpaRepository<Performance, Long> {
     List<Performance> findAllByVenueVenueIdAndStatusIn(Long venueVenueId, Collection<PerformanceStatus> statuses);
     Page<Performance> findAllByRegionIn(Collection<String> regions, Pageable pageable);
+    Page<Performance> findAllByGenre(String genre, Pageable pageable);
 }

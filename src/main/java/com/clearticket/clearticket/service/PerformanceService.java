@@ -19,21 +19,30 @@ public class PerformanceService {
     final PerformanceRepository performanceRepository;
 
     int defaultPageSize = 20;
-    Pageable validPageable(Integer page) {
+
+    Pageable validPageable(Integer page, Integer pageSize) {
         if (page == null || page <= 0) page = 1;
         page--;
-        Pageable pageable = PageRequest.of(page, defaultPageSize);
+        Pageable pageable = PageRequest.of(page, pageSize);
         return pageable;
     }
-
-    public Page<Performance> findAll(int page) {
-        return performanceRepository.findAll(validPageable(page));
+    Pageable validPageable(Integer page) {
+        return validPageable(page, defaultPageSize);
     }
+
+    public Page<Performance> findAll(Integer page, Integer pageSize) {
+        return performanceRepository.findAll(validPageable(page, pageSize));
+    }
+    public Page<Performance> findAll(int page) {
+        return findAll(page, defaultPageSize);
+    }
+
 
     public Page<Performance> findAllByRegion(String region, int page) {
 
         List<String> regions = new ArrayList<>();
         switch (region) {
+            // TODO: 지역 텍스트 형식이 Venue 테이블과 Performances가 서로 다름 -> 이거 해결해야됨
             //case "충청" -> regions.addAll(Arrays.asList("충북", "충남", "대전", "세종"));
             //case "전라" -> regions.addAll(Arrays.asList("전북", "전남", "광주"));
             //case "경상" -> regions.addAll(Arrays.asList("경북", "경남", "부산", "대구", "울산"));
@@ -45,5 +54,10 @@ public class PerformanceService {
         }
 
         return performanceRepository.findAllByRegionIn(regions, validPageable(page));
+    }
+
+    public Page<Performance> findRankingAllByGenre(String genre, Integer page) {
+        // TODO: 현재는 단순 장르 필터링만 -> 예매율 계산 + 정렬 로직 작성 필요
+        return performanceRepository.findAllByGenre(genre, validPageable(page, 10));
     }
 }

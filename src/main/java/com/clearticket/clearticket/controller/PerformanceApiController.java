@@ -31,4 +31,18 @@ public class PerformanceApiController {
 
         return ResponseEntity.ok(performances.getContent());
     }
+
+    @GetMapping("/ranking")
+    public ResponseEntity<List<Performance>> getPerformancesByRanking (@RequestParam(required = false) String genre, @RequestParam(required = false) Integer page) {
+
+        if (page == null) page = 1;
+        Page<Performance> performances;
+        if (genre == null || genre.isEmpty()) {
+            performances = performanceService.findAll(page, 10);
+        } else {
+            performances = performanceService.findRankingAllByGenre(genre, page);
+        }
+
+        return ResponseEntity.ok(performances.getContent());
+    }
 }

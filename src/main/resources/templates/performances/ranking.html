@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>클리어티켓 - 공연 랭킹</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+
+<style>
+    /* 기본 스타일 초기화 및 폰트 적용 */
+    body {
+        font-family: 'Noto Sans KR', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9fa;
+        color: #333;
+    }
+
+    .container {
+        width: 1200px;
+        margin: 40px auto; /* 상하 여백은 임의 지정, 좌우 정렬 center */
+        box-sizing: border-box;
+    }
+
+    .container-top {
+        height: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        position: relative;
+    }
+
+    .tab-group {
+        display: flex;
+        width: 800px;          /* 조건: 너비 1200px */
+        height: 60px;           /* 조건: 높이 70px */
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 10px;    /* 테이블과의 간격 */
+        box-sizing: border-box;
+    }
+
+    .tab-group a {
+        flex: 1; /*!* 버튼이 균등하게 너비를 나눠 가짐 *!*/
+    }
+
+    .tab-item {
+        width: 100%;
+        height: 100%;
+        background-color: #ffffff;
+        border: none;
+        border-right: 1px solid #dee2e6;
+        font-size: 16px;
+        font-weight: 500;
+        color: #495057;
+        cursor: pointer;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    .tab-item:last-child {
+        border-right: none;
+    }
+
+    .tab-item.active {
+        background-color: #007bff;
+        color: #ffffff;
+    }
+
+    .tab-item:hover {
+        background-color: #007bff;
+        color: #ffffff;
+    }
+
+    .sort-bar {
+        height: 30px;
+        display: flex;
+        justify-content: flex-end;
+        align-self: flex-end;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+
+    .sort-btn {
+        height: 30px;
+        border: none; /* 조건: 테두리 없음 */
+        background: none;
+        font-size: 14px;
+        color: #888;
+        cursor: pointer;
+        padding: 0;
+        font-weight: 500;
+    }
+
+    .sort-btn.active {
+        color: #333;
+        font-weight: 700;
+    }
+
+    /* 1. 공통 컨테이너 스타일 */
+    .rank-card {
+        width: 1200px;
+        text-align: left;          /* 텍스트 좌측 정렬 */
+        border: 2px solid #3971E7; /* 테두리 2px #3971E7 */
+        border-radius: 25px;       /* 모서리 반경 25px */
+        box-sizing: border-box;
+        overflow: hidden;          /* 내부 요소가 모서리 반경을 삐져나가지 않도록 설정 */
+        background-color: #ffffff;
+    }
+
+    .rank-top3 {
+        min-height: 500px;
+        height: auto;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: stretch;
+        margin-bottom: 30px;
+        padding: 30px 40px 50px;
+    }
+
+    .rank-lower {
+        height: 100%;
+    }
+
+    /* 1, 2. 개별 순위 카드 틀 (테두리 없음) */
+    .top3-item {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        border: none;                   /* 조건 2: 카드 테두리 없음 */
+    }
+
+    /* 3. 좌상단 순위 숫자 스타일 */
+    .rank-num {
+        font-size: 48px;
+        font-weight: 500;
+        color: #000000;
+        margin: 0;
+        padding-right: 15px;            /* 우측 작은 카드와의 간격 */
+        line-height: 1;
+    }
+
+    /* 4-1. 우측 작은 카드 형식 박스 */
+    .top3-item-sub-card {
+        width: 250px;                   /* 조건 4-1: 너비 300px */
+        height: 100%;
+        border: 1px solid #D9D9D9;      /* 조건 4-1: 테두리 1px #D9D9D9 */
+        border-radius: 8px;             /* 조건 4-1: 모서리 반경 8px */
+        background-color: #FFFFFF;      /* 조건 4-1: 배경색 #FFFFFF */
+        overflow: hidden;               /* 이미지가 라운딩 밖으로 깨지지 않게 코팅 */
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+        padding: 10px;
+    }
+
+    /* 4-2. 상단 3:4 비율 이미지 공간 */
+    .top3-item-sub-card-img {
+        width: 100%;                    /* 조건 4-2: 너비 최대 */
+        aspect-ratio: 3 / 4;            /* 조건 4-2: 가로 3, 세로 4 비율 */
+        background-color: #eef2f7;      /* 이미지 미로드 시 대체 배경색 */
+        overflow: hidden;
+        border-radius: 8px;
+    }
+
+    .top3-item-sub-card-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;              /* 이미지 찌그러짐 방지 원칙 적용 */
+        display: block;
+    }
+
+    /* 4-3. 하단 제목 텍스트 영역 */
+    .top3-item-sub-card-text {
+        padding: 16px;
+        box-sizing: border-box;
+    }
+
+    .top3-item-sub-card-text h4 {
+        margin: 0;
+        font-size: 16px;
+        color: #222;
+        font-weight: 600;
+        line-height: 1.4;
+
+        /* 지난번 설계했던 텍스트 가로 폭 폭주 방지 솔루션 */
+        white-space: normal;
+        word-break: break-all;
+    }
+
+    .rank-lower {
+        width: 100%;
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-sizing: border-box;
+        gap: 15px;
+        padding: 10px;
+    }
+
+    .lower-item {
+        width: 100%;
+        height: 170px;
+        border: 1px solid #D9D9D9;
+        border-radius: 8px;
+        background-color: #FFFFFF;
+        box-sizing: border-box;
+
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+    }
+
+    .lower-item-rank-num {
+        width: 60px;
+        font-size: 36px;
+        font-weight: 600;
+        color: #000000;
+        margin: 0;
+        padding-right: 15px;            /* 우측 작은 카드와의 간격 */
+        line-height: 1;
+        text-align: center;
+    }
+
+    .lower-item-card-img {
+        width: 120px;              /* 조건: 너비 120px */
+        height: 160px;             /* 조건: 높이 160px */
+        background-color: #f1f5f9; /* 영역 식별용 임시 배경색 */
+        border-radius: 6px;
+        /*display: flex;*/
+        /*align-items: center;*/
+        /*justify-content: center;*/
+        flex-shrink: 0;            /* 카드가 줄어들어도 이미지 크기 고정 */
+        box-sizing: border-box;
+    }
+
+    .lower-item-card-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 6px;
+    }
+
+    .lower-item-card-content {
+        flex: 1;
+        margin-left: 25px;         /* 이미지 영역과의 간격 */
+        text-align: left;          /* 조건: 텍스트 좌측 정렬 */
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .lower-item-card-content h4 {
+        margin: 0 0 10px 0;
+        font-size: 18px;
+        color: #222;
+        font-weight: 600;
+    }
+
+    .lower-item-card-desc {
+        margin: 0;
+        font-size: 15px;
+        color: #555;
+        line-height: 1.6;
+    }
+
+</style>
+
+<body>
+<th:block th:replace="~{fragments/header :: header}"></th:block>
+    <main class="container">
+        <div class="container-top">
+            <div class="tab-group">
+<!--                <a href="#"><button class="tab-item active">전체</button></a>-->
+<!--                <a href="#"><button class="tab-item">콘서트</button></a>-->
+<!--                <a href="#"><button class="tab-item">뮤지컬</button></a>-->
+<!--                <a href="#"><button class="tab-item">클래식</button></a>-->
+                <button class="tab-item active">전체</button>
+                <button class="tab-item">콘서트</button>
+                <button class="tab-item">뮤지컬</button>
+                <button class="tab-item">클래식</button>
+            </div>
+
+            <div class="sort-bar">
+                <button class="sort-btn active">일간</button>
+                <button class="sort-btn">주간</button>
+                <button class="sort-btn">월간</button>
+            </div>
+        </div>
+
+        <div class="rank-card rank-top3">
+
+
+            <div class="top3-item" th:each="i : ${#numbers.sequence(1, 3)}">
+                <h2 class="rank-num" th:text="${i}">1</h2>
+                <div class="sub-card">
+                    <div class="sub-card-img">
+                        <img src="" alt="...">
+                    </div>
+                    <div class="sub-card-text">
+                        <h4>-</h4>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="rank-card rank-lower">
+
+            <div class="lower-item" th:each="i : ${#numbers.sequence(4, 10)}">
+                <h3 class="lower-item-rank-num" th:text="${i}">4</h3>
+                <div class="lower-item-card-img">
+                    <img src="" alt="...">
+                </div>
+                <div class="lower-item-card-content">
+                    <h4></h4>
+                    <p class="lower-item-card-desc"></p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+<th:block th:replace="~{fragments/footer :: footer}"></th:block>
+</body>
+
+<script>
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const genre = urlParams.get('genre');
+
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    document.querySelectorAll(".tab-item").forEach(btn => {
+        
+    });
+
+    let page = 1;
+    async function getRankingData(genre, page) {
+        try {
+            const fetchUrl = "/api/performances/ranking?genre=" + (genre == null ? "" : genre) + "&page=" + (page == null ? "" : page);
+            const response = await fetch(fetchUrl, {
+                method: 'GET',
+                    headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            const resultJson = await response.json();
+
+            const top3itemSlot = document.querySelector(".rank-top3");
+            const lowerItemSlot = document.querySelector(".rank-lower");
+
+            top3itemSlot.replaceChildren();
+            lowerItemSlot.replaceChildren();
+
+
+            for (let i = 0; i < Math.min(3, resultJson.length); i++) {
+                top3itemSlot.appendChild(createCardsTop3(resultJson.at(i), i + 1));
+            }
+
+            for (let i = 3; i < resultJson.length; i++) {
+                lowerItemSlot.appendChild(createCardsLowers(resultJson.at(i), i + 1));
+            }
+
+            console.log(resultJson);
+
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    function createCardsTop3(data, rank) {
+        const top3item = document.createElement("div");
+        top3item.classList.add("top3-item");
+
+        const rankNum = document.createElement("h2");
+        rankNum.classList.add("rank-num");
+        rankNum.textContent = rank;
+
+        const top3itemSubCard = document.createElement("div");
+        top3itemSubCard.classList.add("top3-item-sub-card");
+
+        const top3itemSubCardImg = document.createElement("div");
+        top3itemSubCardImg.classList.add("top3-item-sub-card-img");
+
+        const img = document.createElement("img");
+        img.src = data.posterUrl;
+        img.alt = data.title;
+
+        const top3itemSubCardText = document.createElement("div");
+        top3itemSubCardText.classList.add("top3-item-sub-card-text");
+
+        const h4 = document.createElement("h4");
+        h4.textContent = data.title;
+
+        top3itemSubCardText.appendChild(h4);
+        top3itemSubCardImg.appendChild(img);
+
+        top3itemSubCard.appendChild(top3itemSubCardImg);
+        top3itemSubCard.appendChild(top3itemSubCardText);
+
+        top3item.appendChild(rankNum);
+        top3item.appendChild(top3itemSubCard);
+
+        return top3item;
+    }
+
+    function createCardsLowers(data, rank) {
+        const lowerItem = document.createElement("div");
+        lowerItem.classList.add("lower-item");
+
+        const lowerItemRankNum = document.createElement("h3");
+        lowerItemRankNum.classList.add("lower-item-rank-num");
+        lowerItemRankNum.textContent = rank;
+
+        const lowerItemCardImg = document.createElement("div");
+        lowerItemCardImg.classList.add("lower-item-card-img");
+
+        const img = document.createElement("img");
+        img.src = data.posterUrl;
+        img.alt = data.title;
+
+        const lowerItemCardContent = document.createElement("div");
+        lowerItemCardContent.classList.add("lower-item-card-content");
+
+        const h4 = document.createElement("h4");
+        h4.textContent = data.title;
+
+        const p = document.createElement("p");
+        p.classList.add("lower-item-card-desc");
+        p.textContent = "description";
+
+        lowerItemCardContent.appendChild(h4);
+        lowerItemCardContent.appendChild(p);
+
+        lowerItemCardImg.appendChild(img);
+
+        lowerItem.appendChild(lowerItemRankNum);
+        lowerItem.appendChild(lowerItemCardImg);
+        lowerItem.appendChild(lowerItemCardContent);
+
+        return lowerItem;
+    }
+
+    getRankingData(genre, page);
+</script>
+
+</html>

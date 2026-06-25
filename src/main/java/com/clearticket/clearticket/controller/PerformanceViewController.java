@@ -19,7 +19,12 @@ public class PerformanceViewController {
     final PerformanceService performanceService;
 
     @GetMapping("/region")
-    public String regionPerformancesView(String region) {
+    public String regionPerformancesView() {
         return "performances/region";
+    }
+
+    @GetMapping("/ranking")
+    public String rankingPerformancesView() {
+        return "performances/ranking";
     }
 }
