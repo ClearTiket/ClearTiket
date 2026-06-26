@@ -41,4 +41,7 @@ public class PerformanceDocument {
 
     @Field(name = "extracted_text", type = FieldType.Text, analyzer = "nori_korean_analyzer")
     String extractedText;
+
+    @Field(name = "venue_name", type = FieldType.Text, analyzer = "nori_korean_analyzer")
+    String venueName;
 }
