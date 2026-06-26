@@ -12,5 +12,10 @@ public class VenueInfoResponse {
     private String address;
     private String telnum;
     private String relateurl;
+    private String posterUrl;
+    private String introImageUrl;
+    private String period;
+    private int runTime;
+    private String genre;
 
 }

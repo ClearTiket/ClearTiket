@@ -53,12 +53,17 @@ public class VenueService {
 
         // Performance 엔티티의 title을 가져와서 DTO에 넣습니다.
         return new VenueInfoResponse(
-                perf.getTitle(), 
+                perf.getTitle(),
                 venue != null ? venue.getName() : "정보 없음",
                 300,
                 venue != null ? venue.getAddress() : "주소 없음",
                 venue != null ? venue.getTelnum() : "000-0000",
-                venue != null ? venue.getRelateurl() : "#"
+                venue != null ? venue.getRelateurl() : "#",
+                perf.getPosterUrl(),
+                perf.getIntroImageUrl(),
+                perf.getStartDate() + " ~ " + perf.getEndDate(),
+                perf.getRuntime(),
+                perf.getGenre()
         );
     }
 
