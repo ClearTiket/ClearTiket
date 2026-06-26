@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클리어티켓 - 예매완료</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <style>
+        body { min-height: auto; height: 700px; overflow: hidden; background: var(--white); display: flex; align-items: center; justify-content: center; }
+        .popup-wrap { width: 1000px; height: 700px; margin: 0 auto; display: flex; flex-direction: column; background: var(--white); }
+        .popup-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; }
+
+        /* 티켓 그래픽 요소 (CSS로 구현) */
+        .ticket-icon-wrap { position: relative; margin-bottom: 24px; animation: bounce 2s infinite; }
+        .ticket-icon { width: 80px; height: 48px; background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.4); font-size: 20px; font-weight: 800; transform: rotate(-15deg); box-shadow: 0 10px 20px rgba(37,99,235,0.2); }
+
+        .complete-title { font-size: 26px; font-weight: 700; color: #111; margin-bottom: 6px; letter-spacing: -0.5px; }
+        .reservation-num { font-size: 15px; color: var(--text-sub); font-weight: 500; margin-bottom: 28px; }
+
+        /* 상세 내역 카드 상자 */
+        .info-card { width: 480px; background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 32px; margin-bottom: 36px; }
+        .info-table { width: 100%; border-collapse: collapse; }
+        .info-table td { padding: 10px 0; font-size: 14px; vertical-align: top; }
+        .info-table td.label { width: 90px; color: var(--text-muted); font-weight: 500; }
+        .info-table td.value { color: var(--text-main, #111); font-weight: 500; text-align: left; }
+        .info-table tr:last-child td.value { font-weight: 700; }
+
+        /* 하단 버튼 그룹 */
+        .btn-group { display: flex; gap: 12px; width: 480px; }
+        .btn-home { flex: 1; height: 48px; font-size: 14px; font-weight: 700; background: #f3f4f6; color: #4b5563; border: none; }
+        .btn-home:hover { background: #e5e7eb; }
+        .btn-history { flex: 1; height: 48px; font-size: 14px; font-weight: 700; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="popup-wrap">
+    <div class="popup-body">
+        <div class="ticket-icon-wrap">
+            <div class="ticket-icon">🎫</div>
+        </div>
+
+        <h2 class="complete-title">예매가 완료되었습니다!</h2>
+        <p class="reservation-num" th:text="|예약번호 ${reservation?.reservationNumber}|">예약번호 C12345678</p>
+
+        <div class="info-card">
+            <table class="info-table">
+                <tr>
+                    <td class="label">공연명</td>
+                    <td class="value" th:text="${performance?.title}">BLUE HOUR : 청춘이 빛나는 우리들의 시간</td>
+                </tr>
+                <tr>
+                    <td class="label">일시</td>
+                    <td class="value" th:text="${reservation?.schedule != null} ? |${reservation.schedule.showDate} ${reservation.schedule.showTime}| : '일정 정보 없음'">2026.06.06 17:00</td>
+                </tr>
+                <tr>
+                    <td class="label">장소</td>
+                    <td class="value" th:text="${performance?.venue?.name}">KSPO DOME</td>
+                </tr>
+                <tr>
+                    <td class="label">좌석</td>
+                    <td class="value">
+            <span th:each="item, stat : ${selectedGrades}"
+                  th:text="|${item.grade} ${item.count}매${!stat.last ? ', ' : ''}|">R석 2매</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">결제금액</td>
+                    <td class="value" style="color: #111;" th:text="|${#numbers.formatInteger(reservation?.totalPrice ?: 0, 0, 'COMMA')}원|">158,000원</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="btn-group">
+            <button type="button" class="btn btn-home" onclick="goToHome()">홈으로 가기</button>
+            <button type="button" class="btn btn-primary btn-history" onclick="goToMyPage()">예매내역으로 가기</button>
+        </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    function goToMyPage() {
+        // 부모 창(opener)의 주소를 마이페이지 예매내역 경로로 변경합니다.
+        if (window.opener && !window.opener.closed) {
+            window.opener.location.href = '/mypage/reservations';
+        }
+        window.close();
+    }
+
+    // 홈으로 가기 버튼 함수
+    function goToHome() {
+        // 부모 창(opener)이 살아있고 닫히지 않았다면 홈으로 이동
+        if (window.opener && !window.opener.closed) {
+            window.opener.location.href = '/';
+
+            window.open('', '_self').close();
+        } else {
+            location.href = '/';
+        }
+    }
+
+    // 예매내역으로 가기 버튼 함수
+    function goToMyPage() {
+        // 부모 창(opener)이 살아있고 닫히지 않았다면 마이페이지 예매내역으로 이동
+        if (window.opener && !window.opener.closed) {
+            window.opener.location.href = '/mypage/reservations';
+
+            window.open('', '_self').close();
+        } else {
+            location.href = '/mypage/reservations';
+        }
+    }
+</script>
+</body>
+</html>

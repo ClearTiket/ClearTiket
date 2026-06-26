@@ -3,7 +3,7 @@
 <body>
 <header class="site-header" th:fragment="header">
     <div class="header-top">
-        <a th:href="@{/mypage}" class="logo">
+        <a th:href="@{/templates/mypage}" class="logo">
             <img th:src="@{/images/logo.png}" alt="클리어티켓"
                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
                  style="height:38px;">
@@ -22,8 +22,7 @@
         </div>
         <div class="header-actions">
             <th:block th:if="${loginUser != null}">
-                <!-- 이름 클릭 → 마이페이지 이동 -->
-                <a th:href="@{/mypage}"
+                <a th:href="@{/templates/mypage}"
                    style="font-size:13px;color:#4B6EF5;font-weight:600;text-decoration:none;"
                    th:text="${loginUser.name} + '님'">홍길동님</a>
                 <span class="sep">|</span>
@@ -36,7 +35,6 @@
             </th:block>
         </div>
     </div>
-
     <nav class="site-nav">
         <div class="nav-inner">
             <div class="nav-left">

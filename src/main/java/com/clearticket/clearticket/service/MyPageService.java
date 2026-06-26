@@ -260,7 +260,37 @@ public class MyPageService {
         );
     }
 
+    /**
+     * 배송지 수정
+     * @param addressId 수정할 배송지 ID
+     * @param userId 로그인한 회원 (권한 검증용)
+     * @param requestDto 수정 요청 데이터
+     */
+    @Transactional
+    public void updateAddress(Long addressId, Long userId, MyPageAddressSaveRequestDto requestDto) {
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 배송지 내역입니다. ID: " + addressId));
 
+        if (!address.getUser().getUserId().equals(userId)) {
+            throw new IllegalStateException("본인의 배송지 정보만 수정할 수 있습니다.");
+        }
+
+        // 기본 배송지로 변경하는 경우, 기존 기본 배송지 해제
+        if (requestDto.isDefault() && !address.isDefault()) {
+            addressRepository.findByUserAndIsDefaultTrue(address.getUser())
+                    .ifPresent(old -> old.changeDefaultStatus(false));
+        }
+
+        address.updateAddress(
+                requestDto.getAddressName(),
+                requestDto.getRecipientName(),
+                requestDto.getRecipientPhone(),
+                requestDto.getZonecode(),
+                requestDto.getRoadAddress(),
+                requestDto.getDetailAddress(),
+                requestDto.isDefault()
+        );
+    }
     /**
      * 프로필 수정 새 정보 업데이트
      * @param userId 로그인한 회원

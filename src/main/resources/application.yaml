@@ -21,14 +21,18 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
+  thymeleaf:
+    cache: false
+  elasticsearch:
+    uris: http://localhost:9200
   application:
     name: ClearTicket
   config:
     import: optional:file:config.yaml
   datasource:
     url: jdbc:postgresql://localhost:5432/clearticket
-    username: ${db.username}
-    password: ${db.password}
+    username: postgres
+    password: clearticket
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -52,7 +56,7 @@ spring:
       data-locations: classpath:sql/data.sql
       mode: always
 lemonsqueezy:
-  api-key: ${LEMON_SQUEEZY_API_KEY}
+  api-key: ""
   store-id: "410829"
   variant-id: "1806370"
 
