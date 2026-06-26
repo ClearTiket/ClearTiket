@@ -2,29 +2,35 @@ version: '3.8'
 services:
   elasticsearch:
     build: ./elasticsearch       # nori 플러그인 포함 커스텀 이미지
-    container_name: es-korean
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.2
+    container_name: clearticket-es
     environment:
       - discovery.type=single-node
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - ES_JAVA_OPTS=Xms1g -Xmx1g
       - xpack.security.enabled=false
     ports:
       - "9200:9200"
+      - "9300:9300"
     volumes:
       - es-data:/usr/share/elasticsearch/data
     networks:
       - es-network
 
   kibana:                        # 인덱스 확인용 (선택)
-    image: kibana:8.11.0
+    image: docker.elastic.co/kibana/kibana:9.4.2
+    container_name: clearticket-kibana
     ports:
       - "5601:5601"
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     networks:
       - es-network
+    depends_on:
+        - elasticsearch # 엘라스틱서치가 먼저 켜진 후 키바나 실행
 
 volumes:
   es-data:
+    driver: local
 
 networks:
   es-network:
