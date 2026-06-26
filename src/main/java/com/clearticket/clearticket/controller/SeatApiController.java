@@ -11,7 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/seats")
 @RequiredArgsConstructor
-public class SeatAPIController {
+public class SeatApiController {
 
     private final SeatService seatService;
 
