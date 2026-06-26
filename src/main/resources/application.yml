@@ -26,7 +26,7 @@ spring:
   application:
     name: ClearTicket
   config:
-    import: optional:file:config.yml
+    import: optional:file:./config.yml
   datasource:
     url: jdbc:postgresql://localhost:5432/clearticket
     username: ${db.username}
@@ -51,8 +51,12 @@ spring:
     defer-datasource-initialization: true
   sql:
     init:
-      data-locations: classpath:sql/data.sql
       mode: always
+      data-locations:
+        - "classpath:sql/data.sql"
+        - "classpath:sql/venues_20260622.sql"
+        - "classpath:sql/performances_20260622.sql"
+        - "classpath:sql/schedules_20260622.sql"
 lemonsqueezy:
   api-key: ${LEMON_SQUEEZY_API_KEY}
   store-id: "410829"
