@@ -19,4 +19,5 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     @Query("SELECT DISTINCT s.seatGrade FROM Seat s WHERE s.performance.performanceId = :performanceId")
     List<String> findDistinctByPerformancePerformanceId(@Param("performanceId") Long performanceId);
 
+    List<Seat> findByPerformancePerformanceId(Long performanceId);
 }
