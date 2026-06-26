@@ -38,7 +38,6 @@ public class AutocorrectSearchService {
 
         Query integrationQuery = Query.of(q -> q
                 .bool(b -> b
-                        // 1. 공연명과 배우 이름은 오타 교정(Fuzziness)을 적용해서 찾기!
                         .should(s -> s
                                 .multiMatch(mm -> mm
                                         .fields("title", "castings", "venue_name")
@@ -46,7 +45,6 @@ public class AutocorrectSearchService {
                                         .fuzziness("AUTO")
                                 )
                         )
-                        // 장르는 오타 교정없이 정확하게
                         .should(s -> s
                                 .match(m -> m
                                         .field("genre")
