@@ -147,7 +147,7 @@
 
     /* 4-1. 우측 작은 카드 형식 박스 */
     .top3-item-sub-card {
-        width: 250px;                   /* 조건 4-1: 너비 300px */
+        width: 300px;                   /* 조건 4-1: 너비 300px */
         height: 100%;
         border: 1px solid #D9D9D9;      /* 조건 4-1: 테두리 1px #D9D9D9 */
         border-radius: 8px;             /* 조건 4-1: 모서리 반경 8px */
@@ -373,8 +373,6 @@
             for (let i = 3; i < resultJson.length; i++) {
                 lowerItemSlot.appendChild(createCardsLowers(resultJson.at(i), i + 1));
             }
-
-            console.log(resultJson);
 
         } catch (err) {
             console.log(err);
