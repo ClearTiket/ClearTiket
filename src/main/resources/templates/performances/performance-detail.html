@@ -533,6 +533,14 @@
             width: 300px;          /* 포스터 고정 가로 사이즈 (필요시 조절) */
             flex-shrink: 0;        /* 메인 정보 글씨가 밀리지 않게 함 */
         }
+        /* ================== 보안 문자 =================== */
+        .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:9999; }
+        .modal-content { background:#fff; padding:30px; border-radius:12px; width:400px; text-align:center; }
+        .captcha-box { background:#e5e5e5; padding:20px; margin:20px 0; display:flex; justify-content:center; align-items:center; gap:10px; }
+        .captcha-text { font-size:30px; font-weight:bold; letter-spacing:8px; color:#333; }
+        .refresh-btn { cursor:pointer; border:none; background:none; font-size:20px; }
+        #captcha-input { width:100%; padding:15px; box-sizing:border-box; margin-bottom:20px; text-align:center; }
+        .submit-btn { width:100%; padding:15px; background:#ccc; border:none; border-radius:8px; color:#fff; cursor:pointer; }
     </style>
 </head>
 <body>
@@ -562,8 +570,13 @@
 
                     <div id="venue-info-box" class="ct-real-info-grid">
                         <p id="loading-msg" style="color: #9ca3af;">공연장 정보를 불러오는 중입니다...</p>
-                        <p class="ct-show-subtitle" id="top-venue-name"></p>
-                        <p id="top-venue-address"></p>
+
+                        <div id="venue-info-content" style="display: none;">
+                            <p id="perf-address"></p>
+                            <p id="perf-telnum"></p>
+                            <p id="perf-seat-count"></p>
+                            <p id="perf-genre"></p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -637,7 +650,7 @@
                 </div>
             </div>
 
-            <div id="tab-casting" class="ct-tab-content" style="display: none;">
+            <div id="tab-casting" class="ct-tab-content">
                 <div id="casting-section" class="ct-section-block" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px;">
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
@@ -655,14 +668,14 @@
                 </div>
             </div>
 
-            <div id="tab-sales" class="ct-tab-content" style="display: none;">
+            <div id="tab-sales" class="ct-tab-content">
                 <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; margin-top: 20px;">
                     <h3>판매 및 취소수수료 정보 안내</h3>
                     <p style="color: #6b7280; font-size: 0.9rem;">티켓 취소 및 환불 수수료 규정은 공정거래위원회 기준을 준수합니다.</p>
                 </div>
             </div>
 
-            <div id="ct-tab-expectations" class="ct-tab-content" style="display: none;">
+            <div id="ct-tab-expectations" class="ct-tab-content">
                 <div class="ct-section-block" style="margin-top: 20px; text-align: left;">
 
                     <!-- 💡 와이어프레임 상단 유의사항 안내문 -->
@@ -678,7 +691,7 @@
                             총 <span id="total-expect-count" style="font-weight: bold; color: #2563eb;">0</span>개의 기대평이 등록되었습니다.
                         </div>
                         <!-- 기대평 작성하러 가기 버튼 -->
-                        <button type="button" onclick="openReviewModal('EXPECT')"
+                        <button type="button" onclick="window.openReviewModal('EXPECT')"
                                 style="background-color: #111827; color: #ffffff; border: none; padding: 10px 16px; font-size: 0.85rem; font-weight: bold; border-radius: 4px; cursor: pointer;">
                             기대평 작성
                         </button>
@@ -698,7 +711,7 @@
                 </div>
             </div>
 
-            <div id="ct-tab-reviews" class="ct-tab-content" style="display: none;">
+            <div id="ct-tab-reviews" class="ct-tab-content">
                 <div class="ct-section-block" style="margin-top: 20px; text-align: left;">
 
                     <!--  와이어프레임 상단 유의사항 안내문 -->
@@ -719,7 +732,7 @@
                             총 <span id="total-count-text-sub" style="font-weight: bold; color: #2563eb;">0</span>개의 관람후기가 등록되었습니다.
                         </div>
                         <!-- 관람후기 작성하러 가기 버튼 -->
-                        <button type="button" onclick="openReviewModal('REVIEW')"
+                        <button type="button" onclick="window.openReviewModal('REVIEW')"
                                 style="background-color: #111827; color: #ffffff; border: none; padding: 10px 16px; font-size: 0.85rem; font-weight: bold; border-radius: 4px; cursor: pointer;">
                             관람후기 작성
                         </button>
@@ -774,7 +787,7 @@
                     </div>
                 </div>
 
-                <button type="button" class="ct-btn-reservation-submit" onclick="openSeatSelection()">
+                <button type="button" class="ct-btn-reservation-submit" onclick="openCaptchaModal()">
                     예매하기
                 </button>
             </div>
@@ -830,9 +843,25 @@
 
         <div class="modal-button-footer">
             <button type="button" class="btn-custom-cancel" onclick="closeReviewModal()">취소</button>
-            <button type="button" class="btn-custom-submit" onclick="submitModalAction()">확인</button>
+            <button type="button" class="btn-custom-submit" onclick="submitReview()">등록</button>
         </div>
 
+    </div>
+</div>
+<div id="captcha-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+        <h3>화면의 문자를 입력해주세요</h3>
+        <p>문자 입력 인증 후 좌석을 선택할 수 있습니다</p>
+
+        <div class="captcha-box">
+            <span id="captcha-display" class="captcha-text">Loading...</span>
+            <button class="refresh-btn" onclick="fetchNewCaptcha()">↻</button>
+        </div>
+
+        <input type="text" id="captcha-input" placeholder="화면의 문자를 입력해주세요 (대소문자 구분없음)"
+               oninput="this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '')" maxlength="6">
+
+        <button id="submit-captcha" class="submit-btn" onclick="verifyCaptcha()">입력완료</button>
     </div>
 </div>
 
@@ -842,53 +871,19 @@
     let currentSort = "latest";
     let editReviewId = null;
     let selectedScheduleId = null;
+    let selectedDate = null; // 날짜 저장용
+    let selectedRound = null; // 회차 저장용
+
+
+    const performanceId = getPerformanceId();
+    const mt10id = getPerformanceId();
 
     function getPerformanceId() {
         const pathSegments = window.location.pathname.split('/');
 
         return pathSegments[2];
     }
-    const performanceId = getPerformanceId();
 
-    fetch(`/hall/${performanceId}/info`)
-        .then(response => response.json())
-        .then(perfData => {
-            // --- 1. 화면 데이터 바인딩 (추가됨) ---
-            // 상단 정보 업데이트
-            if (document.getElementById("performance-title")) document.getElementById("performance-title").innerText = perfData.title || '제목 없음';
-            if (document.getElementById("venue-name-top")) document.getElementById("venue-name-top").innerText = perfData.venueName || '장소 정보 없음';
-
-            // 상세 테이블 정보 업데이트
-            if (document.getElementById("perf-period")) document.getElementById("perf-period").innerText = perfData.period || '정보없음';
-            if (document.getElementById("perf-runtime")) document.getElementById("perf-runtime").innerText = perfData.runTime ? `${perfData.runTime}분` : "정보없음";
-            if (document.getElementById("perf-venue-name")) document.getElementById("perf-venue-name").innerText = perfData.venueName || '정보없음';
-
-            // 포스터 이미지
-            const poster = document.getElementById("ct-main-poster");
-            if (poster && perfData.posterUrl) poster.src = perfData.posterUrl;
-
-            // "정보를 불러오는 중입니다..." 메시지 숨기기 (상단)
-            const loadingMsg = document.querySelector("#venue-info-box p");
-            if (loadingMsg) loadingMsg.style.display = 'none';
-
-            // --- 2. 기존 유지 로직 (장르/캐스팅) ---
-            // 장르가 뮤지컬이 아니면 탭 메뉴에서 '캐스팅정보' 버튼 숨기기
-            if (perfData.genre !== "뮤지컬") {
-                const castingTabBtn = Array.from(document.querySelectorAll('.ct-tab-btn'))
-                    .find(btn => btn.innerText === "캐스팅정보");
-                if (castingTabBtn) castingTabBtn.style.display = 'none';
-                return;
-            }
-
-            // 캐스팅 데이터가 있는지 확인
-            const castingSection = document.getElementById("casting-section");
-            if (!perfData.castingList || perfData.castingList.length === 0) {
-                if (castingSection) castingSection.style.display = 'none';
-            } else {
-                renderCastingTable(perfData.castingList);
-            }
-        })
-        .catch(err => console.error("공연 정보 로드 실패:", err));
 
     function renderCastingTable(list) {
         const tbody = document.getElementById("casting-table-body");
@@ -920,8 +915,6 @@
 
         currentSort = "latest";
 
-
-
         if (tabId === 'ct-tab-reviews') {
             loadReviews(mt10id, 'REVIEW', 1);
         } else if (tabId === 'ct-tab-expectations') {
@@ -940,7 +933,7 @@
         fetch(`/api/reviews?performanceId=${mt10id}&type=${type}&page=${page}&sort=${currentSort}`)
             .then(response => response.json())
             .then(data => {
-                console.log(`서버가 준 [${type}] 데이터 구조:`, data);
+                console.log("평점 값:", data.averageRating, "타입:", typeof data.averageRating);
 
                 if (type === 'REVIEW') {
                     const avgRatingEl = document.getElementById("avg-rating-text");
@@ -1085,8 +1078,8 @@
     // [6] 수정 / 삭제 핸들러 함수들 (전역)
     function openEditModal(reviewId, title, content, rating, type) {
         editReviewId = reviewId;
-        if (typeof window._openReviewModal === "function") {
-            window._openReviewModal(type);
+        if (typeof window.openReviewModal === "function") {
+            window.openReviewModal(type);
         }
 
         const modalTitle = document.getElementById('modalTitle');
@@ -1166,18 +1159,13 @@
     }
 
     function closeReviewModal() {
-        if (typeof window._closeReviewModal === "function") {
-            window._closeReviewModal();
+        if (typeof window.closeReviewModal === "function") {
+            window.closeReviewModal();
         }
     }
 
     // [7] 예매하기 버튼 클릭 이벤트 (전역 함수)
     function openSeatSelection() {
-        if (!selectedScheduleId) {
-            alert("관람 회차를 먼저 선택해 주세요!");
-            return;
-        }
-
         const popupUrl = `/seat/selection?scheduleId=${selectedScheduleId}`;
         const popupName = "ClearTicket_SeatSelection";
         const popupOptions = "width=1000, height=700, resizable=no, scrollbars=yes, status=no, location=no";
@@ -1185,29 +1173,37 @@
         window.open(popupUrl, popupName, popupOptions);
     }
 
-    // [8] DOMContentLoaded 초기화 블록
+    //[8] DOMContentLoaded 초기화 블록
     document.addEventListener("DOMContentLoaded", function() {
-        const mt10id = getPerformanceId();
         const calendarDays = document.getElementById("calendar-days");
+        console.log(document.getElementById("performance-title"))
 
         // 공연장 정보 로드
         fetch(`/hall/${mt10id}/info`)
             .then(response => response.json())
             .then(venue => {
-                // 1. 제목 및 서브타이틀 업데이트
+                // 1. [공연 기본 정보]
+                if (document.getElementById("perf-period")) document.getElementById("perf-period").innerText = venue.period;
+                if (document.getElementById("perf-runtime")) document.getElementById("perf-runtime").innerText = venue.runTime ? `${venue.runTime}분` : "정보없음";
+                if (document.getElementById("perf-venue-name")) document.getElementById("perf-venue-name").innerText = venue.venueName;
+                // 2. [상단 요약 & 정보 박스]
                 if (document.getElementById("performance-title")) document.getElementById("performance-title").innerText = venue.title;
                 if (document.getElementById("venue-name-top")) document.getElementById("venue-name-top").innerText = venue.venueName;
 
-                // 2. 공연장 정보 업데이트 (ID 방식 사용 권장)
-                // HTML 내에 이미 id="perf-venue-name", id="perf-genre" 등이 있다면 이렇게 하세요
-                if (document.getElementById("loading-msg")) document.getElementById("loading-msg").style.display = 'none';
-                if (document.getElementById("perf-venue-name")) document.getElementById("perf-venue-name").innerText = venue.venueName;
-                if (document.getElementById("perf-genre")) document.getElementById("perf-genre").innerText = venue.genre;
-                if (document.getElementById("perf-address")) document.getElementById("perf-address").innerText = venue.address;
+                const loadingMsg = document.getElementById("loading-msg");
+                if (loadingMsg) loadingMsg.style.display = 'none';
+                // venue-info-box
+                const infoBox = document.getElementById("venue-info-box");
+                if (infoBox) {
+                    // HTML에 p 태그들을 추가해서 바인딩하세요 (아래 3번 항목 참고)
+                    infoBox.innerHTML += `
+                <p><strong>주소:</strong> ${venue.address}</p>
+                <p><strong>장르:</strong> ${venue.genre}</p>
+                <p><strong>좌석수:</strong> ${venue.seatCount || 300}석</p>
+                <p><strong>전화번호:</strong> ${venue.telnum || '정보 없음'}</p>
 
-                // 3. 공연 기본 정보 업데이트
-                if (document.getElementById("perf-period")) document.getElementById("perf-period").innerText = venue.period;
-                if (document.getElementById("perf-runtime")) document.getElementById("perf-runtime").innerText = venue.runTime ? `${venue.runTime}분` : "정보없음";
+            `;
+                }
 
                 // 4. 이미지 처리 (이미지 주소값이 없을 경우를 대비한 체크)
                 if (document.getElementById("ct-main-poster")) document.getElementById("ct-main-poster").src = venue.posterUrl || '';
@@ -1312,6 +1308,10 @@
                         dayDiv.addEventListener("click", () => {
                             document.querySelectorAll("#calendar-days .day").forEach(d => d.classList.remove("selected"));
                             dayDiv.classList.add("selected");
+
+                            selectedDate = matchedDateItem.date;
+                            selectedRound = null;
+
                             loadSchedules(mt10id, matchedDateItem.date);
                         });
                     } else {
@@ -1375,7 +1375,8 @@
                             document.querySelectorAll(".schedule-btn").forEach(b => b.classList.remove("active"));
                             btn.classList.add("active");
                             selectedScheduleId = sId;
-                            console.log("선택된 실제 DB 스케줄 ID:", selectedScheduleId);
+                            selectedRound = round;
+                            console.log("선택된 실제 DB 스케줄 ID:", selectedScheduleId, " / 회차:", selectedRound);
                         });
                         scheduleList.appendChild(btn);
                     });
@@ -1387,7 +1388,7 @@
         }
 
         // 창 내부 제어용 바인딩 정의
-        window._openReviewModal = function(type) {
+        window.openReviewModal = function(type) {
             const modalTitle = document.getElementById('modalTitle');
             const modalType = document.getElementById('modalType');
             const ratingArea = document.getElementById('ratingArea');
@@ -1405,7 +1406,7 @@
             if (reviewModal) reviewModal.style.display = 'flex';
         };
 
-        window._closeReviewModal = function() {
+        window.closeReviewModal = function() {
             const reviewModal = document.getElementById('reviewModal');
             if (reviewModal) reviewModal.style.display = 'none';
             const reviewForm = document.getElementById('reviewForm');
@@ -1466,6 +1467,84 @@
                 }
             })
             .catch(err => console.error("통신 장애 발생:", err));
+    }
+    // ================== 보안 문자 로직 ====================
+
+    // 1. 모달 열기 및 초기화
+    function openCaptchaModal() {
+        // 만약 값이 없다면 알림 후 종료
+        if (!selectedDate || !selectedRound) {
+            alert("관람 날짜와 회차를 먼저 선택해주세요.");
+            return;
+        }
+
+        // 모달 표시
+        document.getElementById('captcha-modal').style.display = 'flex';
+        fetchNewCaptcha();
+
+        // 입력창 초기화 및 이벤트 등록
+        const captchaInput = document.getElementById('captcha-input');
+        const submitBtn = document.getElementById('submit-captcha');
+
+        captchaInput.value = ''; // 이전 입력값 초기화
+        submitBtn.style.backgroundColor = "#ccc"; // 초기 비활성화 상태
+
+        // 입력 제한 및 대문자 고정 로직 (강력하게 적용)
+        captchaInput.oninput = function() {
+            // 입력값에서 영문 대문자(A-Z)를 제외한 모든 문자 제거
+            this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
+
+            // 버튼 색상 변경
+            if (this.value.length === 6) {
+                submitBtn.style.backgroundColor = "#2563eb";
+            } else {
+                submitBtn.style.backgroundColor = "#ccc";
+            }
+        };
+
+        fetchNewCaptcha();
+    }
+
+    // 2. 캡챠 새로고침
+    function fetchNewCaptcha() {
+        fetch('/api/captcha/generate')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('captcha-display').innerText = data.captchaCode;
+            })
+            .catch(err => console.error("캡챠 생성 실패:", err));
+    }
+
+    // 3. 검증 및 좌석 선택 팝업 실행
+    function verifyCaptcha() {
+        const inputCode = document.getElementById('captcha-input').value;
+
+        if (inputCode.length < 6) {
+            alert("6자리 문자를 모두 입력해주세요.");
+            return;
+        }
+
+        fetch('/api/captcha/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ inputCode: inputCode })
+        })
+            .then(res => {
+                if (res.ok) {
+                    document.getElementById('captcha-modal').style.display = 'none';
+                    // 통과 시 기존 팝업 함수 호출
+                    if (typeof openSeatSelection === 'function') {
+                        openSeatSelection();
+                    } else {
+                        console.error("openSeatSelection 함수를 찾을 수 없습니다.");
+                    }
+                } else {
+                    alert("문자가 일치하지 않습니다.");
+                    document.getElementById('captcha-input').value = '';
+                    fetchNewCaptcha();
+                }
+            })
+            .catch(err => console.error("검증 통신 실패:", err));
     }
 </script>
 </body>
