@@ -119,4 +119,41 @@ public class AutocorrectSearchService {
             log.error("❌ 데이터 조인 및 복사 중 에러 발생: ", e);
         }
     }
+
+    /**
+     * 엘라스틱서치를 이용한 실시간 검색어 자동완성 및 오타 교정 제안 API
+     * @param searchText 유저가 검색창에 실시간으로 입력 중인 검색어 문자열
+     * @return 검색어와 매칭 및 오타 교정된 공연 제목 리스트
+     */
+    public List<String> getSuggestions(String searchText) {
+        if (searchText == null || searchText.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        try {
+            Query suggestQuery = Query.of(q -> q
+                    .multiMatch(mm -> mm
+                            .fields("title")
+                            .query(searchText)
+                            .fuzziness("AUTO") // 오타 교정 기능 포함
+                    )
+            );
+
+            NativeQuery nativeQuery = NativeQuery.builder()
+                    .withQuery(suggestQuery)
+                    .withPageable(PageRequest.of(0, 5)) // 추천 검색어는 상위 5개만 보여주는 게 국룰!
+                    .build();
+
+            SearchHits<PerformanceDocument> searchHits = elasticsearchOperations.search(nativeQuery, PerformanceDocument.class);
+
+            return searchHits.stream()
+                    .map(hit -> hit.getContent().getTitle())
+                    .distinct()
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            log.error("❌ Suggestion API 실행 중 에러 발생: ", e);
+            return new ArrayList<>();
+        }
+    }
 }
