@@ -24,7 +24,7 @@ public class AuthController {
         if (loginUser != null) model.addAttribute("loginUser", loginUser);
     }
 
-    @GetMapping("/")
+    @GetMapping("/mypage/main")
     public String index(HttpSession session) {
         if (session.getAttribute("loginUser") != null) return "redirect:/mypage";
         return "redirect:/login";
