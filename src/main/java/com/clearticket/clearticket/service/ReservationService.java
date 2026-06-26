@@ -1,10 +1,12 @@
 package com.clearticket.clearticket.service;
 
+import com.clearticket.clearticket.model.UserSession;
 import com.clearticket.clearticket.model.dto.ReservationBuyerInfoRequestDto;
 import com.clearticket.clearticket.model.dto.ReservationRequestDto;
 import com.clearticket.clearticket.model.dto.ReservationResponseDto;
 //import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.entity.*;
+import com.clearticket.clearticket.repository.AddressRepository;
 import com.clearticket.clearticket.repository.ReservationRepository;
 import com.clearticket.clearticket.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ import java.util.*;
 public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final SeatRepository seatRepository;
+    private final AddressRepository addressRepository;
 
     /**
      * 신규 티켓 예매 내역 생성 및 DB저장
@@ -247,6 +250,22 @@ public class ReservationService {
         reservation.setRecipientName(requestDto.getRecipientName());
         reservation.setRecipientPhone(requestDto.getRecipientPhone());
 
+        String fullAddress = "[" + requestDto.getZonecode() + "] "
+                + requestDto.getRoadAddress() + " "
+                + requestDto.getDetailAddress();
+
+        reservation.setShippingAddress(fullAddress);
+
         reservation.setTotalPrice(requestDto.getTotalPrice());
+    }
+
+    @Transactional(readOnly = true)
+    public Address getDefaultAddressByUserId(Long userId) {
+
+        User user = new User();
+        user.setUserId(userId);
+
+        return addressRepository.findByUserAndIsDefaultTrue(user)
+                .orElse(null);
     }
 }

@@ -131,6 +131,25 @@ public class MypageViewController {
         return "mypage/survey";
     }
 
+
+    @GetMapping("/address-popup")
+    public String addressPopup(HttpSession session, Model model) {
+        // 1. 로그인 체크 (로그인 안 되어 있으면 로그인 페이지로)
+        if (!checkLogin(session, model)) return "redirect:/login";
+
+        UserSession loginUser = getLoginUser(session);
+        Long userId = Long.parseLong(loginUser.getId());
+
+        // 2. 기존 마이페이지 배송지 조회 로직 그대로 재활용 🎯
+        List<MyPageAddressResponseDto> addressList = myPageService.getAddressList(userId);
+        model.addAttribute("addressList", addressList);
+
+        // 3. 아까 새로 만든 팝업 전용 HTML 파일 경로 리턴!
+        // (만약 templates 폴더 바로 밑에 두셨다면 "address-popup"으로,
+        //  reservation 폴더 안에 두셨다면 "reservation/address-popup"으로 경로를 맞춰주세요!)
+        return "reservation/address-popup";
+    }
+
     @GetMapping("/coupons")
     public String coupons(HttpSession session, Model model) {
         if (!checkLogin(session, model)) return "redirect:/login";

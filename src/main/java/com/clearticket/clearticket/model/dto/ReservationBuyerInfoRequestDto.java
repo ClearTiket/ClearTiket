@@ -13,4 +13,7 @@ public class ReservationBuyerInfoRequestDto {
     private String recipientName; // 수령인(주문자) 이름
     private String recipientPhone; // 수령인(주문자) 연락처
     private int totalPrice; // 화면에서 배송비까지 최종 합산된 총 결제 금액
+    private String zonecode; // 우편번호
+    private String roadAddress; // 도로명 주소
+    private String detailAddress; // 상세 주소
 }

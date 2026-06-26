@@ -1,6 +1,8 @@
 package com.clearticket.clearticket.controller;
 
 import com.clearticket.clearticket.model.UserSession;
+import com.clearticket.clearticket.model.entity.Address;
+import com.clearticket.clearticket.model.entity.User;
 import com.clearticket.clearticket.service.ReservationService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -88,7 +90,11 @@ public class ReservationViewController {
         try {
             java.util.Map<String, Object> summary = reservationService.getReservationSummary(reservationId);
             model.addAllAttributes(summary);
-            model.addAttribute("user", getLoginUser(session));
+
+            UserSession loginUser = getLoginUser(session);
+            model.addAttribute("user", loginUser);
+            Address defaultAddress = reservationService.getDefaultAddressByUserId(Long.valueOf(loginUser.getId()));
+            model.addAttribute("address", defaultAddress);
 
             return "reservation/buyer-info";
 
