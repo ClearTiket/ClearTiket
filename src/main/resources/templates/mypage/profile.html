@@ -102,6 +102,7 @@
         .withdraw-link:hover { color:#E53E3E; }
         .error-msg { font-size:12px; color:#E53E3E; margin-top:4px; }
 
+        /* ── 취향 설정 칩 ── */
         .survey-chip-group { display:flex; flex-wrap:wrap; gap:8px; }
         .s-chip {
             padding:8px 18px; border-radius:24px; border:1.5px solid #E2E4F0;
@@ -110,13 +111,15 @@
         }
         .s-chip:hover { border-color:#4B6EF5; color:#4B6EF5; }
         .s-chip.selected { background:#4B6EF5; border-color:#4B6EF5; color:#fff; box-shadow:0 2px 6px rgba(75,110,245,.28); }
-        .s-tag {
-            padding:6px 14px; border-radius:20px; border:1.5px solid #E2E4F0;
-            background:#fff; color:#555577; font-size:12.5px; font-weight:500;
-            font-family:inherit; cursor:pointer; transition:all .18s; user-select:none;
+
+        /* 저장 피드백 토스트 */
+        .toast {
+            position:fixed; bottom:32px; left:50%; transform:translateX(-50%) translateY(20px);
+            background:#1A1A2E; color:#fff; padding:12px 24px; border-radius:10px;
+            font-size:14px; font-weight:600; opacity:0;
+            transition:opacity .3s, transform .3s; pointer-events:none; z-index:9999;
         }
-        .s-tag:hover { border-color:#4B6EF5; color:#4B6EF5; }
-        .s-tag.selected { background:#EEF1FF; border-color:#4B6EF5; color:#4B6EF5; font-weight:700; }
+        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
     </style>
 </head>
 <body>
@@ -132,15 +135,15 @@
                 <!-- 프로필 배너 -->
                 <div class="profile-banner">
                     <div class="avatar-ring">
-                        <span th:text="${session.loginUser?.name?.substring(0,1)} ?: 'P'">P</span>
+                        <span th:text="${loginUser.name.substring(0,1)}"></span>
                     </div>
                     <div class="profile-banner-info">
-                        <h2><span th:text="${session.loginUser?.name} ?: 'OOO'">OOO</span> 님, 안녕하세요.</h2>
-                        <p th:text="${session.loginUser?.email} ?: ''"></p>
+                        <h2><span th:text="${loginUser.name}"></span> 님, 안녕하세요.</h2>
+                        <p th:text="${loginUser.email}"></p>
                     </div>
                 </div>
 
-                <!-- 기본 정보 카드 -->
+                <!-- ── 기본 정보 카드 ── -->
                 <div class="info-card">
                     <div class="info-card-header">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -150,15 +153,15 @@
 
                         <div class="field-row">
                             <span class="field-label">이메일 (아이디)</span>
-                            <span class="field-readonly" th:text="${session.loginUser?.email} ?: '-'"></span>
+                            <span class="field-readonly" th:text="${loginUser.email}"></span>
                             <div></div>
                         </div>
 
                         <div class="field-row">
                             <span class="field-label">이름</span>
-                            <div id="name-view" class="field-value" th:text="${session.loginUser?.name} ?: '-'"></div>
+                            <div id="name-view" class="field-value" th:text="${loginUser.name}"></div>
                             <div id="name-input" class="field-input-wrap" style="display:none;">
-                                <input type="text" class="field-input" id="name-field" th:value="${session.loginUser?.name} ?: ''">
+                                <input type="text" class="field-input" id="name-field" th:value="${loginUser.name}">
                             </div>
                             <button class="btn btn-outline-gray btn-sm" id="name-btn" onclick="toggleEdit('name')">수정</button>
                         </div>
@@ -174,10 +177,10 @@
 
                         <div class="field-row">
                             <span class="field-label">이메일 변경</span>
-                            <div id="email-view" class="field-value" th:text="${session.loginUser?.email} ?: '-'"></div>
+                            <div id="email-view" class="field-value" th:text="${loginUser.email}"></div>
                             <div id="email-input" class="email-edit-wrap" style="display:none;">
                                 <div class="email-edit-row">
-                                    <input type="email" class="field-input" id="email-field" th:value="${session.loginUser?.email} ?: ''">
+                                    <input type="email" class="field-input" id="email-field" th:value="${loginUser.email}">
                                     <button class="btn btn-primary btn-sm" type="button" onclick="alert('인증번호 발송 (데모)')">인증번호 발송</button>
                                 </div>
                                 <div class="email-edit-row">
@@ -191,7 +194,7 @@
                     </div>
                 </div>
 
-                <!-- 비밀번호 변경 카드 -->
+                <!-- ── 비밀번호 변경 카드 ── -->
                 <div class="info-card">
                     <div class="info-card-header">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -236,7 +239,10 @@
                     </div>
                 </div>
 
-                <!-- 공연 취향 설정 카드 -->
+                <!-- ══════════════════════════════════════
+                     공연 취향 설정 카드 (DB 연동)
+                     컨트롤러에서 survey(SurveyRequestDto) 모델에 담아 전달
+                     ══════════════════════════════════════ -->
                 <div class="info-card">
                     <div class="info-card-header">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -244,47 +250,94 @@
                     </div>
                     <div class="info-card-body">
 
-                        <div class="field-row" style="grid-template-columns:160px 1fr;align-items:flex-start;padding:20px 0;">
-                            <span class="field-label" style="padding-top:4px;">선호 장르 <span style="font-weight:400;font-size:11px;color:#9999BB;">최대 2개</span></span>
+                        <!-- Q1. 선호 장르 (최대 2개) -->
+                        <div class="field-row" style="grid-template-columns:160px 1fr; align-items:flex-start; padding:20px 0;">
+                            <span class="field-label" style="padding-top:6px;">
+                                선호 장르
+                                <span style="font-weight:400; font-size:11px; color:#9999BB;">최대 2개</span>
+                            </span>
                             <div class="survey-chip-group" id="pref-q1">
-                                <button type="button" class="s-chip" onclick="toggleSurvey(this,'pref-q1',2)">뮤지컬</button>
-                                <button type="button" class="s-chip" onclick="toggleSurvey(this,'pref-q1',2)">콘서트</button>
-                                <button type="button" class="s-chip" onclick="toggleSurvey(this,'pref-q1',2)">클래식</button>
+                                <!--
+                                    th:classappend: DB에 저장된 genres 목록에 해당 값이 있으면 'selected' 추가
+                                    survey가 null(설문 미완료)이면 아무것도 선택 안 됨
+                                -->
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.genres != null and survey.genres.contains('콘서트')} ? ' selected' : ''"
+                                        data-value="콘서트" onclick="toggleSurvey(this,'pref-q1',2)">콘서트</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.genres != null and survey.genres.contains('뮤지컬')} ? ' selected' : ''"
+                                        data-value="뮤지컬" onclick="toggleSurvey(this,'pref-q1',2)">뮤지컬</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.genres != null and survey.genres.contains('연극')} ? ' selected' : ''"
+                                        data-value="연극" onclick="toggleSurvey(this,'pref-q1',2)">연극</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.genres != null and survey.genres.contains('클래식')} ? ' selected' : ''"
+                                        data-value="클래식" onclick="toggleSurvey(this,'pref-q1',2)">클래식</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.genres != null and survey.genres.contains('무용/전통')} ? ' selected' : ''"
+                                        data-value="무용/전통" onclick="toggleSurvey(this,'pref-q1',2)">무용/전통</button>
                             </div>
                         </div>
 
-                        <div class="field-row" style="grid-template-columns:160px 1fr;align-items:flex-start;padding:20px 0;">
-                            <span class="field-label" style="padding-top:4px;">선호 분위기 <span style="font-weight:400;font-size:11px;color:#9999BB;">최대 2개</span></span>
+                        <!-- Q2. 중요 요소 (1개) -->
+                        <div class="field-row" style="grid-template-columns:160px 1fr; align-items:flex-start; padding:20px 0;">
+                            <span class="field-label" style="padding-top:6px;">
+                                중요 요소
+                                <span style="font-weight:400; font-size:11px; color:#9999BB;">1개</span>
+                            </span>
                             <div class="survey-chip-group" id="pref-q2">
-                                <button type="button" class="s-tag" onclick="toggleSurvey(this,'pref-q2',2)">#눈물폭발</button>
-                                <button type="button" class="s-tag" onclick="toggleSurvey(this,'pref-q2',2)">#유머충전</button>
-                                <button type="button" class="s-tag" onclick="toggleSurvey(this,'pref-q2',2)">#감동클라이맥스풀릭</button>
-                                <button type="button" class="s-tag" onclick="toggleSurvey(this,'pref-q2',2)">#스트레스해소</button>
-                                <button type="button" class="s-tag" onclick="toggleSurvey(this,'pref-q2',2)">#설렘충전2</button>
-                                <button type="button" class="s-tag" onclick="toggleSurvey(this,'pref-q2',2)">#배품빠지는</button>
-                                <button type="button" class="s-tag" onclick="toggleSurvey(this,'pref-q2',2)">#화려한볼거리</button>
-                                <button type="button" class="s-tag" onclick="toggleSurvey(this,'pref-q2',2)">#잔잔한위로</button>
-                                <button type="button" class="s-tag" onclick="toggleSurvey(this,'pref-q2',2)">#생각이많아지는</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.moods != null and survey.moods.contains('라인업/배우')} ? ' selected' : ''"
+                                        data-value="라인업/배우" onclick="toggleSurvey(this,'pref-q2',1)">라인업/배우</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.moods != null and survey.moods.contains('스토리/작품성')} ? ' selected' : ''"
+                                        data-value="스토리/작품성" onclick="toggleSurvey(this,'pref-q2',1)">스토리/작품성</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.moods != null and survey.moods.contains('티켓 가격')} ? ' selected' : ''"
+                                        data-value="티켓 가격" onclick="toggleSurvey(this,'pref-q2',1)">티켓 가격</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.moods != null and survey.moods.contains('무대 연출/음악')} ? ' selected' : ''"
+                                        data-value="무대 연출/음악" onclick="toggleSurvey(this,'pref-q2',1)">무대 연출/음악</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.moods != null and survey.moods.contains('관람 후기')} ? ' selected' : ''"
+                                        data-value="관람 후기" onclick="toggleSurvey(this,'pref-q2',1)">관람 후기</button>
                             </div>
                         </div>
 
-                        <div class="field-row" style="grid-template-columns:160px 1fr;align-items:flex-start;padding:20px 0;border-bottom:none;">
-                            <span class="field-label" style="padding-top:4px;">주 관람 동행 <span style="font-weight:400;font-size:11px;color:#9999BB;">1개</span></span>
+                        <!-- Q3. 주 동행 (1개) -->
+                        <div class="field-row" style="grid-template-columns:160px 1fr; align-items:flex-start; padding:20px 0; border-bottom:none;">
+                            <span class="field-label" style="padding-top:6px;">
+                                주 관람 동행
+                                <span style="font-weight:400; font-size:11px; color:#9999BB;">1개</span>
+                            </span>
                             <div class="survey-chip-group" id="pref-q3">
-                                <button type="button" class="s-chip" onclick="toggleSurvey(this,'pref-q3',1)">혼자서</button>
-                                <button type="button" class="s-chip" onclick="toggleSurvey(this,'pref-q3',1)">연인과 함께</button>
-                                <button type="button" class="s-chip" onclick="toggleSurvey(this,'pref-q3',1)">부모님과 함께</button>
-                                <button type="button" class="s-chip" onclick="toggleSurvey(this,'pref-q3',1)">친구와 함께</button>
-                                <button type="button" class="s-chip" onclick="toggleSurvey(this,'pref-q3',1)">아이와 함께</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.companion == '혼자서'} ? ' selected' : ''"
+                                        data-value="혼자서" onclick="toggleSurvey(this,'pref-q3',1)">혼자서 혼공!</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.companion == '연인과 함께'} ? ' selected' : ''"
+                                        data-value="연인과 함께" onclick="toggleSurvey(this,'pref-q3',1)">연인과 함께</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.companion == '친구와 함께'} ? ' selected' : ''"
+                                        data-value="친구와 함께" onclick="toggleSurvey(this,'pref-q3',1)">친구와 함께</button>
+                                <button type="button" class="s-chip"
+                                        th:classappend="${survey != null and survey.companion == '가족과 함께'} ? ' selected' : ''"
+                                        data-value="가족과 함께" onclick="toggleSurvey(this,'pref-q3',1)">가족과 함께</button>
                             </div>
                         </div>
 
                     </div>
+
+                    <!-- 취향 저장 버튼 (카드 하단) -->
+                    <div class="pw-submit-row">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="saveSurvey()">취향 저장</button>
+                    </div>
                 </div>
 
-                <!-- 저장 바 -->
+                <!-- ── 저장 바 (기본 정보 전체 저장) ── -->
                 <div class="save-bar">
-                    <button type="button" class="withdraw-link" onclick="if(confirm('정말 탈퇴하시겠습니까?')) alert('탈퇴 처리 (데모)')">회원탈퇴</button>
+                    <button type="button" class="withdraw-link"
+                            onclick="if(confirm('정말 탈퇴하시겠습니까?')) alert('탈퇴 처리 (데모)')">회원탈퇴</button>
                     <button type="button" class="btn btn-outline-gray" onclick="history.back()">취소</button>
                     <button type="button" class="btn btn-primary" onclick="alert('기본정보가 저장되었습니다.')">저장하기</button>
                 </div>
@@ -295,7 +348,11 @@
 </main>
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
 
-<script>
+<!-- 토스트 -->
+<div class="toast" id="toast"></div>
+
+<script th:inline="javascript">
+    /* ── 기본 정보 편집 ──────────────────────────────── */
     function toggleEdit(field) {
         const view  = document.getElementById(field + '-view');
         const input = document.getElementById(field + '-input');
@@ -313,33 +370,113 @@
             btn.classList.replace('btn-outline-gray','btn-primary');
         }
     }
-    function togglePw(id) { const el=document.getElementById(id); el.type=el.type==='password'?'text':'password'; }
+
+    function togglePw(id) {
+        const el = document.getElementById(id);
+        el.type = el.type === 'password' ? 'text' : 'password';
+    }
+
     function validateNewPw() {
-        const pw=document.getElementById('new-pw').value;
-        const pw2=document.getElementById('new-pw2').value;
-        const ok=/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,20}$/.test(pw);
-        document.getElementById('new-pw-error').style.display=(!ok&&pw)?'block':'none';
-        if(pw2) document.getElementById('new-pw2-error').style.display=(pw!==pw2)?'block':'none';
+        const pw  = document.getElementById('new-pw').value;
+        const pw2 = document.getElementById('new-pw2').value;
+        const ok  = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,20}$/.test(pw);
+        document.getElementById('new-pw-error').style.display  = (!ok && pw)  ? 'block' : 'none';
+        if (pw2) document.getElementById('new-pw2-error').style.display = (pw !== pw2) ? 'block' : 'none';
     }
+
     function formatPhone(el) {
-        let v=el.value.replace(/\D/g,'');
-        if(v.length<=3) el.value=v;
-        else if(v.length<=7) el.value=v.slice(0,3)+'-'+v.slice(3);
-        else el.value=v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7,11);
+        let v = el.value.replace(/\D/g,'');
+        if (v.length <= 3)      el.value = v;
+        else if (v.length <= 7) el.value = v.slice(0,3) + '-' + v.slice(3);
+        else                    el.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7,11);
     }
-    const surveyState={};
-    function toggleSurvey(btn,group,max) {
-        if(!surveyState[group]) surveyState[group]=[];
-        const isSelected=btn.classList.contains('selected');
-        if(isSelected) {
+
+    /* ── 취향 칩 선택 ───────────────────────────────── */
+    /*
+     * 페이지 로드 시 Thymeleaf가 'selected' 클래스를 심어놓은 버튼을
+     * surveyState에 등록해서 JS 상태와 일치시킴
+     */
+    const surveyState = {};
+
+    function initSurveyState() {
+        ['pref-q1', 'pref-q2', 'pref-q3'].forEach(groupId => {
+            surveyState[groupId] = [];
+            document.querySelectorAll('#' + groupId + ' .s-chip.selected').forEach(btn => {
+                surveyState[groupId].push(btn);
+            });
+        });
+    }
+
+    function toggleSurvey(btn, group, max) {
+        if (!surveyState[group]) surveyState[group] = [];
+        const isSelected = btn.classList.contains('selected');
+        if (isSelected) {
             btn.classList.remove('selected');
-            surveyState[group]=surveyState[group].filter(b=>b!==btn);
+            surveyState[group] = surveyState[group].filter(b => b !== btn);
         } else {
-            if(surveyState[group].length>=max) surveyState[group].shift().classList.remove('selected');
+            if (surveyState[group].length >= max) {
+                surveyState[group].shift().classList.remove('selected');
+            }
             btn.classList.add('selected');
             surveyState[group].push(btn);
         }
     }
+
+    /* ── 취향 저장 (AJAX POST → /mypage/survey) ─────── */
+    /*
+     * 백엔드 컨트롤러 예시:
+     *   @PostMapping("/mypage/survey")
+     *   @ResponseBody
+     *   public ResponseEntity<?> updateSurvey(@RequestBody SurveyRequestDto dto,
+     *                                          @SessionAttribute("loginUser") User user) {
+     *       surveyService.saveOrUpdate(user.getId(), dto);
+     *       return ResponseEntity.ok(Map.of("message","저장 완료"));
+     *   }
+     */
+    function saveSurvey() {
+        // 선택된 칩의 data-value 수집
+        const genres    = surveyState['pref-q1']?.map(b => b.dataset.value) ?? [];
+        const moods     = surveyState['pref-q2']?.map(b => b.dataset.value) ?? [];
+        const companion = surveyState['pref-q3']?.[0]?.dataset.value ?? null;
+
+        if (genres.length === 0 && moods.length === 0 && !companion) {
+            showToast('최소 하나의 항목을 선택해 주세요.', true);
+            return;
+        }
+
+        const payload = { genres, moods, companion };
+
+        // CSRF 토큰 가져오기 (Thymeleaf가 meta 태그로 심어준 경우)
+        const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+        fetch(/*[[@{/mypage/survey}]]*/ '/mypage/survey', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(payload)
+        })
+            .then(res => {
+                if (!res.ok) throw new Error('서버 오류');
+                return res.json();
+            })
+            .then(() => showToast('취향 설정이 저장되었습니다.'))
+            .catch(() => showToast('저장에 실패했습니다. 다시 시도해 주세요.', true));
+    }
+
+    /* ── 토스트 ──────────────────────────────────────── */
+    function showToast(msg, isError = false) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.background = isError ? '#E53E3E' : '#1A1A2E';
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    /* 초기화 */
+    document.addEventListener('DOMContentLoaded', initSurveyState);
 </script>
 </body>
 </html>

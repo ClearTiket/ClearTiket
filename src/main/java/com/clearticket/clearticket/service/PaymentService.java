@@ -47,7 +47,7 @@ public class PaymentService {
         // 결제창에 표시할 커스텀 공연 상품명 동적 구성
         String performanceTitle = "클리어티켓 공연 예매";
         if (reservation.getSchedule() != null && reservation.getSchedule().getPerformance() != null) {
-            performanceTitle = reservation.getSchedule().getPerformance().getTitle();
+            performanceTitle = reservation.getSchedule().getPerformance().getTitle(); // 공연 제목이 있다면 공연명 교체
         }
         String checkoutName = String.format("[%s] %s 티켓", performanceTitle, reservation.getTicketType());
 
@@ -81,7 +81,7 @@ public class PaymentService {
              if (reservation != null) {
                 reservation.changeStatus(ReservationStatus.CONFIRMED);
                 reservationRepository.save(reservation);
-                log.info("예매번호(ID) {}번 DB 상태 변경 완료 [BOOKED]", reservationId);
+                log.info("예매번호(ID) {}번 DB 상태 변경 완료 [CONFIRMED]", reservationId);
              } else {
                 log.error("DB에서 예매번호 {}번을 찾을 수 없습니다!", reservationId);
              }
@@ -90,9 +90,11 @@ public class PaymentService {
 
 
     /**
-     * 신규 결제 요청 처리 및 완료 영수증 발급
-     * @param paymentRequestDto 프론트엔드 결제 요청 데이터 (금액, 결제수단 등)
-     * @return 결제 완료 내역 및 연관 공연 정보가 포함된 최종 영수증 객체
+     * 레몬스퀴지에서 결제 완료 알림 처리
+     * 사용자가 가상 결제창에서 카드 결제시, 레몬스퀴지 → 자바 서버 신호보냄
+     * 스프링부트 DB에 최종 결제 내역을 저장하는 서비스
+     * @param paymentRequestDto 레몬스퀴지에서 전달한 결제 데이터
+     * @return DB에 성공적으로 저장된 최동 결제 내역(프론트 확인용)
      */
     @Transactional
     public PaymentResponseDto createPayment(PaymentRequestDto paymentRequestDto) {
@@ -101,8 +103,27 @@ public class PaymentService {
         payment.setAmount(paymentRequestDto.getAmount());
         payment.setBankName(paymentRequestDto.getBankName());
 
-        payment.setPaymentMethod(PaymentMethod.valueOf(paymentRequestDto.getPaymentMethod()));
+        Reservation reservation = null;
+
+        // 결제 데이터와 예약 엔티티 간의 연관 관계 매핑
+        if (paymentRequestDto.getReservationId() != null) {
+            reservation = reservationRepository.findByReservationId(paymentRequestDto.getReservationId());
+            payment.setReservation(reservation);
+        }
+
+        // 결제 수단 데이터 검증 및 예외 처리
+        String methodStr = paymentRequestDto.getPaymentMethod();
+        if (methodStr == null || methodStr.trim().isEmpty()) {
+            methodStr = "CARD";
+        }
+        payment.setMethod(PaymentMethod.valueOf(methodStr.toUpperCase()));
         payment.setStatus(PaymentStatus.CONFIRMED);
+
+        if ("BANK_TRANSFER".equalsIgnoreCase(methodStr) && reservation != null) {
+            reservation.changeStatus(ReservationStatus.CONFIRMED);
+            reservationRepository.save(reservation); // 예약 상태 반영
+            log.info("무통장 입금 확인: 예매번호 {}번 [CONFIRMED] 상태 변경 완료", reservation.getReservationId());
+        }
 
         Payment savedPayment = paymentRepository.save(payment);
 
@@ -170,7 +191,7 @@ public class PaymentService {
      * @return 결제 정보 및 연관 공연 제목이 포함된 최종 응답 DTO 객체
      */
     private PaymentResponseDto toResponseDto(Payment payment) {
-        Reservation reservation = new Reservation();
+        Reservation reservation = payment.getReservation();
 
         Schedule schedule = (reservation != null) ? reservation.getSchedule() : null;
         Performance performance = (schedule != null) ? schedule.getPerformance() : null;
@@ -179,7 +200,7 @@ public class PaymentService {
                 payment.getPaymentId(),
                 reservation != null ? reservation.getReservationId() : null,
                 performance != null ? performance.getTitle() : "공연 정보 없음",
-                payment.getPaymentMethod() != null ? payment.getPaymentMethod().name() : null,
+                payment.getMethod() != null ? payment.getMethod().name() : null,
                 payment.getBankName(),
                 payment.getAmount(),
                 payment.getStatus() != null ? payment.getStatus().name() : null,

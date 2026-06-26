@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클리어티켓 - 배송지 선택</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: #F8F9FA;
+            padding: 15px;
+            font-family: 'Noto Sans KR', sans-serif;
+            width: 100%;
+            margin: 0;
+            overflow-x: hidden; /* 가로 스크롤 방지 */
+            box-sizing: border-box;
+        }
+
+        .popup-container {
+            max-width: 100%;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-sizing: border-box;
+        }
+
+        .popup-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #111;
+            border-bottom: 2px solid #F0F0F0;
+            padding-bottom: 12px;
+        }
+
+        .addr-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .addr-card {
+            background: #fff;
+            border: 1.5px solid #E5E7EB;
+            border-radius: 14px;
+            padding: 20px;
+            position: relative;
+            transition: border-color .2s;
+            box-sizing: border-box;
+        }
+        .addr-card:hover { border-color: #A0B4FA; }
+        .addr-card.is-default { border-color: #2563eb; background: rgba(75,110,245,0.01); }
+
+        .addr-card-tag { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .addr-tag-name { font-size: 14px; font-weight: 700; color: #111; }
+
+        .badge-default {
+            font-size: 10px;
+            font-weight: 700;
+            color: #2563eb;
+            background: rgba(75,110,245,.12);
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        .addr-name-phone { font-size: 13px; font-weight: 600; color: #111; margin-bottom: 6px; }
+        .addr-road { font-size: 13px; color: #555; line-height: 1.5; margin: 0; }
+        .addr-zip  { font-size: 12px; color: #999; margin-top: 4px; margin-bottom: 0; }
+
+        .addr-card-pick {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .popup-footer {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            border-top: 1px solid #F0F0F0;
+            padding-top: 16px;
+            margin-top: 20px;
+        }
+
+        .btn-outline-gray {
+            background: #fff;
+            color: #666;
+            border: 1.5px solid #D1D5DB;
+            cursor: pointer;
+        }
+        .btn-outline-gray:hover {
+            background: #F9FAFB;
+        }
+        .btn-primary {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+        .popup-footer .btn {
+            min-width: 100px;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="popup-container">
+    <h1 class="popup-title">배송지 선택</h1>
+
+    <div class="addr-grid">
+        <div th:each="addr : ${addressList}"
+             th:classappend="${addr.isDefault()} ? 'is-default'"
+             class="addr-card">
+
+            <div class="addr-card-tag">
+                <span class="addr-tag-name" th:text="${addr.addressName}">집</span>
+                <span th:if="${addr.isDefault()}" class="badge-default">기본배송지</span>
+            </div>
+            <p class="addr-name-phone" th:text="${addr.recipientName} + ' · ' + ${addr.recipientPhone}">홍길동 · 010-1234-5678</p>
+            <p class="addr-road">
+                <span th:text="${addr.roadAddress}">서울특별시 강남구 테헤란로 123</span><br>
+                <span th:text="${addr.detailAddress}">클리어빌딩 10층</span>
+            </p>
+            <p class="addr-zip" th:text="'우편번호 ' + ${addr.zonecode}">우편번호 06141</p>
+
+            <div class="addr-card-pick">
+                <button class="btn btn-primary btn-sm"
+                        th:data-name="${addr.recipientName}"
+                        th:data-phone="${addr.recipientPhone}"
+                        th:data-zip="${addr.zonecode}"
+                        th:data-road="${addr.roadAddress}"
+                        th:data-detail="${addr.detailAddress}"
+                        onclick="selectAddress(this)">선택</button>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(addressList)}" style="text-align: center; padding: 40px 0; color: var(--text-muted); font-size: 14px;">
+            등록된 배송지 정보가 없습니다.
+        </div>
+    </div>
+
+    <div class="popup-footer">
+        <button type="button" class="btn btn-outline-gray" onclick="window.close();">취소</button>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    // [선택] 버튼 클릭 시 부모창으로 데이터를 전달하고 팝업을 닫는 함수
+    function selectAddress(button) {
+        const addressData = {
+            recipientName: button.getAttribute('data-name'),
+            recipientPhone: button.getAttribute('data-phone'),
+            zonecode: button.getAttribute('data-zip'),
+            roadAddress: button.getAttribute('data-road'),
+            detailAddress: button.getAttribute('data-detail')
+        };
+
+        // 부모 창(opener)에 정의된 주소 수령 전역 함수 호출
+        if (window.opener && typeof window.opener.receiveAddress === 'function') {
+            window.opener.receiveAddress(addressData);
+            window.close(); // 전송 후 팝업창 닫기
+        } else {
+            alert('부모 창을 찾을 수 없거나 연동에 실패했습니다.');
+        }
+    }
+</script>
+</body>
+</html>

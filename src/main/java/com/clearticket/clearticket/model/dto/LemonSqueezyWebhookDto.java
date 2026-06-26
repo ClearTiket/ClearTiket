@@ -15,6 +15,7 @@ public class LemonSqueezyWebhookDto {
 
     private Meta meta;
 
+
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor

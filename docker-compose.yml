@@ -1,0 +1,31 @@
+version: '3.8'
+services:
+  elasticsearch:
+    build: ./elasticsearch       # nori 플러그인 포함 커스텀 이미지
+    container_name: es-korean
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - es-network
+
+  kibana:                        # 인덱스 확인용 (선택)
+    image: kibana:8.11.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - es-network
+
+volumes:
+  es-data:
+
+networks:
+  es-network:
+    driver: bridge

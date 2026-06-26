@@ -23,7 +23,7 @@
         <div class="header-actions">
             <th:block th:if="${loginUser != null}">
                 <!-- 이름 클릭 → 마이페이지 이동 -->
-                <a th:href="@{/mypage}"
+                <a th:href="@{/templates/mypage}"
                    style="font-size:13px;color:#4B6EF5;font-weight:600;text-decoration:none;"
                    th:text="${loginUser.name} + '님'">홍길동님</a>
                 <span class="sep">|</span>

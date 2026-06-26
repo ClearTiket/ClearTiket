@@ -11,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @Controller
@@ -89,9 +90,8 @@ public class AuthController {
         try {
             User user = userService.register(dto);
             session.removeAttribute(EmailVerificationController.SESSION_VERIFIED_EMAIL);
-            // 가입 후 바로 설문을 진행할 수 있도록 세션 생성 (ID나 Email 정보 세팅)
             session.setAttribute("loginUser",
-                    new UserSession(user.getEmail(), user.getName(), user.getEmail()));
+                    new UserSession(String.valueOf(user.getUserId()), user.getName(), user.getEmail(), user.getPhone()));
             return "redirect:/survey";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -99,21 +99,18 @@ public class AuthController {
         }
     }
 
-    // ─── 취향 설문 ─────────────────────────────────────────────────────────
+    // ─── 취향 설문 (회원가입 직후 / 신규 → 저장값 없음) ──────────────────
 
     @GetMapping("/survey")
     public String survey(HttpSession session, Model model) {
         UserSession loginUser = (UserSession) session.getAttribute("loginUser");
         if (loginUser == null) return "redirect:/login";
         model.addAttribute("loginUser", loginUser);
-        model.addAttribute("currentUser", loginUser);
-        model.addAttribute("genreList",
-                List.of("뮤지컬", "콘서트", "연극", "오페라", "발레", "클래식", "팝페라", "기타"));
-        model.addAttribute("moodList",
-                List.of("#눈물폭발", "#유머충전", "#감동클라이맥스", "#스트레스해소",
-                        "#설렘충전", "#화려한볼거리", "#잔잔한위로", "#생각이많아지는"));
-        model.addAttribute("companionList",
-                List.of("혼자서", "연인과 함께", "친구와 함께", "가족과 함께", "아이와 함께"));
+
+       model.addAttribute("savedGenres", Collections.emptyList());
+        model.addAttribute("savedMoods", Collections.emptyList());
+        model.addAttribute("savedCompanion", "");
+
         return "auth/survey";
     }
 
@@ -121,11 +118,7 @@ public class AuthController {
     @ResponseBody
     public String saveSurvey(@RequestBody SurveyRequestDto dto, HttpSession session) {
         UserSession loginUser = (UserSession) session.getAttribute("loginUser");
-        if (loginUser == null) {
-            return "FAIL";
-        }
-
-        // 현재 로그인된 사용자의 이메일(혹은 ID)과 함께 설문 데이터 저장
+        if (loginUser == null) return "FAIL";
         userService.saveSurvey(loginUser.getEmail(), dto);
         return "SUCCESS";
     }
@@ -136,21 +129,6 @@ public class AuthController {
     public String findIdForm(HttpSession session, Model model) {
         addLoginUser(session, model);
         return "auth/find-id";
-    }
-
-    @PostMapping("/find-id")
-    public String findIdSubmit(@RequestParam String email,
-                               HttpSession session, Model model) {
-        addLoginUser(session, model);
-        return userService.findByEmail(email)
-                .map(user -> {
-                    model.addAttribute("userId", maskEmail(user.getEmail()));
-                    return "auth/find-id-result";
-                })
-                .orElseGet(() -> {
-                    model.addAttribute("error", "일치하는 이메일 정보가 없습니다.");
-                    return "auth/find-id";
-                });
     }
 
     // ─── 비밀번호 찾기 ─────────────────────────────────────────────────────
@@ -164,8 +142,7 @@ public class AuthController {
     // ─── 비밀번호 재설정 ───────────────────────────────────────────────────
 
     @GetMapping("/reset-password")
-    public String resetPasswordForm(@RequestParam(required = false) String email,
-                                    HttpSession session, Model model) {
+    public String resetPasswordForm(HttpSession session, Model model) {
         String resetVerifiedEmail = (String) session.getAttribute(
                 EmailVerificationController.SESSION_RESET_VERIFIED_EMAIL);
 
@@ -204,15 +181,5 @@ public class AuthController {
             model.addAttribute("email", email);
             return "auth/reset-password";
         }
-    }
-
-    // ─── 유틸 ──────────────────────────────────────────────────────────────
-
-    private String maskEmail(String email) {
-        int atIdx = email.indexOf('@');
-        if (atIdx <= 2) return email;
-        String local  = email.substring(0, atIdx);
-        String domain = email.substring(atIdx);
-        return local.substring(0, 2) + "*".repeat(local.length() - 2) + domain;
     }
 }
