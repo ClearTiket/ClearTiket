@@ -56,8 +56,7 @@ public class Review {
 
     @Column(name = "status", nullable = false, length = 10)
     @Builder.Default
-    private String status = "Y"; // 기본값 "Y" (노출 상태)
-
+    private String status = "Y";
 
 
 }
