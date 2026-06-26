@@ -1,6 +1,5 @@
 package com.clearticket.clearticket.controller;
 
-import com.clearticket.clearticket.model.dto.seat.BookSeatResponse;
 import com.clearticket.clearticket.model.dto.seat.SeatResponse;
 import com.clearticket.clearticket.service.SeatService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +11,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/seats")
 @RequiredArgsConstructor
-public class SeatController {
+public class SeatAPIController {
 
     private final SeatService seatService;
 

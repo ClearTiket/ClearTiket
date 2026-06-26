@@ -1179,7 +1179,7 @@
         console.log(document.getElementById("performance-title"))
 
         // 공연장 정보 로드
-        fetch(`/hall/${mt10id}/info`)
+        fetch(`/api/venue/${mt10id}/info`)
             .then(response => response.json())
             .then(venue => {
                 // 1. [공연 기본 정보]
@@ -1224,7 +1224,7 @@
             .catch(err => console.error("공연 정보 로드 에러:", err));
 
         // 출연진 정보 로드
-        fetch(`/hall/${mt10id}/casting`)
+        fetch(`/api/venue/${mt10id}/casting`)
             .then(response => response.json())
             .then(castingList => {
                 const castingBox = document.getElementById("casting-list");
@@ -1255,7 +1255,7 @@
         let globalScheduleData = [];
 
         // [수정 및 확장] 달력 로드 및 무한 이동 렌더링 시스템
-        fetch(`/hall/${mt10id}/dates`)
+        fetch(`/api/venue/${mt10id}/dates`)
             .then(response => response.json())
             .then(data => {
                 globalScheduleData = data; // JPA 데이터셋 전체 캐싱
@@ -1352,7 +1352,7 @@
             selectedScheduleId = null; // 날짜 변경 시 선택된 ID 초기화
             scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#6b7280;'>회차 정보를 불러오는 중...</p>";
 
-            fetch(`/hall/${mt10id}/schedules?date=${selectedDate}`)
+            fetch(`/api/venue/${mt10id}/schedules?date=${selectedDate}`)
                 .then(response => response.json())
                 .then(data => {
                     scheduleList.innerHTML = "";
