@@ -15,13 +15,13 @@ public class Seat {
     @Column(nullable = false, unique = true)
     Long seatId;
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "performance_id")
-//    Performance performance;
-//
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "venue_id")
-//    Venue venue;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "performance_id")
+    Performance performance;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "venue_id")
+    Venue venue;
 
     @Column(length = 255)
     String seatGrade;
