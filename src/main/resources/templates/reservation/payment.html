@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클리어티켓 - 결제방법 선택</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <script src="https://app.lemonsqueezy.com/js/lemon.js" defer="defer"></script>
+    <style>
+        body { min-height: auto; height: 700px; overflow: hidden; background: var(--bg); }
+        .popup-wrap { width: 1000px; height: 700px; margin: 0 auto; background: var(--white); display: flex; flex-direction: column; }
+        .popup-header { padding: 24px 32px 0 32px; display: flex; justify-content: space-between; align-items: center; }
+        .popup-body { flex: 1; display: flex; padding: 24px 32px; gap: 28px; overflow: hidden; }
+
+        .side-section { width: 350px; display: flex; flex-direction: column; gap: 20px; }
+        .main-section { flex: 1; display: flex; flex-direction: column; gap: 24px; }
+
+        .select-card { background: transparent; border: none; padding: 0; margin-bottom: 20px;}
+
+        .btn-group { display: flex; gap: 12px; margin-top: auto; width: 100%; }
+        .btn-prev { width: 140px; height: 52px; font-size: 15px; font-weight: 700; }
+        .btn-next { flex: 1; height: 52px; font-size: 15px; font-weight: 700; }
+
+        /* 탭(결제수단 선택) 버튼 스타일정의 */
+        .pay-method-group { display: flex; gap: 12px; margin-top: 8px; margin-bottom: 24px; }
+        .pay-method-btn { flex: 1; height: 46px; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--white); font-size: 14px; font-weight: 700; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .pay-method-btn.active { border-color: var(--primary, #2563eb); color: var(--primary, #2563eb); background: #ffffff; }
+
+        /* 무통장입금 입력 폼 스타일 */
+        .vbank-info-box { display: flex; flex-direction: column; gap: 16px; background-color: #ffffff; padding: 4px 0; }
+        .form-row { display: flex; align-items: center; font-size: 14px;}
+        .form-label { width: 80px; font-weight: 500; color: var(--text-main, #111); }
+        .form-select { flex: 1; height: 44px; padding: 0 14px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 14px; color: #111; outline: none; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%23999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>') no-repeat right 14px center; -webkit-appearance: none; -moz-appearance: none; appearance: none; background-size: 16px; cursor: pointer; }
+        .form-select:focus { border-color: var(--primary, #2563eb); }
+        .text-value { font-size: 14px; color: var(--text-main, #111); font-weight: 500; }
+
+        /* 이용약관 동의 체크박스 */
+        .agree-container { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-main, #111); margin-top: auto; padding-top: 16px; }
+        .agree-checkbox { width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 4px; cursor: pointer; accent-color: var(--primary, #2563eb); }
+    </style>
+</head>
+<body>
+
+<div class="popup-wrap">
+    <div th:replace="~{fragments/reservation-header :: popupHeader(3)}"></div>
+
+    <div class="popup-body">
+        <div class="side-section">
+            <div class="card">
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <img th:src="${performance?.posterUrl}" class="img-placeholder" style="width: 90px; height: 120px;">
+                    <div>
+                        <h2 class="section-title" style="font-size: 15px; margin-bottom: 4px;" th:text="${performance?.title}"></h2>
+                        <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 2px;" th:text="|${performance?.startDate} ~ ${performance?.endDate}|"></p>
+                        <p style="font-size: 13px; color: var(--text-muted);" th:text="${performance?.venue?.name}"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 16px 20px;">
+                <div th:each="item : ${selectedGrades}" style="display: flex; justify-content: space-between; align-items: center; font-size: 14px;">
+                    <span style="color: var(--text-sub, #555);" th:text="|${item.grade} ${item.count}매|"></span>
+                    <span style="color: var(--text-main, #111); font-weight: 600;" th:text="|${#numbers.formatInteger(item.price ?: 0, 0, 'COMMA')} 원|"></span>
+                </div>
+            </div>
+
+            <div class="card">
+                <table class="fee-table" style="min-height: auto; gap: 12px;">
+                    <tr><td>상품금액</td><td th:text="|${#numbers.formatInteger(seatPriceSum ?: 0, 0, 'COMMA')} 원|"></td></tr>
+                    <tr>
+                        <td>할인금액</td>
+                        <td style="color: var(--error);"
+                            th:text="${discountAmount != null && discountAmount > 0} ? |-${#numbers.formatInteger(discountAmount, 0, 'COMMA')} 원| : '0 원'">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>배송비</td>
+                        <td th:text="${reservation?.shippingFee != null && reservation?.shippingFee > 0} ? |${#numbers.formatInteger(reservation.shippingFee, 0, 'COMMA')} 원| : '0 원'"></td>
+                    </tr>
+                    <tr style="color: var(--primary); font-weight: 700; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 8px;">
+                        <td>총결제금액</td>
+                        <td th:text="|${#numbers.formatInteger(reservation?.totalPrice ?: 0, 0, 'COMMA')} 원|"></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="main-section">
+            <div class="select-card" style="margin-bottom: 0; flex: 1; display: flex; flex-direction: column;">
+                <h3 class="section-title" style="font-size: 15px; margin-bottom: 4px;">결제수단 선택</h3>
+
+                <div class="pay-method-group">
+                    <button type="button" id="method-card" class="pay-method-btn active" onclick="selectPayMethod('CARD')">신용카드</button>
+                    <button type="button" id="method-vbank" class="pay-method-btn" onclick="selectPayMethod('BANK_TRANSFER')">무통장입금</button>
+                </div>
+
+                <div id="payment-content-area" style="flex: 1;">
+                    <div id="content-card" style="display: block; font-size: 14px; color: var(--text-sub); line-height: 1.6; padding-top: 8px;">
+                        <p style="font-weight: 500; color: #111; margin-bottom: 6px;">💳 신용카드 결제 안내</p>
+                        <p>• [결제하기] 버튼 클릭 시 외부 안전 결제창(Lemon Squeezy API)으로 연결됩니다.</p>
+                        <p>• 결제 완료 후 자동으로 예매 완료 처리 페이지로 이동합니다.</p>
+                    </div>
+
+                    <div id="content-vbank" style="display: none;" class="vbank-info-box">
+                        <div class="form-row" style="margin-bottom: 14px;">
+                            <span class="form-label">입금은행</span>
+                            <select id="bank-name-select" class="form-select">
+                                <option value="">입금하실 은행을 선택하세요.</option>
+                                <option value="신한은행">신한은행</option>
+                                <option value="국민은행">국민은행</option>
+                                <option value="우리은행">우리은행</option>
+                                <option value="하나은행">하나은행</option>
+                                <option value="토스뱅크">토스뱅크</option>
+                                <option value="카카오뱅크">카카오뱅크</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <span class="form-label">예금주</span>
+                            <span class="text-value">(주)클리어티켓</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agree-container">
+                    <input type="checkbox" id="agree-check" class="agree-checkbox">
+                    <label th:for="agree-check" style="cursor: pointer; font-weight: 500;">
+                        결제 진행에 동의하였으며, 취소 수수료 및 예매 안내를 확인하였습니다.
+                    </label>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <a th:href="@{/reservations/{id}/buyer-info(id=${reservation?.reservationId})}" class="btn btn-outline-gray btn-prev" style="display: flex; align-items: center; justify-content: center;">이전</a>
+                <button type="button" id="pay-submit-btn" class="btn btn-primary btn-next" th:text="|${#numbers.formatInteger(reservation?.totalPrice ?: 0, 0, 'COMMA')} 원 결제하기|" onclick="submitPayment()"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const reservationId = /*[[${reservation?.reservationId}]]*/ null;
+    const totalPrice = /*[[${reservation?.totalPrice ?: 0}]]*/ 0;
+
+    let selectedMethod = "CARD";
+
+    function selectPayMethod(method) {
+        selectedMethod = method;
+        const cardBtn = document.getElementById('method-card');
+        const vbankBtn = document.getElementById('method-vbank');
+        const cardContent = document.getElementById('content-card');
+        const vbankContent = document.getElementById('content-vbank');
+
+        if (method === 'CARD') {
+            cardBtn.classList.add('active');
+            vbankBtn.classList.remove('active');
+            cardContent.style.display = 'block';
+            vbankContent.style.display = 'none';
+        } else if (method === 'BANK_TRANSFER') {
+            vbankBtn.classList.add('active');
+            cardBtn.classList.remove('active');
+            vbankContent.style.display = 'block';
+            cardContent.style.display = 'none';
+        }
+    }
+
+    let paymentPopup = null;
+
+    function submitPayment() {
+        const isAgreed = document.getElementById('agree-check').checked;
+        if (!isAgreed) {
+            alert("결제 진행 및 예매 안내 동의에 체크해 주세요.");
+            return;
+        }
+
+        let bankName = null;
+        if (selectedMethod === 'BANK_TRANSFER') {
+            bankName = document.getElementById('bank-name-select').value;
+            if (!bankName) {
+                alert("입금하실 은행을 선택해 주세요.");
+                return;
+            }
+        }
+
+        if (selectedMethod === 'CARD') {
+            console.log("레몬스퀴지 연동 시작 - 총 금액:", totalPrice);
+
+            fetch('/api/payments/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reservationId: reservationId })
+            })
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error("체크아웃 창 생성 실패");
+                })
+                .then(data => {
+                    if (data && data.checkoutUrl) {
+                        const width = 500;
+                        const height = 650;
+                        const left = (window.screen.width / 2) - (width / 2);
+                        const top = (window.screen.height / 2) - (height / 2);
+
+                        paymentPopup = window.open(
+                            data.checkoutUrl,
+                            'LemonSqueezyCheckout',
+                            `width=${width}, height=${height}, top=${top}, left=${left}, resizable=yes, scrollbars=yes`
+                        );
+
+                        startPaymentCheck(reservationId);
+                    } else {
+                        alert("결제창 주소를 불러오지 못했습니다.");
+                    }
+                })
+                .catch(err => {
+                    console.error("레몬스퀴지 통신 에러:", err);
+                    alert("신용카드 결제 시스템 연결에 실패했습니다.");
+                });
+
+        } else {
+            fetch(`/api/payments/bank-transfer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    reservationId: reservationId,
+                    paymentMethod: selectedMethod,
+                    bankName: bankName,
+                    amount: totalPrice
+                })
+            })
+                .then(res => {
+                    if (res.ok) {
+                        location.href = `/reservations/${reservationId}/complete`;
+                    } else {
+                        alert("결제 정보 처리에 실패했습니다. 다시 시도해 주세요.");
+                    }
+                })
+                .catch(err => {
+                    console.error("통신 에러 발생:", err);
+                    alert("서버 연결에 실패했습니다.");
+                });
+        }
+    }
+
+    function startPaymentCheck(resId) {
+        console.log("⏱️ 결제 상태 감지 타이머 기동 - 예약 ID:", resId);
+
+        const paymentTimer = setInterval(function() {
+            fetch(`/api/reservations/${resId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("상태 조회 실패");
+                    return res.json();
+                })
+                .then(reservationDto => {
+                    console.log("🔍 현재 예약 상태 데이터 확인:", reservationDto);
+
+                    if (reservationDto && (reservationDto.status === 'CONFIRMED' || reservationDto.status === 'PAID')) {
+                        console.log("[검증 완료] 백엔드 결제 처리 확인됨! 완공 페이지로 이동합니다.");
+
+                        if (paymentPopup && !paymentPopup.closed) {
+                            paymentPopup.close();
+                        }
+
+                        clearInterval(paymentTimer);
+                        location.href = `/reservations/${resId}/complete`;
+                    }
+                })
+                .catch(err => console.log("⏳ 결제 완료 대기 중..."));
+        }, 3000);
+    }
+</script>
+</body>
+</html>

@@ -7,15 +7,21 @@ import com.clearticket.clearticket.model.entity.Venue;
 import com.clearticket.clearticket.repository.PerformanceRepository;
 import com.clearticket.clearticket.repository.ReviewRepository;
 import com.clearticket.clearticket.repository.ScheduleRepository;
+import com.clearticket.clearticket.repository.VenueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -23,12 +29,15 @@ public class VenueService {
     private final ScheduleRepository scheduleRepository;
     private final PerformanceRepository performanceRepository;
     private final ReviewRepository reviewRepository;
+    final VenueRepository venueRepository;
+    int defaultPageSize = 20;
 
     public List<AvailableDateResponse> calculateAvailableDates(String kopisId) {
         Performance perf = performanceRepository.findByKopisId(kopisId)
                 .orElseThrow(() -> new IllegalArgumentException("공연 없음: " + kopisId));
 
         List<LocalDate> dates = scheduleRepository.findDistinctDatesByPerformanceId(perf.getPerformanceId());
+
 
         return dates.stream()
                 .map(date -> new AvailableDateResponse(
@@ -37,12 +46,26 @@ public class VenueService {
                         true))
                 .toList();
     }
+    Pageable validPageable(Integer page) {
+        if (page == null || page <= 0) page = 1;
+        page--;
+        Pageable pageable = PageRequest.of(page, defaultPageSize);
+        return pageable;
+    }
 
     public List<ScheduleResponse> getSchedulesByDate(Long performanceId, LocalDate date) {
         return scheduleRepository.findByPerformance_PerformanceIdAndShowDateOrderByRoundNumberAsc(performanceId, date)
                 .stream()
                 .map(s -> new ScheduleResponse(s.getScheduleId(), s.getRoundNumber(), s.getShowTime().format(DateTimeFormatter.ofPattern("HH:mm"))))
                 .toList();
+    }
+    public Venue findById(long id) {
+        return venueRepository.findByVenueId(id);
+    }
+
+    public Page<Venue> findAll(Integer page) {
+
+        return venueRepository.findAll(validPageable(page));
     }
 
     public VenueInfoResponse getVenueInfoByPerformanceId(Long id) {
@@ -67,6 +90,18 @@ public class VenueService {
         );
     }
 
+    public Page<Venue> findByRegion(String region, Integer page) {
+
+        List<String> regions = new ArrayList<>();
+        switch (region) {
+            case "충청" -> regions.addAll(Arrays.asList("충북", "충남", "세종"));
+            case "전라" -> regions.addAll(Arrays.asList("전북", "전남", "광주"));
+            case "경상" -> regions.addAll(Arrays.asList("경북", "경남", "부산", "울산"));
+            default -> regions.add(region);
+        }
+
+        return venueRepository.findAllByRegionIn(regions, validPageable(page));
+    }
 
     public VenueLayoutResponse getVenueLayout(Long venueId) {
         List<SeatGradeInfo> gradeList = Arrays.asList(

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>클리어티켓 - 수령방법 및 주문자정보</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
+  <style>
+    body { min-height: auto; height: 700px; overflow: hidden; background: var(--bg); }
+    .popup-wrap { width: 1000px; height: 700px; margin: 0 auto; background: var(--white); display: flex; flex-direction: column; }
+    .popup-header { padding: 24px 32px 0 32px; display: flex; justify-content: space-between; align-items: center; }
+    .popup-body { flex: 1; display: flex; padding: 24px 32px; gap: 28px; overflow: hidden; }
+
+    .side-section { width: 350px; display: flex; flex-direction: column; gap: 20px; }
+    .main-section { flex: 1; display: flex; flex-direction: column; gap: 24px; }
+
+    .select-card { background: transparent; border: none; padding: 0; margin-bottom: 12px;}
+
+    .btn-group { display: flex; gap: 12px; margin-top: auto; width: 100%; }
+    .btn-prev { width: 140px; }
+    .btn-next { flex: 1; height: 52px; font-size: 15px; font-weight: 700; }
+
+    .receipt-item { display: flex; align-items: flex-start; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: var(--radius); cursor: pointer; gap: 12px; margin-bottom: 12px; }
+    .receipt-item.active { border-color: var(--primary, #2563eb); } /* 선택 시 파란 테두리 */
+
+    /* 주문자 정보 입력 폼 레이아웃 */
+    .form-row { display: flex; align-items: center; font-size: 14px; margin-bottom: 12px;}
+    .form-label { width: 80px; font-weight: 500; color: var(--text-main, #111); }
+    .form-input { flex: 1; height: 44px; padding: 0 14px; border: 1.5px solid var(--border); border-radius: var(--radius); font-size: 14px; outline: none; }
+    .form-input:focus { border-color: var(--primary, #2563eb); }
+  </style>
+</head>
+<body>
+
+<div class="popup-wrap">
+  <div th:replace="~{fragments/reservation-header :: popupHeader(2)}"></div>
+
+  <div class="popup-body">
+    <div class="side-section">
+      <div class="card">
+        <div style="display: flex; gap: 16px; align-items: flex-start;">
+          <img th:src="${performance?.posterUrl}" class="img-placeholder" style="width: 90px; height: 120px;">
+          <div>
+            <h2 class="section-title" style="font-size: 15px; margin-bottom: 4px;" th:text="${performance?.title}"></h2>
+            <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 2px;" th:text="|${performance?.startDate} ~ ${performance?.endDate}|"></p>
+            <p style="font-size: 13px; color: var(--text-muted);" th:text="${performance?.venue?.name}"></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <table class="fee-table" style="min-height: 250px;">
+          <tr><td>상품금액</td><td th:text="|${#numbers.formatInteger(seatPriceSum ?: 0, 0, 'COMMA')} 원|"></td></tr>
+          <tr>
+            <td>할인금액</td>
+            <td id="sidebar-discount" style="color: var(--error);"
+                th:text="${discountAmount != null && discountAmount > 0} ? |-${#numbers.formatInteger(discountAmount, 0, 'COMMA')} 원| : '0 원'">
+            </td>
+          </tr>
+          <tr><td>배송비</td><td id="sidebar-shipping">4,000 원</td></tr>
+          <tr style="color: var(--primary); font-weight: 700;">
+            <td>총결제금액</td>
+            <td id="sidebar-total"></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="main-section">
+      <div class="select-card">
+        <h3 class="section-title" style="font-size: 15px; margin-bottom: 12px;">수령방법</h3>
+        <div class="receipt-list">
+          <label class="receipt-item active">
+            <input type="radio" name="receiptMethod" value="DELIVERY" checked style="margin-top: 3px;" onchange="changeShippingFee(this)">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <div style="font-size: 14px; font-weight: 700; color: #111;">배송</div>
+              <div style="font-size: 12px; color: #999;">배송받을 주소로 티켓을 보내드려요</div>
+            </div>
+          </label>
+
+          <label class="receipt-item">
+            <input type="radio" name="receiptMethod" value="VENUE" style="margin-top: 3px;" onchange="changeShippingFee(this)">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <div style="font-size: 14px; font-weight: 700; color: #111;">현장수령</div>
+              <div style="font-size: 12px; color: #999;">공연당일 당일 현장 매표소에서 수령</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div class="select-card" style="flex: 1; display: flex; flex-direction: column;">
+        <h3 class="section-title" style="font-size: 15px; margin-bottom: 18px;">주문자정보</h3>
+        <div style="display: flex; flex-direction: column;">
+          <div class="form-row">
+            <span class="form-label">이름</span>
+            <input type="text" class="form-input" th:value="${user?.name}" readonly style="background-color: #f5f5f5;">
+          </div>
+          <div class="form-row">
+            <span class="form-label">연락처</span>
+            <input type="text" class="form-input" th:value="${user?.phone}">
+          </div>
+          <div class="form-row">
+            <span class="form-label">이메일</span>
+            <input type="email" class="form-input" th:value="${user?.email}">
+          </div>
+
+
+          <div class="form-row" style="margin-top: 10px; border-top: 1px solid #f0f0f0; padding-top: 15px; display: flex; align-items: center; justify-content: space-between;">
+            <span class="form-label" style="margin-top: 6px;">배송지</span>
+
+            <div style="flex: 1; margin-left: 6px; margin-right: 10px; font-size: 14px; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <span id="display-address" th:text="${address != null ? '[' + address.zonecode + '] ' + address.roadAddress + ' ' + address.detailAddress : '등록된 배송지가 없습니다.'}"></span>
+
+              <input type="hidden" id="recipientName" name="recipientName" th:value="${address?.recipientName}">
+              <input type="hidden" id="recipientPhone" name="recipientPhone" th:value="${address?.recipientPhone}">
+              <input type="hidden" id="zonecode" name="zonecode" th:value="${address?.zonecode}">
+              <input type="hidden" id="roadAddress" name="roadAddress" th:value="${address?.roadAddress}">
+              <input type="hidden" id="detailAddress" name="detailAddress" th:value="${address?.detailAddress}">
+            </div>
+
+            <button type="button" id="btn-change-address" style="padding: 5px 12px; font-size: 12px; background-color: #fff; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; white-space: nowrap;">변경</button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <a th:href="@{/coupons(reservationId=${reservation?.reservationId})}" class="btn btn-outline-gray btn-prev">이전</a>
+        <button type="button" id="next-btn" class="btn btn-primary btn-next">다음단계</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  const seatPriceSum = /*[[${seatPriceSum ?: 0}]]*/ 0;
+  const discountAmount = /*[[${discountAmount ?: 0}]]*/ 0;
+
+  let currentShippingFee = 4000;
+
+  document.addEventListener("DOMContentLoaded", function() {
+    updateTotalPrice();
+  });
+
+  // 라디오 버튼 체인지 이벤트 함수 (배송 vs 현장수령)
+  function changeShippingFee(radio) {
+    const items = document.querySelectorAll('.receipt-item');
+
+    items.forEach(item => item.classList.remove('active'));
+    radio.closest('.receipt-item').classList.add('active');
+
+    if (radio.value === 'VENUE') {
+      currentShippingFee = 0;
+    } else if (radio.value === 'DELIVERY') {
+      currentShippingFee = 4000;
+    }
+
+    updateTotalPrice();
+  }
+
+  function updateTotalPrice() {
+    document.getElementById('sidebar-shipping').innerText = `${currentShippingFee.toLocaleString()} 원`;
+    const finalTotal = seatPriceSum - discountAmount + currentShippingFee;
+    document.getElementById('sidebar-total').innerText = `${finalTotal.toLocaleString()} 원`;
+  }
+
+
+  // 🚚 [1] 변경 버튼 클릭 시 새창 팝업 띄우기
+  document.getElementById('btn-change-address').addEventListener('click', function() {
+    // 🎯 아까 컨트롤러에 뚫어놓은 팝업 전용 URL 주소로 매칭!
+    const popupUrl = '/mypage/address-popup';
+    const popupName = 'addressPopup';
+
+    const width = 600;
+    const height = 650;
+    const left = (window.screen.width / 2) - (width / 2);
+    const top = (window.screen.height / 2) - (height / 2);
+
+    window.open(popupUrl, popupName, `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`);
+  });
+
+  // 🚚 [2] 팝업창에서 주소를 선택했을 때 데이터를 넘겨받는 전역 함수 (콜백)
+  window.receiveAddress = function(data) {
+    // 1. 화면에 보이는 텍스트 변경
+    const displayEl = document.getElementById('display-address');
+    displayEl.innerText = `[${data.zonecode}] ${data.roadAddress} ${data.detailAddress}`;
+
+    // 2. 백엔드로 전송할 히든 필드 값 세팅
+    document.getElementById('recipientName').value = data.recipientName;
+    document.getElementById('recipientPhone').value = data.recipientPhone;
+    document.getElementById('zonecode').value = data.zonecode;
+    document.getElementById('roadAddress').value = data.roadAddress;
+    document.getElementById('detailAddress').value = data.detailAddress;
+  };
+
+
+  // 🎯 [3] 다음 단계 이동시 데이터 조립 후 백엔드로 최종 전송 (통합본)
+  document.getElementById('next-btn').addEventListener('click', function() {
+    const reservationId = /*[[${reservation?.reservationId}]]*/ null;
+
+    if (!reservationId) {
+      alert("예매 정보가 존재하지 않습니다.");
+      return;
+    }
+
+    const selectedRadio = document.querySelector('input[name="receiptMethod"]:checked');
+    const ticketType = selectedRadio ? selectedRadio.value : 'DELIVERY';
+    const finalTotal = seatPriceSum - discountAmount + currentShippingFee;
+
+    // 💡 현장수령이 아니고 '배송'인데 주소가 비어있으면 막아세우기
+    if (ticketType === 'DELIVERY') {
+      const zonecode = document.getElementById('zonecode').value;
+      if (!zonecode) {
+        alert('배송지 정보를 [변경] 버튼을 통해 선택해 주세요.');
+        return;
+      }
+    }
+
+    // 🚀 혜인님이 작성하셨던 DTO 양식에 맞게 팝업으로 선택한 주소 데이터까지 전부 묶어서 쏩니다!
+    const payload = {
+      ticketType: ticketType,
+      shippingFee: currentShippingFee,
+      recipientName: document.getElementById('recipientName').value || /*[[${user?.name}]]*/ '',
+      recipientPhone: document.getElementById('recipientPhone').value || /*[[${user?.phone}]]*/ '',
+      zonecode: document.getElementById('zonecode').value,
+      roadAddress: document.getElementById('roadAddress').value,
+      detailAddress: document.getElementById('detailAddress').value,
+      totalPrice: finalTotal
+    };
+
+    fetch(`/api/reservations/${reservationId}/buyer-info`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+            .then(res => {
+              if (res.ok) {
+                // 성공 시 다음 결제 페이지로 스무스하게 이동!
+                location.href = `/reservations/${reservationId}/payment`;
+              } else {
+                res.text().then(msg => alert("주문 정보 저장 실패: " + msg));
+              }
+            })
+            .catch(err => {
+              console.error("통신 에러:", err);
+              alert("서버 연결에 실패했습니다.");
+            });
+  });
+</script>
+</body>
+</html>

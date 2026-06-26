@@ -24,8 +24,8 @@ public class Payment {
     @JoinColumn(name = "reservation_id")
     Reservation reservation;
 
-    @Column(nullable = false, length = 50)
-    PaymentMethod paymentMethod;
+//    @Column(nullable = false, length = 50)
+//    PaymentMethod paymentMethod;
 
     @Column(length = 50)
     String bankName;
@@ -37,6 +37,12 @@ public class Payment {
     @Enumerated(EnumType.STRING)
     PaymentStatus status;
 
+    @Column(nullable = false, length = 20)
+    @Enumerated(EnumType.STRING)
+    PaymentMethod method;
+
+
     @CreationTimestamp
     LocalDateTime paymentDate;
 }
+

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클리어티켓 - 할인쿠폰/등급선택</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <style>
+        body { min-height: auto; height: 700px; overflow: hidden; background: var(--bg); }
+        .popup-wrap { width: 1000px; height: 700px; margin: 0 auto; background: var(--white); display: flex; flex-direction: column; }
+        .popup-header { padding: 24px 32px 0 32px; display: flex; justify-content: space-between; align-items: center; }
+        .popup-body { flex: 1; display: flex; padding: 24px 32px; gap: 28px; overflow: hidden; }
+
+        .side-section { width: 350px; display: flex; flex-direction: column; gap: 20px; }
+        .main-section { flex: 1; display: flex; flex-direction: column; gap: 24px; }
+
+        .select-card { background: transparent; border: none; padding: 0; }
+
+        .btn-group { display: flex; gap: 12px; margin-top: auto; width: 100%; }
+        .btn-prev { width: 140px; }
+        .btn-next { flex: 1; height: 52px; font-size: 15px; font-weight: 700; }
+
+        .coupon-list { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; overflow-y: auto; flex: 1; }
+        .coupon-item { display: flex; align-items: center; padding: 14px 16px; border: 1.5px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+        .no-coupon-msg { text-align: center; padding: 40px 0; border: 1.5px solid var(--border); border-radius: var(--radius); color: var(--text-muted); font-size: 14px; }
+
+        .chip-container { display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="popup-wrap">
+    <div th:replace="~{fragments/reservation-header :: popupHeader(1)}"></div>
+
+    <div class="popup-body">
+        <div class="side-section">
+            <div class="card">
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <img th:src="${performance?.posterUrl}" class="img-placeholder" style="width: 90px; height: 120px;">
+                    <div>
+                        <h2 class="section-title" style="font-size: 15px; margin-bottom: 4px;" th:text="${performance?.title}"></h2>
+                        <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 2px;" th:text="|${performance?.startDate} ~ ${performance?.endDate}|"></p>
+                        <p style="font-size: 13px; color: var(--text-muted);" th:text="${performance?.venue?.name}"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <table class="fee-table" style="min-height: 250px;">
+                    <tr><td>상품금액</td><td th:text="|${#numbers.formatInteger(seatPriceSum ?: 0, 0, 'COMMA')} 원|"></td></tr>
+                    <tr><td>할인금액</td><td id="sidebar-discount" style="color: var(--error);">0 원</td></tr>
+                    <tr><td>배송비</td><td>0 원</td></tr>
+                    <tr style="color: var(--primary); font-weight: 700;">
+                        <td>총결제금액</td>
+                        <td id="sidebar-total"
+                            th:text="|${#numbers.formatInteger(seatPriceSum ?: 0, 0, 'COMMA')} 원|">
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="main-section">
+            <div class="select-card" style="margin-bottom: 9px;">
+                <h3 class="section-title" style="font-size: 15px; margin-bottom: 12px;">등급선택</h3>
+                <div style="display: flex; flex-direction: column; gap: 22px; font-size: 14px; background-color: #ffffff; padding: 16px; border: 1px solid var(--border, #e5e7eb); border-radius: 12px; margin-top: 8px;">
+                    <div th:each="item : ${selectedGrades}" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-sub, #555); font-weight: 500;" th:text="|${item.grade} ${item.count}매|"></span>
+                        <span style="color: var(--text-main, #111); font-weight: 600;" th:text="|${#numbers.formatInteger(item.price ?: 0, 0, 'COMMA')} 원|"></span>
+                    </div>
+                </div>
+            </div>
+
+
+            <div class="select-card" style="flex: 1; display: flex; flex-direction: column;">
+                <h3 class="section-title" style="font-size: 15px; margin-bottom: 2px;">할인쿠폰선택</h3>
+                <div id="coupon-container" class="coupon-list"></div>
+            </div>
+
+            <div class="btn-group">
+                <a th:href="@{/reservations/seats}" class="btn btn-outline-gray btn-prev">이전</a>
+                <button type="button" id="next-btn" class="btn btn-primary btn-next">다음단계</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    const originalPrice = /*[[${seatPriceSum ?: 0}]]*/ 0;
+    const shippingFee = 0;
+    const gradeList = /*[[${seatGradeList}]]*/ [];
+    const currentGrade = /*[[${seatGrade}]]*/ "";
+
+    document.addEventListener("DOMContentLoaded", function() {
+        loadCoupons();
+    });
+
+    function loadCoupons() {
+        fetch('/api/coupons')
+            .then(res => res.json())
+            .then(list => {
+                const container = document.getElementById('coupon-container');
+
+                container.innerHTML = '';
+
+                const noneLabel = document.createElement('label');
+                noneLabel.className = 'coupon-item';
+                noneLabel.style.display = 'flex';
+                noneLabel.style.alignItems = 'center';
+                noneLabel.style.gap = '8px';
+
+                noneLabel.innerHTML = `
+                    <input type="radio" name="couponSelect" value="NONE" data-discount="0" checked onchange="calculateDiscount(this)">
+                    <span style="font-size: 14px; font-weight: 500; color: var(--text-main, #111);">적용 안 함</span>
+                `;
+                container.appendChild(noneLabel);
+
+                if (!list || list.length === 0) {
+                    const noCoupon = document.createElement('div');
+                    noCoupon.className = 'no-coupon-msg';
+                    noCoupon.innerText = '보유하신 쿠폰이 없습니다.';
+                    noCoupon.style.padding = '8px 0';
+                    noCoupon.style.color = '#999';
+                    container.appendChild(noCoupon);
+                    return;
+                }
+
+                list.forEach(c => {
+                    const type = c.discountType;
+                    const discount = c.discountValue || 0;
+
+                    const label = document.createElement('label');
+                    label.className = 'coupon-item';
+                    label.style.display = 'flex';
+                    label.style.alignItems = 'center';
+                    label.style.gap = '8px';
+
+                    let displayText = "";
+                    if (type === "PERCENT") {
+                        displayText = `${c.couponName} (${discount}% 할인)`;
+                    } else {
+                        displayText = `${c.couponName} (${discount.toLocaleString()}원 할인)`;
+                    }
+
+                    label.innerHTML = `
+                        <input type="radio" name="couponSelect" value="${c.couponId}"
+                               data-type="${type}"
+                               data-value="${discount}"
+                               onchange="calculateDiscount(this)">
+                        <span style="font-size: 14px;">${displayText}</span>
+                    `;
+                    container.appendChild(label);
+                });
+            })
+            .catch(err => {
+                console.error("쿠폰 로딩 실패:", err);
+            });
+    }
+
+    function calculateDiscount(radio) {
+        const type = radio.dataset.type;
+        const val = parseInt(radio.dataset.value) || 0;
+
+        let calculatedDiscount = 0;
+
+        if (type === "PERCENT") {
+            calculatedDiscount = Math.floor(originalPrice * (val / 100));
+        } else if (type === "AMOUNT") {
+            calculatedDiscount = val;
+        } else {
+            calculatedDiscount = 0;
+        }
+
+        const discountText = calculatedDiscount > 0 ? `-${calculatedDiscount.toLocaleString()} 원` : '0 원';
+        document.getElementById('sidebar-discount').innerText = discountText;
+        document.getElementById('sidebar-total').innerText = `${(originalPrice - calculatedDiscount).toLocaleString()} 원`;
+    }
+
+    document.getElementById('next-btn').addEventListener('click', function () {
+        const selectedRadio = document.querySelector('input[name="couponSelect"]:checked');
+        if (!selectedRadio) {
+            alert("쿠폰 선택 정보가 올바르지 않습니다.");
+            return;
+        }
+
+        const couponId = selectedRadio.value;
+
+        const totalText = document.getElementById('sidebar-total').innerText;
+        const totalPrice = parseInt(totalText.replace(/[^0-9]/g, '')) || 0;
+
+        const reservationId = /*[[${reservation?.reservationId}]]*/ null;
+
+        if (!reservationId) {
+            alert("예매 정보가 존재하지 않습니다.");
+            return;
+        }
+
+        fetch(`/api/reservations/${reservationId}/coupon`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                couponId: couponId,
+                totalPrice: totalPrice
+            })
+        })
+            .then(res => {
+                if (res.ok) {
+                    location.href = `/reservations/${reservationId}/buyer-info`;
+                } else {
+                    alert("쿠폰 정보 저장에 실패했습니다. 다시 시도해 주세요.");
+                }
+            })
+            .catch(err => {
+                console.error("네트워크 에러 발생:", err);
+                alert("서버 통신 중 오류가 발생했습니다.");
+            });
+    });
+</script>
+</body>
+</html>

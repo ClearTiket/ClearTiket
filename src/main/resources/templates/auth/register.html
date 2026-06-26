@@ -5,126 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>클리어티켓 - 회원가입</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
-    <style>
-        .register-page {
-            flex: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            padding: 48px 24px; background: var(--bg);
-        }
-        .register-logo { margin-bottom: 28px; }
-        .register-logo img { height: 48px; }
-
-        .register-card {
-            background: var(--white);
-            border: 1.5px solid var(--border);
-            border-radius: var(--radius-lg);
-            padding: 36px 40px;
-            width: 100%; max-width: 500px;
-            box-shadow: var(--shadow-md);
-        }
-
-        /* 필드 공통 */
-        .r-field { position: relative; margin-bottom: 10px; }
-        .r-field-icon {
-            position: absolute; left: 14px; top: 50%;
-            transform: translateY(-50%);
-            color: #9999BB; display: flex; align-items: center;
-            pointer-events: none; z-index: 1;
-        }
-        .r-input {
-            width: 100%; padding: 12px 14px 12px 40px;
-            border: 1.5px solid var(--border);
-            border-radius: var(--radius);
-            font-size: 14px; font-family: inherit;
-            outline: none; color: var(--text-main);
-            background: var(--white);
-            transition: border-color .2s, box-shadow .2s;
-        }
-        .r-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(75,110,245,.10);
-        }
-        .r-input.error { border-color: var(--error); }
-        .r-input.ok    { border-color: #38A169; }
-        .r-input-pr { padding-right: 42px; } /* eye 버튼 있을 때 */
-
-        /* 인증번호 발송 버튼을 input 우측에 */
-        .r-input-with-btn { position: relative; }
-        .r-input-with-btn .r-input { padding-right: 90px; }
-        .r-inline-btn {
-            position: absolute; right: 8px; top: 50%;
-            transform: translateY(-50%);
-            background: var(--primary); color: #fff;
-            border: none; border-radius: 6px;
-            font-size: 11px; font-weight: 700;
-            font-family: inherit; cursor: pointer;
-            padding: 5px 10px; white-space: nowrap;
-            transition: background .18s;
-        }
-        .r-inline-btn:hover { background: var(--primary-dark); }
-        .r-inline-btn:disabled { background: #C0C8E8; cursor: not-allowed; }
-
-        /* 눈 버튼 */
-        .eye-btn {
-            position: absolute; right: 12px; top: 50%;
-            transform: translateY(-50%);
-            background: none; border: none; cursor: pointer;
-            color: #9999BB; display: flex; align-items: center; padding: 0;
-        }
-        .eye-btn:hover { color: var(--primary); }
-
-        /* 상태 메시지 */
-        .r-msg {
-            font-size: 12px; margin-top: 4px; margin-bottom: 4px;
-            display: none; padding-left: 2px;
-        }
-        .r-msg.ok  { display: block; color: #38A169; }
-        .r-msg.err { display: block; color: var(--error); }
-
-        /* 구분선 */
-        .r-divider { height: 1px; background: var(--border); margin: 16px 0; }
-
-        /* 인증번호 구역 */
-        .code-section { display: none; margin-bottom: 10px; }
-        .code-section.open { display: block; }
-
-        /* 타이머 */
-        .code-timer { font-size: 12px; color: #F44336; margin-top: 4px; display: none; }
-
-        /* 가입하기 버튼 */
-        .btn-register {
-            width: 100%; padding: 14px;
-            background: var(--primary); color: #fff;
-            border: none; border-radius: var(--radius);
-            font-size: 15px; font-weight: 700;
-            font-family: inherit; cursor: pointer;
-            margin-top: 8px;
-            transition: all .2s;
-            box-shadow: 0 4px 14px rgba(75,110,245,.3);
-        }
-        .btn-register:hover { background: var(--primary-dark); transform: translateY(-1px); }
-
-        .login-link {
-            text-align: center; margin-top: 16px;
-            font-size: 13px; color: var(--text-muted);
-        }
-        .login-link a { color: var(--primary); font-weight: 600; text-decoration: none; }
-        .login-link a:hover { text-decoration: underline; }
-    </style>
 </head>
 <body>
 <th:block th:replace="~{fragments/header :: header}"></th:block>
 
 <main>
     <div class="register-page fade-in">
-
-        <a th:href="@{/login}" class="register-logo">
-            <img th:src="@{/images/logo.png}" alt="클리어티켓"
-                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <span style="display:none;font-size:28px;font-weight:800;color:#4B6EF5;align-items:center;">클리어티켓</span>
-        </a>
+        <h2 style="font-size:22px;font-weight:800;color:var(--text-main);margin-bottom:24px;">회원가입</h2>
 
         <div class="register-card">
 
@@ -146,12 +36,13 @@
                                name="email" placeholder="아이디 (이메일)"
                                oninput="onEmailInput()">
                         <button type="button" class="r-inline-btn"
-                                id="btn-send-code" onclick="handleEmailBtn()">인증번호 발송</button>
+                                id="btn-send-code" onclick="handleEmailBtn()">인증번호 발송
+                        </button>
                     </div>
                 </div>
                 <p class="r-msg" id="email-msg"></p>
 
-                <div class="code-section" id="code-section">
+                <div class="code-section" id="reg-code-section">
                     <div class="r-field">
                         <span class="r-field-icon">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -164,7 +55,8 @@
                             <input type="text" class="r-input" id="code_input"
                                    placeholder="인증번호 6자리 입력" maxlength="6">
                             <button type="button" class="r-inline-btn"
-                                    onclick="verifyCode()">확인</button>
+                                    onclick="verifyCode()">확인
+                            </button>
                         </div>
                     </div>
                     <p class="code-timer" id="code-timer"></p>
@@ -245,6 +137,7 @@
                            maxlength="8" oninput="this.value=this.value.replace(/\D/g,'')">
                 </div>
 
+                <!-- 주소 검색 (카카오 우편번호 API) -->
                 <div class="r-field">
                     <span class="r-field-icon">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -253,7 +146,33 @@
                             <circle cx="12" cy="10" r="3"></circle>
                         </svg>
                     </span>
-                    <input type="text" class="r-input" name="address" placeholder="주소 (예) 서울시 서초구 ...">
+                    <div class="r-input-with-btn">
+                        <input type="text" class="r-input" id="zipcode_input"
+                               name="zipcode" placeholder="우편번호" readonly>
+                        <button type="button" class="r-inline-btn" onclick="openPostcode()">주소 검색</button>
+                    </div>
+                </div>
+                <div class="r-field">
+                    <span class="r-field-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                    </span>
+                    <input type="text" class="r-input" id="addr1_input"
+                           name="address" placeholder="기본 주소" readonly>
+                </div>
+                <div class="r-field">
+                    <span class="r-field-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                    </span>
+                    <input type="text" class="r-input" id="addr2_input"
+                           name="addressDetail" placeholder="상세 주소 입력">
                 </div>
 
                 <div class="r-field">
@@ -269,13 +188,15 @@
                                placeholder="전화번호 (예) 010-1234-5678"
                                oninput="formatPhone(this)">
                         <button type="button" class="r-inline-btn"
-                                id="btn-check-phone" onclick="checkPhone()">중복 확인</button>
+                                id="btn-check-phone" onclick="checkPhone()">중복 확인
+                        </button>
                     </div>
                 </div>
                 <p class="r-msg" id="phone-msg"></p>
 
                 <button type="button" class="btn-register"
-                        onclick="submitRegister()">가입하기</button>
+                        onclick="submitRegister()">가입하기
+                </button>
 
             </form>
 
@@ -288,11 +209,23 @@
 </main>
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
 
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script>
-    let emailVerified  = false;
-    let emailCodeSent  = false;
+    function openPostcode() {
+        new daum.Postcode({
+            oncomplete: function (data) {
+                document.getElementById('zipcode_input').value = data.zonecode;
+                document.getElementById('addr1_input').value =
+                    data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+                document.getElementById('addr2_input').focus();
+            }
+        }).open();
+    }
+
+    let emailVerified = false;
+    let emailCodeSent = false;
     let phoneAvailable = false;
-    let timerInterval  = null;
+    let timerInterval = null;
 
     // ── 이메일 입력 변경 시 상태 초기화
     function onEmailInput() {
@@ -300,8 +233,8 @@
         emailCodeSent = false;
         setMsg('email-msg', '', '');
         setMsg('code-msg', '', '');
-        document.getElementById('code-section').classList.remove('open');
-        document.getElementById('email_input').classList.remove('ok','error');
+        document.getElementById('reg-code-section').classList.remove('open');
+        document.getElementById('email_input').classList.remove('ok', 'error');
         clearTimer();
         const btn = document.getElementById('btn-send-code');
         btn.textContent = '인증번호 발송';
@@ -311,131 +244,163 @@
     // ── 인증번호 발송 버튼 (중복확인 + 발송 통합)
     async function handleEmailBtn() {
         const email = document.getElementById('email_input').value.trim();
-        if (!email) { setMsg('email-msg','이메일을 입력해 주세요.','err'); return; }
-        if (!isValidEmail(email)) { setMsg('email-msg','올바른 이메일 형식이 아닙니다.','err'); return; }
+        if (!email) {
+            setMsg('email-msg', '이메일을 입력해 주세요.', 'err');
+            return;
+        }
+        if (!isValidEmail(email)) {
+            setMsg('email-msg', '올바른 이메일 형식이 아닙니다.', 'err');
+            return;
+        }
 
         const btn = document.getElementById('btn-send-code');
-        btn.disabled = true; btn.textContent = '확인 중...';
+        btn.disabled = true;
+        btn.textContent = '확인 중...';
 
         // 중복 확인
         try {
-            const res  = await fetch('/api/auth/check-email', {
-                method:'POST', headers:{'Content-Type':'application/json'},
+            const res = await fetch('/api/auth/check-email', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({email})
             });
             const data = await res.json();
             if (!data.available) {
                 setMsg('email-msg', data.message ?? '이미 사용 중인 이메일입니다.', 'err');
                 document.getElementById('email_input').classList.add('error');
-                btn.disabled = false; btn.textContent = '인증번호 발송';
+                btn.disabled = false;
+                btn.textContent = '인증번호 발송';
                 return;
             }
         } catch {
-            setMsg('email-msg','서버 오류가 발생했습니다.','err');
-            btn.disabled = false; btn.textContent = '인증번호 발송';
+            setMsg('email-msg', '서버 오류가 발생했습니다.', 'err');
+            btn.disabled = false;
+            btn.textContent = '인증번호 발송';
             return;
         }
 
         // 인증번호 발송
         btn.textContent = '발송 중...';
         try {
-            const res  = await fetch('/api/auth/send-code', {
-                method:'POST', headers:{'Content-Type':'application/json'},
+            const res = await fetch('/api/auth/send-code', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({email})
             });
             const data = await res.json();
             if (data.success) {
                 emailCodeSent = true;
                 document.getElementById('email_input').classList.add('ok');
-                setMsg('email-msg','사용 가능한 이메일입니다.','ok');
-                document.getElementById('code-section').classList.add('open');
-                setMsg('code-msg','인증번호가 발송되었습니다. (5분 이내 입력)','ok');
+                setMsg('email-msg', '사용 가능한 이메일입니다.', 'ok');
+                document.getElementById('reg-code-section').classList.add('open');
+                setMsg('code-msg', '인증번호가 발송되었습니다. (5분 이내 입력)', 'ok');
                 startTimer(300);
-                btn.textContent = '재발송'; btn.disabled = false;
+                btn.textContent = '재발송';
+                btn.disabled = false;
             } else {
-                setMsg('email-msg', data.message ?? '발송 실패','err');
-                btn.disabled = false; btn.textContent = '인증번호 발송';
+                setMsg('email-msg', data.message ?? '발송 실패', 'err');
+                btn.disabled = false;
+                btn.textContent = '인증번호 발송';
             }
         } catch {
-            setMsg('code-msg','발송 중 오류가 발생했습니다.','err');
-            btn.disabled = false; btn.textContent = '인증번호 발송';
+            setMsg('code-msg', '발송 중 오류가 발생했습니다.', 'err');
+            btn.disabled = false;
+            btn.textContent = '인증번호 발송';
         }
     }
 
     async function verifyCode() {
         const email = document.getElementById('email_input').value.trim();
-        const code  = document.getElementById('code_input').value.trim();
-        if (!code) { setMsg('code-msg','인증번호를 입력해 주세요.','err'); return; }
+        const code = document.getElementById('code_input').value.trim();
+        if (!code) {
+            setMsg('code-msg', '인증번호를 입력해 주세요.', 'err');
+            return;
+        }
 
         try {
-            const res  = await fetch('/api/auth/verify-code', {
-                method:'POST', headers:{'Content-Type':'application/json'},
+            const res = await fetch('/api/auth/verify-code', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({email, code})
             });
             const data = await res.json();
             if (data.verified) {
                 emailVerified = true;
-                setMsg('code-msg','인증이 완료되었습니다.','ok');
+                setMsg('code-msg', '인증이 완료되었습니다.', 'ok');
                 document.getElementById('code_input').classList.add('ok');
                 document.getElementById('code_input').disabled = true;
                 clearTimer();
             } else {
-                setMsg('code-msg', data.message ?? '인증번호가 일치하지 않습니다.','err');
+                setMsg('code-msg', data.message ?? '인증번호가 일치하지 않습니다.', 'err');
                 document.getElementById('code_input').classList.add('error');
             }
         } catch {
-            setMsg('code-msg','서버 오류가 발생했습니다.','err');
+            setMsg('code-msg', '서버 오류가 발생했습니다.', 'err');
         }
     }
 
     async function checkPhone() {
         const phone = document.getElementById('phone_input').value.trim();
-        if (!phone) { setMsg('phone-msg','전화번호를 입력해 주세요.','err'); return; }
+        if (!phone) {
+            setMsg('phone-msg', '전화번호를 입력해 주세요.', 'err');
+            return;
+        }
         if (!/^01[0-9]-\d{3,4}-\d{4}$/.test(phone)) {
-            setMsg('phone-msg','올바른 전화번호 형식이 아닙니다.','err'); return;
+            setMsg('phone-msg', '올바른 전화번호 형식이 아닙니다.', 'err');
+            return;
         }
         const btn = document.getElementById('btn-check-phone');
-        btn.disabled = true; btn.textContent = '확인 중...';
+        btn.disabled = true;
+        btn.textContent = '확인 중...';
 
         try {
-            const res  = await fetch('/api/auth/check-phone', {
-                method:'POST', headers:{'Content-Type':'application/json'},
+            const res = await fetch('/api/auth/check-phone', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({phone})
             });
             const data = await res.json();
             if (data.available) {
                 phoneAvailable = true;
-                setMsg('phone-msg','사용 가능한 번호입니다.','ok');
+                setMsg('phone-msg', '사용 가능한 번호입니다.', 'ok');
                 document.getElementById('phone_input').classList.add('ok');
                 btn.textContent = '확인완료';
             } else {
                 phoneAvailable = false;
-                setMsg('phone-msg', data.message ?? '이미 사용 중인 번호입니다.','err');
+                setMsg('phone-msg', data.message ?? '이미 사용 중인 번호입니다.', 'err');
                 document.getElementById('phone_input').classList.add('error');
-                btn.disabled = false; btn.textContent = '중복 확인';
+                btn.disabled = false;
+                btn.textContent = '중복 확인';
             }
         } catch {
-            setMsg('phone-msg','서버 오류가 발생했습니다.','err');
-            btn.disabled = false; btn.textContent = '중복 확인';
+            setMsg('phone-msg', '서버 오류가 발생했습니다.', 'err');
+            btn.disabled = false;
+            btn.textContent = '중복 확인';
         }
     }
 
     function submitRegister() {
-        if (!emailVerified) { alert('이메일 인증을 완료해 주세요.'); return; }
-        if (!phoneAvailable) { alert('전화번호 중복확인을 완료해 주세요.'); return; }
-        const pw  = document.getElementById('pw_input').value;
+        if (!emailVerified) {
+            alert('이메일 인증을 완료해 주세요.');
+            return;
+        }
+        if (!phoneAvailable) {
+            alert('전화번호 중복확인을 완료해 주세요.');
+            return;
+        }
+        const pw = document.getElementById('pw_input').value;
         const pw2 = document.getElementById('pw2_input').value;
         if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,20}$/.test(pw)) {
-            alert('비밀번호 형식을 확인해 주세요.'); return;
+            alert('비밀번호 형식을 확인해 주세요.');
+            return;
         }
-        if (pw !== pw2) { alert('비밀번호가 일치하지 않습니다.'); return; }
+        if (pw !== pw2) {
+            alert('비밀번호가 일치하지 않습니다.');
+            return;
+        }
         document.getElementById('register-form').submit();
     }
 
     function validatePw() {
-        const pw  = document.getElementById('pw_input').value;
+        const pw = document.getElementById('pw_input').value;
         const pw2 = document.getElementById('pw2_input').value;
-        const ok  = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,20}$/.test(pw);
+        const ok = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,20}$/.test(pw);
         if (pw) {
             setMsg('pw-msg', ok ? '' : '8~20자의 영문 대/소문자와 숫자, 특수문자를 조합해야 합니다.', ok ? '' : 'err');
             document.getElementById('pw_input').classList.toggle('error', !ok);
@@ -456,7 +421,9 @@
     }
 
     // 이메일 정규식 포맷 확인
-    function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+    function isValidEmail(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
 
     // 비밀번호 보이기/숨기기 토글
     function togglePw(id) {
@@ -466,16 +433,22 @@
 
     // 핸드폰 하이픈 자동포맷 및 상태 관리
     function formatPhone(el) {
-        let v = el.value.replace(/\D/g,'');
-        if      (v.length <= 3) el.value = v;
-        else if (v.length <= 7) el.value = v.slice(0,3) + '-' + v.slice(3);
-        else                    el.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7,11);
+        let v = el.value.replace(/\D/g, '');
+        if (v.length <= 3) el.value = v;
+        else if (v.length <= 7) el.value = v.slice(0, 3) + '-' + v.slice(3);
+        else el.value = v.slice(0, 3) + '-' + v.slice(3, 7) + '-' + v.slice(7, 11);
         const ok = /^01[0-9]-\d{3,4}-\d{4}$/.test(el.value);
         el.classList.toggle('error', !ok && el.value.length > 0);
         el.classList.toggle('ok', ok);
-        if (!ok) { phoneAvailable = false; setMsg('phone-msg','',''); }
+        if (!ok) {
+            phoneAvailable = false;
+            setMsg('phone-msg', '', '');
+        }
         const btn = document.getElementById('btn-check-phone');
-        if (!ok) { btn.disabled = false; btn.textContent = '중복 확인'; }
+        if (!ok) {
+            btn.disabled = false;
+            btn.textContent = '중복 확인';
+        }
     }
 
     // 인증 타이머 작동 및 초기화
@@ -485,8 +458,8 @@
         timerEl.style.display = 'block';
         let remaining = seconds;
         timerInterval = setInterval(() => {
-            const m = String(Math.floor(remaining / 60)).padStart(2,'0');
-            const s = String(remaining % 60).padStart(2,'0');
+            const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+            const s = String(remaining % 60).padStart(2, '0');
             timerEl.textContent = `남은 시간: ${m}:${s}`;
             if (--remaining < 0) {
                 clearTimer();
@@ -496,7 +469,10 @@
     }
 
     function clearTimer() {
-        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
         const timerEl = document.getElementById('code-timer');
         if (timerEl) timerEl.style.display = 'none';
     }

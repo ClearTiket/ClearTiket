@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>클리어티켓 - 공연장 목록</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+
+<style>
+    /* 기본 스타일 초기화 및 폰트 적용 */
+    body {
+        font-family: 'Noto Sans KR', sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9fa;
+        color: #333;
+    }
+
+    /* 1. 전체 컨텐츠 너비 설정 */
+    .container {
+        width: 1200px;
+        margin: 40px auto; /* 상하 여백은 임의 지정, 좌우 정렬 center */
+        box-sizing: border-box;
+    }
+
+    /* 2. 검색어 입력 창 스타일 */
+    .search-wrapper {
+        display: flex;
+        justify-content: center; /* 검색창 중앙 정렬 필요 시 사용 */
+        margin-bottom: 30px;    /* 3. 탭 그룹과의 여백 30px */
+    }
+
+    .search-input {
+        width: 500px;           /* 조건: 너비 500px */
+        height: 50px;           /* 조건: 높이 50px */
+        padding: 0 15px;
+        font-size: 16px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+
+    /* 3, 4. 지역 선택 Tab Group 스타일 */
+    .tab-group {
+        display: flex;
+        width: 1200px;          /* 조건: 너비 1200px */
+        height: 60px;           /* 조건: 높이 70px */
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        margin-bottom: 30px;    /* 테이블과의 간격 */
+        box-sizing: border-box;
+        background-color: #ffffff;
+    }
+
+    .tab-item {
+        flex: 1;                /* 8개 버튼이 균등하게 너비를 나눠 가짐 */
+        height: 100%;
+        background-color: #ffffff;
+        border: none;
+        border-right: 1px solid #dee2e6;
+        font-size: 16px;
+        font-weight: 500;
+        color: #495057;
+        cursor: pointer;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    .tab-item:last-child {
+        border-right: none;
+    }
+
+    .tab-item.active {
+        background-color: #007bff;
+        color: #ffffff;
+    }
+
+    /* [새로 추가] 8개 영역을 균등 분할하기 위한 컨테이너 */
+    .tab-item-container {
+        flex: 1;
+        height: 100%;
+        position: relative; /* 드롭다운 메뉴의 기준점이 됨 */
+    }
+
+    /* [새로 추가] 탭 버튼 스타일 */
+    .tab-btn {
+        width: 100%;
+        height: 100%;
+        background-color: #ffffff;
+        border: none;
+        border-right: 1px solid #dee2e6;
+        font-size: 16px;
+        font-weight: 500;
+        color: #495057;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: background-color 0.2s, color 0.2s;
+    }
+
+    .tab-item-container:last-child .tab-btn {
+        border-right: none; /* 마지막 버튼 테두리 제거 */
+    }
+
+    /* 화살표 아이콘 스타일 */
+    .arrow {
+        font-size: 10px;
+        color: #adb5bd;
+        transition: transform 0.2s;
+    }
+
+    /* 활성화(선택) 상태 및 드롭다운이 열린 상태의 스타일 */
+    .tab-btn.active,
+    .tab-btn.active a,
+    .tab-item-container.open .tab-btn {
+        background-color: #3971E7;
+        color: #ffffff;
+        text-decoration: none;
+    }
+
+    .tab-item-container.open .arrow {
+        color: #ffffff;
+        transform: rotate(180deg); /* 열렸을 때 화살표 뒤집기 */
+    }
+
+    /* [새로 추가] 세부 지역 드롭다운 메뉴 스타일 */
+    .dropdown-menu {
+        position: absolute;
+        top: 100%;               /* 메인 탭 바로 아래에 붙음 */
+        left: -1px;              /* 좌우 테두리 정렬 정밀 조정 */
+        width: calc(100% + 2px); /* 부모 너비를 꽉 채우도록 설정 */
+        background-color: #ffffff;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 6px 6px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: none;           /* 기본 상태는 숨김 */
+        z-index: 100;            /* 테이블 등 다른 요소 위로 띄움 */
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 드롭다운이 열렸을 때 표시 */
+    .tab-item-container.open .dropdown-menu {
+        display: block;
+    }
+
+    /* 세부 지역 개별 아이템 스타일 */
+    .dropdown-menu li a {
+        display: block;
+        padding: 12px 0;
+        text-align: center;
+        text-decoration: none;
+        color: #495057;
+        font-size: 14px;
+        border-bottom: 1px solid #f1f3f5;
+        transition: background-color 0.2s;
+    }
+
+    .dropdown-menu li:last-child a {
+        border-bottom: none;
+    }
+
+    /* 세부 지역 마우스 호버 효과 */
+    .dropdown-menu li a:hover {
+        background-color: #f1f5f9;
+        color: #3971E7;
+        font-weight: 500;
+    }
+
+    /* 5, 6, 7. 시설 목록 테이블 스타일 */
+    .facility-table {
+        width: 1200px;          /* 컨테이너 너비에 맞춤 */
+        border-collapse: collapse;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 30px;    /* 8. 페이지네이션과의 간격 30px */
+    }
+
+    .facility-table th,
+    .facility-table td {
+        padding: 12px 15px;
+        text-align: center;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .facility-table th {
+        background-color: #f1f3f5;
+        font-weight: 600;
+        color: #343a40;
+    }
+
+    .facility-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* 8. 페이지네이션 스타일 */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .page-btn {
+        min-width: 35px;
+        height: 35px;
+        padding: 0 6px;
+        border: 1px solid #dee2e6;
+        background-color: #ffffff;
+        color: #495057;
+        font-size: 14px;
+        cursor: pointer;
+        border-radius: 4px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .page-btn.active {
+        background-color: #007bff;
+        color: #ffffff;
+        border-color: #007bff;
+    }
+
+    .page-btn:hover:not(.active) {
+        background-color: #e9ecef;
+    }
+</style>
+
+<body>
+<th:block th:replace="~{fragments/header :: header}"></th:block>
+
+    <main class="container">
+
+        <div class="search-wrapper">
+            <input type="text" class="search-input" placeholder="검색어를 입력하세요.">
+        </div>
+
+        <div class="tab-group">
+
+            <div class="tab-item-container">
+                <button class="tab-btn active"><a href="/venue/list">전체</a></button>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    서울 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=서울">서울</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    경기 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=인천">인천</a></li>
+                    <li><a href="?region=경기">경기</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    강원 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=강원">강원</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    충청 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=충청">충청</a></li>
+                    <li><a href="?region=충북">충북</a></li>
+                    <li><a href="?region=충남">충남</a></li>
+                    <li><a href="?region=세종">세종</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    전라 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=전라">전라</a></li>
+                    <li><a href="?region=광주">광주</a></li>
+                    <li><a href="?region=전북">전북</a></li>
+                    <li><a href="?region=전남">전남</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    경상 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=경상">경상</a></li>
+                    <li><a href="?region=부산">부산</a></li>
+                    <li><a href="?region=울산">울산</a></li>
+                    <li><a href="?region=경북">경북</a></li>
+                    <li><a href="?region=경남">경남</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    제주 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=제주">제주</a></li>
+                </ul>
+            </div>
+
+            <div class="tab-item-container">
+                <button class="tab-btn" onclick="toggleDropdown(this)">
+                    기타 <span class="arrow">▼</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a href="?region=해외">해외</a></li>
+                </ul>
+            </div>
+
+        </div>
+
+        <table class="facility-table">
+            <thead>
+                <tr>
+                    <th>지역</th>
+                    <th>시설명</th>
+                    <th>주소</th>
+                    <th>전화번호</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="venue : ${venueList}">
+                    <td th:text="${venue.getRegion()}"></td>
+                    <td th:text="${venue.getName()}"></td>
+                    <td th:text="${venue.getAddress()}"></td>
+                    <td th:text="${venue.getTelnum()}"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="pagination">
+            <button class="page-btn prev">&lt;</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">4</button>
+            <button class="page-btn">5</button>
+            <button class="page-btn next">&gt;</button>
+        </div>
+
+    </main>
+
+<th:block th:replace="~{fragments/footer :: footer}"></th:block>
+</body>
+<script>
+    function toggleDropdown(button) {
+        const currentContainer = button.parentElement;
+        const allContainers = document.querySelectorAll('.tab-item-container');
+
+        // 클릭한 버튼 외에 이미 열려있는 다른 드롭다운은 모두 닫기
+        allContainers.forEach(container => {
+            if (container !== currentContainer) {
+                container.classList.remove('open');
+            }
+        });
+
+        // 현재 클릭한 탭의 드롭다운 상태를 토글(열기/닫기)
+        currentContainer.classList.toggle('open');
+    }
+
+    // 드롭다운 바깥 영역을 클릭하면 열려있는 드롭다운 닫기
+    window.addEventListener('click', function(e) {
+        if (!e.target.matches('.tab-btn') && !e.target.closest('.dropdown-menu')) {
+            document.querySelectorAll('.tab-item-container').forEach(container => {
+                container.classList.remove('open');
+            });
+        }
+    });
+</script>
+</html>

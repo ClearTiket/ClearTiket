@@ -27,15 +27,15 @@ public class PerformanceDocument {
     @Field(type = FieldType.Keyword)
     String status;
 
-    @Field(type = FieldType.Date)
+    @Field(name = "start_date", type = FieldType.Date)
     String startDate;
 
-    @Field(type = FieldType.Date)
+    @Field(name = "end_date", type = FieldType.Date)
     String endDate;
 
     @Field(type = FieldType.Text, analyzer = "nori_korean_analyzer")
     String castings;
 
-    @Field(type = FieldType.Text, analyzer = "nori_korean_analyzer")
+    @Field(name = "extracted_text", type = FieldType.Text, analyzer = "nori_korean_analyzer")
     String extractedText;
 }

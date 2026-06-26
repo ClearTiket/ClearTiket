@@ -1,10 +1,6 @@
 package com.clearticket.clearticket.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -16,18 +12,21 @@ import java.util.concurrent.ConcurrentHashMap;
  * 이메일 인증번호 발송 및 검증 서비스.
  * 인증코드는 인메모리(ConcurrentHashMap)에 저장하며 5분간 유효합니다.
  * 운영 환경에서는 Redis로 교체를 권장합니다.
+ *
+ * 실제 SMTP 발송은 AsyncMailSender 에서 비동기로 처리한다.
+ * 코드 생성/저장은 즉시 끝나므로 sendCode() / sendPasswordResetCode() 는
+ * 메일 전송 완료를 기다리지 않고 바로 반환된다 — 프론트에서 인증번호
+ * 입력 화면으로 즉시 전환할 수 있게 하기 위함.
  */
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
 
-    private final JavaMailSender mailSender;
+    private final AsyncMailSender asyncMailSender;
 
     private final Map<String, CodeEntry> codeStore = new ConcurrentHashMap<>();
 
     private static final int EXPIRE_MINUTES = 5;
-    private static final String FROM_ADDRESS = "tjoeun.jr5@gmail.com";
-    private static final String FROM_NAME    = "클리어티켓";
 
     // ─────────────────────────────────────────────
     // 인증번호 발송 (회원가입용 - 미가입 이메일만)
@@ -36,7 +35,7 @@ public class EmailVerificationService {
     public void sendCode(String toEmail) {
         String code = generateCode();
         codeStore.put(toEmail, new CodeEntry(code, LocalDateTime.now().plusMinutes(EXPIRE_MINUTES)));
-        sendMail(toEmail, code);
+        asyncMailSender.sendAsync(toEmail, "[클리어티켓] 이메일 인증번호 안내", buildHtmlBody(code));
     }
 
     // ─────────────────────────────────────────────
@@ -46,7 +45,7 @@ public class EmailVerificationService {
     public void sendPasswordResetCode(String toEmail) {
         String code = generateCode();
         codeStore.put("reset:" + toEmail, new CodeEntry(code, LocalDateTime.now().plusMinutes(EXPIRE_MINUTES)));
-        sendMail(toEmail, code);
+        asyncMailSender.sendAsync(toEmail, "[클리어티켓] 비밀번호 재설정 인증번호 안내", buildHtmlBody(code));
     }
 
     // ─────────────────────────────────────────────
@@ -85,22 +84,6 @@ public class EmailVerificationService {
         SecureRandom rnd = new SecureRandom();
         int num = rnd.nextInt(900_000) + 100_000;
         return String.valueOf(num);
-    }
-
-    private void sendMail(String toEmail, String code) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(FROM_ADDRESS, FROM_NAME);
-            helper.setTo(toEmail);
-            helper.setSubject("[클리어티켓] 이메일 인증번호 안내");
-            helper.setText(buildHtmlBody(code), true);
-
-            mailSender.send(message);
-        } catch (MessagingException | java.io.UnsupportedEncodingException e) {
-            throw new RuntimeException("이메일 발송에 실패했습니다.", e);
-        }
     }
 
     private String buildHtmlBody(String code) {
