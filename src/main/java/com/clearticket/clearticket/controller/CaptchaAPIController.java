@@ -11,11 +11,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/captcha")
-public class CaptchaController {
+public class CaptchaAPIController {
 
     private final CaptchaService captchaService;
 
-    public CaptchaController(CaptchaService captchaService) {
+    public CaptchaAPIController(CaptchaService captchaService) {
         this.captchaService = captchaService;
     }
 
