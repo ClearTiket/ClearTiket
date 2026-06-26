@@ -1,16 +1,663 @@
 <!DOCTYPE html>
-
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>클리어티켓</title>
+    <title>Title</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/swiper@12/swiper-bundle.min.js"></script>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
+
+<style>
+    html,
+    body {
+        position: relative;
+        height: 100%;
+    }
+
+    body {
+        background: #f8f9fa;
+        font-family: 'Noto Sans KR', sans-serif;
+        font-size: 14px;
+        color: #000;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+
+        align-items: center;
+        justify-content: flex-start;
+        padding: 0;
+        box-sizing: border-box;
+
+        min-height: 100%;
+        height: auto;
+    }
+
+    .site-header {
+        width: 100%;
+    }
+
+    .site-footer {
+        width: 100%;
+    }
+
+    /* 1. Carousel 전체 높이 600px 고정 */
+    .swiper {
+        width: 100%;
+        height: 600px;
+        padding: 20px 0; /* 네비게이션/페이지네이션 공간 확보용 패딩 */
+        box-sizing: border-box;
+        margin-top: 40px;
+        margin-bottom: 60px;
+
+        flex-shrink: 0;
+    }
+
+    /* 2. Slide 높이 550px, 너비 350px 고정 */
+    .swiper-slide {
+        width: 350px !important; /* JS 'auto' 설정과 함께 너비 강제 고정 */
+        height: 550px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+
+        /* 내부 요소 정렬 설정 */
+        display: flex;
+        flex-direction: column;
+        align-items: center;       /* 3. 상단 가운데 정렬 */
+        justify-content: flex-start;
+        padding-top: 25px;         /* 슬라이드 내부 상단 여백 */
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    /* 3. Slide 내부 상단 이미지 영역 (너비 300px, 높이 400px) */
+    .swiper-slide img {
+        display: block;
+        width: 300px;
+        height: 400px;
+        object-fit: cover;         /* 이미지 비율 유지하며 꽉 채움 */
+        border-radius: 8px;        /* 이미지 모서리 라운딩 (선택 사항) */
+    }
+
+    /* 4. Slide 내부 하단 h3 제목 텍스트 영역 */
+    .swiper-slide h3 {
+        width: 300px;              /* 이미지 너비와 일치시켜 통일감 부여 */
+        margin: 20px 0 0 0;        /* 이미지와의 간격 */
+        font-size: 18px;
+        font-weight: 600;
+        color: #222;
+        text-align: center;
+
+        /* 텍스트가 너무 길어질 경우를 대비한 안전장치 */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* 네비게이션 버튼 색상 커스텀 (디자인용) */
+    .swiper-button-next, .swiper-button-prev {
+        /* 1. 원형 버튼 규격 설정 */
+        width: 70px !important;       /* 원의 가로 크기 */
+        height: 70px !important;      /* 원의 세로 크기 */
+        background-color: #ffffff;    /* 조건: 흰색 배경 */
+        border: 2px solid #000000;    /* 조건: 검은색 테두리 */
+        border-radius: 50%;           /* 조건: 모서리 반경을 원으로 */
+
+        /* 2. 내부 화살표 아이콘 정중앙 정렬 */
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        color: #000000;               /* 화살표 색상도 검은색으로 통일 */
+
+        /* 부드러운 호버 효과 및 그림자 (시각적 보완) */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease;
+
+        padding: 15px;
+    }
+
+    /* 기본 상태 (화면 너비가 1280px 미만일 때는 양 끝단에서 살짝 떨어진 곳에 위치) */
+    .swiper-button-prev {
+        left: 20px;
+        right: auto;
+    }
+    .swiper-button-next {
+        right: 20px;
+        left: auto;
+    }
+
+    /* 마우스 올렸을 때 반응 (선택 사항) */
+    .swiper-button-prev:hover,
+    .swiper-button-next:hover {
+        background-color: #000000;    /* 배경을 검은색으로 */
+        color: #ffffff;               /* 화살표를 흰색으로 반전 */
+        transform: scale(1.05);       /* 살짝 커지는 효과 */
+    }
+
+    /* 핵심: 화면 너비가 대형 모니터 기준(1280px 이상)일 때 중앙 정렬 가동 */
+    @media (min-width: 1280px) {
+        .swiper-button-prev {
+            /* 화면 중앙(50%)에서 좌측으로 600px 이동 */
+            left: calc(50% - 600px) !important;
+            right: auto !important;
+        }
+
+        .swiper-button-next {
+            /* 화면 중앙(50%)에서 우측으로 600px 이동 (즉, 오른쪽 끝에서 중심 방향으로 calc) */
+            right: calc(50% - 600px) !important;
+            left: auto !important;
+        }
+    }
+
+    .swiper-pagination-bullet-active {
+        background: #3971E7;
+    }
+
+    .card-section {
+        width: 1200px;
+        box-sizing: border-box;
+        margin-bottom: 40px;
+    }
+
+    /* 조건 1: 가장 위 h2 타이틀 좌우 중앙 정렬 */
+    .card-section h2 {
+        text-align: center;
+        font-size: 28px;
+        font-weight: 700;
+        color: #111;
+        margin: 0 0 24px 0;
+    }
+
+    /* 조건 2, 3: 탭 그룹 라인 (탭은 중앙정렬, 더보기는 우측정렬 배치) */
+    .genre-control-row {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    /* 조건 2: 탭 그룹 (테두리 없음, 중앙 배치) */
+    .tab-group {
+        display: flex;
+        gap: 24px;
+    }
+
+    .tab-btn {
+        border: none;                   /* 조건 2: 테두리 없음 */
+        background: none;
+        font-size: 16px;
+        font-weight: 500;
+        color: #888;
+        cursor: pointer;
+        padding: 6px 4px;
+        transition: color 0.2s;
+    }
+
+    .tab-btn.active {
+        color: #000;
+        font-weight: 700;
+        border-bottom: 2px solid #000; /* 활성화 표시용 밑줄 (선택사항) */
+    }
+
+    /* 조건 3: 더보기 버튼 (동일 선상 우측 정렬, 테두리 없음) */
+    .more-btn {
+        position: absolute;
+        right: 0;
+        border: none;                   /* 조건 3: 테두리 없음 */
+        background: none;
+        font-size: 14px;
+        font-weight: 500;
+        color: #666;
+        cursor: pointer;
+    }
+
+    /* 조건 4: 메인 Card Slot 컨테이너 설정 */
+    .card-slot-container {
+        width: 1200px;                  /* 조건 4: 너비 1200px */
+        height: 450px;                  /* 조건 4: 높이 500px */
+        border: 1px solid #D9D9D9;      /* 조건 4: 테두리 1px #D9D9D9 */
+        border-radius: 8px;             /* 조건 4: 모서리 반경 8px */
+        background-color: #ffffff;
+
+        /* 조건 5: 상하좌우 여백 25px, 가로 간격 25px 균등 분배 */
+        padding: 20px;
+        box-sizing: border-box;
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+        align-items: stretch;           /* 자식 카드의 높이를 최대화 */
+    }
+
+    /* 조건 5: 개별 카드 스타일 (너비/높이 최대 확장) */
+    .rank-slot-card {
+        flex: 1;                        /* 공간을 5개가 정확히 균등하게 나누어 가짐 */
+        height: 100%;                   /* 부모 높이 안에서 최대치 채움 */
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        box-sizing: border-box;
+        border: 1px solid #D9D9D9;
+        border-radius: 8px;
+        padding: 5px;
+    }
+
+    /* 조건 6: 카드 상단 가로 3 : 세로 4 이미지 래퍼 */
+    .rank-slot-card-img {
+        position: relative;             /* 조건 7: 내부 숫자 배치를 위한 기준점 설정 */
+        width: 100%;                    /* 조건 6: 최대 너비 크기 */
+        aspect-ratio: 3 / 4;            /* 조건 6: 가로 3, 세로 4 비율 */
+        border-radius: 6px;
+        overflow: hidden;
+        background-color: #eef2f7;
+    }
+
+    .rank-slot-card-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* 조건 7: 이미지 내부 좌하단 순위 숫자 표기 */
+    .img-rank-num {
+        position: absolute;
+        bottom: 12px;                   /* 좌하단 배치 */
+        left: 12px;
+        font-size: 32px;
+        font-weight: 800;
+        color: #FFFFFF;                 /* 조건 7: 글자색 #FFFFFF */
+        line-height: 1;
+        /* 배경 이미지에 묻히지 않도록 부드러운 그림자 쉐이딩 추가 */
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    }
+
+    /* 조건 6: 하단 제목 텍스트 영역 */
+    .rank-slot-card-text {
+        margin-top: 12px;               /* 이미지 영역과의 상하 간격 */
+        box-sizing: border-box;
+    }
+
+    .rank-slot-card-text h4 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: #222;
+        line-height: 1.4;
+
+        /* 텍스트가 폭주하여 카드 레이아웃을 깨는 현상 원천 방쇄 */
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+
 <body>
 <th:block th:replace="~{fragments/header :: header}"></th:block>
 
+    <div class="swiper mainSwiper">
+        <div class="swiper-wrapper">
+            <div class="swiper-slide">
+                <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500" alt="Slide 1">
+                <h3>뮤지컬 〈블루 노팅힐〉</h3>
+            </div>
+            <div class="swiper-slide">
+                <img src="https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=500" alt="Slide 2">
+                <h3>연극 〈한여름 밤의 꿈〉</h3>
+            </div>
+            <div class="swiper-slide">
+                <img src="https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=500" alt="Slide 3">
+                <h3>오케스트라 마스터피스</h3>
+            </div>
+            <div class="swiper-slide">
+                <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=500" alt="Slide 4">
+                <h3>힙합 페스티벌 2026</h3>
+            </div>
+            <div class="swiper-slide">
+                <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=500" alt="Slide 5">
+                <h3>모던 아트 전시회</h3>
+            </div>
+            <div class="swiper-slide">
+                <img src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500" alt="Slide 6">
+                <h3>팝 밴드 내한 콘서트</h3>
+            </div>
+            <div class="swiper-slide">
+                <img src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500" alt="Slide 6">
+                <h3>팝 밴드 내한 콘서트</h3>
+            </div>
+            <div class="swiper-slide">
+                <img src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500" alt="Slide 6">
+                <h3>팝 밴드 내한 콘서트</h3>
+            </div>
+            <div class="swiper-slide">
+                <img src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=500" alt="Slide 6">
+                <h3>팝 밴드 내한 콘서트</h3>
+            </div>
+        </div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+<!--        <div class="swiper-pagination"></div>-->
+    </div>
+
+    <section class="card-section ranking">
+        <h2>장르별 랭킹</h2>
+
+        <div class="genre-control-row">
+            <div class="tab-group">
+                <button class="tab-btn active">콘서트</button>
+                <button class="tab-btn">뮤지컬</button>
+                <button class="tab-btn">클래식</button>
+            </div>
+            <button class="more-btn">더보기&gt;</button>
+        </div>
+
+        <div class="card-slot-container">
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300" alt="Rank 1">
+                    <span class="img-rank-num">1</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>뮤지컬 〈블루 노팅힐〉 - 오리지널 캐스팅</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300" alt="Rank 2">
+                    <span class="img-rank-num">2</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>로맨틱 연극 〈한여름 밤의 꿈 신드롬〉</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=300" alt="Rank 3">
+                    <span class="img-rank-num">3</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>2026 클래식 소사이어티 그랜드 콘서트</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300" alt="Rank 4">
+                    <span class="img-rank-num">4</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>K-POP 라이브 월드 투어 인 서울</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=300" alt="Rank 5">
+                    <span class="img-rank-num">5</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>프랑스 현대 미술 컬렉션 특별전</h4>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="card-section recommending">
+        <h2>추천 공연</h2>
+
+        <div class="card-slot-container">
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300" alt="Rank 1">
+                    <span class="img-rank-num">1</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>뮤지컬 〈블루 노팅힐〉 - 오리지널 캐스팅</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300" alt="Rank 2">
+                    <span class="img-rank-num">2</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>로맨틱 연극 〈한여름 밤의 꿈 신드롬〉</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=300" alt="Rank 3">
+                    <span class="img-rank-num">3</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>2026 클래식 소사이어티 그랜드 콘서트</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300" alt="Rank 4">
+                    <span class="img-rank-num">4</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>K-POP 라이브 월드 투어 인 서울</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=300" alt="Rank 5">
+                    <span class="img-rank-num">5</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>프랑스 현대 미술 컬렉션 특별전</h4>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="card-section preparing">
+        <h2>오픈 예정 공연</h2>
+
+        <div class="card-slot-container">
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300" alt="Rank 1">
+                    <span class="img-rank-num">1</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>뮤지컬 〈블루 노팅힐〉 - 오리지널 캐스팅</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300" alt="Rank 2">
+                    <span class="img-rank-num">2</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>로맨틱 연극 〈한여름 밤의 꿈 신드롬〉</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=300" alt="Rank 3">
+                    <span class="img-rank-num">3</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>2026 클래식 소사이어티 그랜드 콘서트</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300" alt="Rank 4">
+                    <span class="img-rank-num">4</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>K-POP 라이브 월드 투어 인 서울</h4>
+                </div>
+            </div>
+
+            <div class="rank-slot-card">
+                <div class="rank-slot-card-img">
+                    <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=300" alt="Rank 5">
+                    <span class="img-rank-num">5</span>
+                </div>
+                <div class="rank-slot-card-text">
+                    <h4>프랑스 현대 미술 컬렉션 특별전</h4>
+                </div>
+            </div>
+
+        </div>
+    </section>
+    
+
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
 </body>
+
+<script>
+    fillSwiper();
+
+    const mainSwiper = new Swiper(".mainSwiper", {
+        /* ★ 핵심 수정: 고정 너비(350px)를 온전히 렌더링하기 위해 'auto' 설정 */
+        slidesPerView: "auto",
+        spaceBetween: 30, // 슬라이드 카드 간의 간격 (조금 더 넓혀서 시각적 균형 확보)
+        loop: true,
+        navigation: {
+            nextEl: ".swiper-button-next",
+            prevEl: ".swiper-button-prev"
+        },
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true
+        },
+        autoplay: {
+            delay: 5000,
+            disableOnInteraction: true
+        },
+        mousewheel: false,
+        centeredSlides: true, // 중앙 정렬 유지
+    });
+
+    function createBannerSlide(data) {
+        const swiperSlide = document.createElement("div");
+        swiperSlide.className = "swiper-slide";
+
+        const img = document.createElement("img");
+        img.src = data.posterUrl;
+        img.alt = data.title;
+
+        const h3 = document.createElement("h3");
+        h3.textContent = data.title;
+
+        swiperSlide.appendChild(img);
+        swiperSlide.appendChild(h3);
+
+        return swiperSlide;
+    }
+
+    function createRankSlotCard(data, rankNum) {
+        const rankSlotCard = document.createElement("div");
+        rankSlotCard.classList.add("rank-slot-card");
+
+        const rankSlotCardImg = document.createElement("div");
+        rankSlotCardImg.classList.add("rank-slot-card-img");
+
+        const img = document.createElement("img");
+        img.src = data.posterUrl;
+        img.alt = data.title;
+
+        const imgRankNum = document.createElement("span");
+        imgRankNum.classList.add("img-rank-num");
+        imgRankNum.textContent = rankNum;
+
+        const rankSlotCardText = document.createElement("div");
+        rankSlotCardText.classList.add("rank-slot-card-text");
+
+        const h4 = document.createElement("h4");
+        h4.textContent = data.title;
+
+        rankSlotCardText.appendChild(h4);
+
+        rankSlotCardImg.appendChild(img);
+        rankSlotCardImg.appendChild(imgRankNum);
+
+        rankSlotCard.appendChild(rankSlotCardImg);
+        rankSlotCard.appendChild(rankSlotCardText);
+
+        return rankSlotCard;
+    }
+
+    async function getRankingData (genre, page) {
+        try {
+            const fetchUrl = "/api/performances/ranking?genre=" + (genre == null ? "" : genre) + "&page=" + (page == null ? "" : page);
+            const response = await fetch(fetchUrl, {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            const resultJson = await response.json();
+            return resultJson;
+        } catch (err) {
+            console.log(err);
+        }
+
+    }
+
+    async function fillSwiper() {
+        const swiperWrapper = document.querySelector(".swiper-wrapper");
+        const bannerRankingData = await getRankingData();
+        swiperWrapper.replaceChildren();
+        for (let i = 0; i < 10; i++) {
+            swiperWrapper.appendChild(createBannerSlide(bannerRankingData.at(i)));
+        }
+    }
+
+    async function fillCardSlot(cardSectionClassName, genreName) {
+        const cardSlotContainer = document.querySelector(".card-section." + cardSectionClassName + " .card-slot-container");
+        const cardRankingData = await getRankingData(genreName);
+        cardSlotContainer.replaceChildren();
+        for (let i = 0; i < 5; i++) {
+            cardSlotContainer.appendChild(createRankSlotCard(cardRankingData.at(i), i + 1))
+        }
+    }
+
+    fillCardSlot("ranking", "콘서트");
+    fillCardSlot("recommending");
+    fillCardSlot("preparing");
+
+    const tabBtns = document.querySelectorAll(".tab-btn")
+    tabBtns.forEach(btn => {
+        btn.addEventListener("click", (event) => {
+            tabBtns.forEach(b => {
+                b.classList.remove("active");
+            });
+            btn.classList.add("active");
+            fillCardSlot("ranking", btn.textContent);
+        })
+    });
+
+    const moreBtn = document.querySelector(".more-btn");
+    moreBtn.addEventListener("click", (event) => {
+        window.location.href = "/performances/ranking";
+    });
+</script>
+
 </html>
