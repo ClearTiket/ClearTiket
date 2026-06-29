@@ -16,16 +16,50 @@ import java.util.List;
 @RequestMapping("/api/search/performance")
 @RequiredArgsConstructor
 public class SearchPerformanceApiController {
-    final SearchPerformanceService searchPerformanceService;
     private final AutocorrectSearchService autocorrectSearchService;
 
     @GetMapping("")
-    public ResponseEntity<List<PerformanceDocument>> performanceSearch(@RequestParam String keyword) {
-        return ResponseEntity.ok(searchPerformanceService.searchPerformances(keyword));
+    public ResponseEntity<java.util.Map<String, Object>> performanceSearch(
+            @RequestParam String keyword) {
+        log.info("[통합 조건 검색 가동] 입력 키워드 -> '{}'", keyword);
+
+        List<PerformanceDocument> results = autocorrectSearchService.searchAutocorrect(keyword);
+
+        String correctedKeyword = keyword;
+
+        if (!results.isEmpty()) {
+            boolean isExactMatchExist = false;
+
+            for (PerformanceDocument doc : results) {
+                String title = doc.getTitle();
+                String castings = doc.getCastings();
+                String genre = doc.getGenre();
+
+                if ((title != null && title.contains(keyword)) ||
+                        (castings != null && castings.contains(keyword)) ||
+                        (genre != null && genre.contains(keyword))) {
+                    isExactMatchExist = true;
+                    break;
+                }
+            }
+
+            if (!isExactMatchExist) {
+                String realTitle = results.get(0).getTitle();
+                correctedKeyword = realTitle.replaceAll("\\[.*?\\]", "").trim();
+            }
+        }
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("correctedKeyword", correctedKeyword);
+        response.put("results", results);
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("")
-    public ResponseEntity<List<PerformanceDocument>> performanceSearch(@RequestParam String keyword, @RequestBody SearchPerformanceFilterDto filterDto) {
+    public ResponseEntity<List<PerformanceDocument>> performanceSearch(
+            @RequestParam String keyword,
+            @RequestBody SearchPerformanceFilterDto filterDto) {
         return null;
     }
 
@@ -36,8 +70,7 @@ public class SearchPerformanceApiController {
 
     @GetMapping("/suggest")
     public ResponseEntity<List<String>> getSearchSuggestions(@RequestParam("keyword") String keyword) {
-
-        log.info("⚡ [실시간 타이핑 입력 감지]: -> '{}'", keyword);
+        log.info("[실시간 타이핑 입력 감지]: -> '{}'", keyword);
         List<String> suggestions = autocorrectSearchService.getSuggestions(keyword);
         return ResponseEntity.ok(suggestions);
     }

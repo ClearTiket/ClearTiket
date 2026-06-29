@@ -36,27 +36,30 @@ public class AutocorrectSearchService {
             return new ArrayList<>();
         }
 
+        final String keyword = searchText.trim();
+
         Query integrationQuery = Query.of(q -> q
                 .bool(b -> b
-                        .should(s -> s
-                                .multiMatch(mm -> mm
-                                        .fields("title", "castings", "venue_name")
-                                        .query(searchText)
-                                        .fuzziness("AUTO")
-                                )
-                        )
-                        .should(s -> s
-                                .match(m -> m
-                                        .field("genre")
-                                        .query(searchText)
-                                )
-                        )
+                        // 제목(title) 매칭 조건 (오타 허용 + 부분 일치 둘 다 커버)
+                        .should(s -> s.match(m -> m.field("title").query(keyword).fuzziness("AUTO")))
+                        .should(s -> s.wildcard(w -> w.field("title").value("*" + keyword + "*")))
+
+                        // 배우명(castings) 매칭 조건 (정확히 검색 또는 포함될 때만 - 오타 교정 X)
+                        .should(s -> s.match(m -> m.field("castings").query(keyword)))
+                        .should(s -> s.wildcard(w -> w.field("castings").value("*" + keyword + "*")))
+
+                        // 장르명(genre) 매칭 조건 (정확히 검색 - 오타 교정 X)
+                        .should(s -> s.match(m -> m.field("genre").query(keyword)))
+
+                        // 공연장명(venue_name) 매칭 조건 (선택 사항 - 오타 교정 X)
+                        .should(s -> s.match(m -> m.field("venue_name").query(keyword)))
+                        .should(s -> s.wildcard(w -> w.field("venue_name").value("*" + keyword + "*")))
                 )
         );
 
         NativeQuery nativeQuery = NativeQuery.builder()
                 .withQuery(integrationQuery)
-                .withPageable(PageRequest.of(0, 10))
+                .withPageable(PageRequest.of(0, 100))
                 .build();
 
         SearchHits<PerformanceDocument> searchHits = elasticsearchOperations.search(nativeQuery, PerformanceDocument.class);
