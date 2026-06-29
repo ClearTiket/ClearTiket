@@ -725,6 +725,76 @@
     document.getElementById("section-view").style.display = "flex";
     document.getElementById("btn-back-to-zone").style.display = "none";
   }
+
+
+
+
+
+  // =================================================================
+  // 🚀 [혜인님 파트 도킹] 선택 완료 버튼 클릭 시 실제 데이터 연동 및 예매 생성
+  // =================================================================
+  document.getElementById("btn-submit").addEventListener("click", async function() {
+    if (selectedSeatList.length === 0) return;
+
+    // 1. 주소창(URL)에 붙어 있는 실제 스케줄 ID 긁어오기 (예: ?scheduleId=501)
+    const urlParams = new URLSearchParams(window.location.search);
+    const realScheduleId = urlParams.get('scheduleId');
+
+    if (!realScheduleId) {
+      alert("정상적인 스케줄 접근이 아닙니다. 상단 URL 파라미터를 확인해 주세요.");
+      return;
+    }
+
+    // 2. 선택한 좌석 수량만큼 총 금액 동적 계산 (하드코딩 배제)
+    let dynamicTotalPrice = 0;
+    selectedSeatList.forEach(seat => {
+      dynamicTotalPrice += seat.price;
+    });
+
+    // 3. 혜인님 수정 DTO 규격에 맞춰 진짜 데이터 주머니 조립
+    // (※ 단, seatIds는 현재 팀원 화면 구조상 가상 숫자 배열로 우선 파싱하여 유연하게 호환성을 잡아둡니다.)
+    const fakeSeatIds = selectedSeatList.map((seat, index) => index + 101);
+
+    const requestData = {
+      performanceId: 1,                          // 상위 공연 고유 번호
+      scheduleId: parseInt(realScheduleId),       // 🚀 주소창에서 추출한 진짜 스케줄 ID 매핑!
+      userId: 1,                                 // 세션 또는 테스트 유저 ID
+      seatIds: fakeSeatIds,
+      couponId: null,
+      totalPrice: dynamicTotalPrice,             // 🚀 실시간 선택된 실제 총 금액 동적 반영!
+      ticketType: "일반"
+    };
+
+    try {
+      // 4. 혜인님 백엔드 API 컨트롤러 찌르기
+      const response = await fetch("/api/reservations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        throw new Error("예매 임시 저장에 실패했습니다.");
+      }
+
+      const responseData = await response.json();
+      const reservationId = responseData.id || responseData.reservationId;
+
+      if (reservationId) {
+        // 5. 🎉 성공 시 예약 ID를 물고 혜인님 결제/쿠폰 페이지로 점프!
+        window.location.href = `/coupons?reservationId=${reservationId}`;
+      } else {
+        alert("예약 번호를 가져오지 못했습니다.");
+      }
+
+    } catch (error) {
+      console.error("예매 생성 중 에러 발생:", error);
+      alert("서버 연결 중 오류가 발생했습니다. 다시 시도해 주세요.");
+    }
+  });
+
 </script>
 </body>
 </html>

@@ -8,6 +8,7 @@ import com.clearticket.clearticket.model.dto.ReservationResponseDto;
 import com.clearticket.clearticket.model.entity.*;
 import com.clearticket.clearticket.repository.AddressRepository;
 import com.clearticket.clearticket.repository.ReservationRepository;
+import com.clearticket.clearticket.repository.ScheduleRepository;
 import com.clearticket.clearticket.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final SeatRepository seatRepository;
     private final AddressRepository addressRepository;
+    private final ScheduleRepository scheduleRepository;
 
     /**
      * 신규 티켓 예매 내역 생성 및 DB저장
@@ -36,6 +38,20 @@ public class ReservationService {
         reservation.setTicketType(reservationRequestDto.getTicketType());
         reservation.setShippingFee(0);
         reservation.setReservationNumber("RSV-" + System.currentTimeMillis());
+
+        if (reservationRequestDto.getScheduleId() != null) {
+            Schedule schedule = scheduleRepository.findById(reservationRequestDto.getScheduleId())
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 공연 스케줄 ID입니다: " + reservationRequestDto.getScheduleId()));
+            reservation.setSchedule(schedule);
+        } else {
+            throw new IllegalArgumentException("스케줄 ID(scheduleId)는 필수 항목입니다.");
+        }
+
+        if (reservationRequestDto.getUserId() != null) {
+            User user = new User();
+            user.setUserId(reservationRequestDto.getUserId());
+            reservation.setUser(user);
+        }
 
         Reservation savedReservation = reservationRepository.save(reservation);
 

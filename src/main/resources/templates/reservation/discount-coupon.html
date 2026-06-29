@@ -78,7 +78,7 @@
             </div>
 
             <div class="btn-group">
-                <a th:href="@{/reservations/seats}" class="btn btn-outline-gray btn-prev">이전</a>
+                <a th:href="@{/venue/seat/selection(scheduleId=${reservation?.schedule?.scheduleId})}" class="btn btn-outline-gray btn-prev">이전</a>
                 <button type="button" id="next-btn" class="btn btn-primary btn-next">다음단계</button>
             </div>
         </div>

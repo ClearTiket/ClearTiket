@@ -11,6 +11,7 @@ import java.util.List;
 @ToString
 public class ReservationRequestDto {
     private Long performanceId;
+    private Long scheduleId;
     private Long userId;
     private List<Long> seatIds;
     private Long couponId;
