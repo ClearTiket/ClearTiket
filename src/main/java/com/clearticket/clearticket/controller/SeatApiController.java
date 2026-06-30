@@ -15,14 +15,12 @@ public class SeatApiController {
 
     private final SeatService seatService;
 
-    // 💡 1. 좌석 목록 조회 API (GET http://localhost:8080/api/seats?performanceId=1)
     @GetMapping
-    public ResponseEntity<List<SeatResponse>> getSeats(@RequestParam("performanceId") Long performanceId) {
-        List<SeatResponse> seats = seatService.getSeatsByPerformance(performanceId);
+    public ResponseEntity<List<SeatResponse>> getSeats(@RequestParam("scheduleId") Long scheduleId) {
+        List<SeatResponse> seats = seatService.getSeatsBySchedule(scheduleId);
         return ResponseEntity.ok(seats); // 200 OK 상태코드와 함께 좌석 포장지 묶음을 반환!
     }
 
-    // 💡 2. 좌석 임시 선점 API (POST http://localhost:8080/api/seats/book)
     @PostMapping("/book")
     public ResponseEntity<String> bookSeat(@RequestParam Long seatId, @RequestParam Long userId) {
         try {

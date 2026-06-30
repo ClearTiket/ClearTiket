@@ -218,6 +218,7 @@
       background-color: #d1d5db;
       color: #9ca3af;
       cursor: not-allowed;
+      pointer-events: none;
     }
     .seat-grid-container .seat-circle.sold-out:hover {
       background-color: #d1d5db;
@@ -524,19 +525,8 @@
 <script>
   let currentActiveZone = null;
   let selectedSeatList = [];
-
-  const PRICE_POLICY = {
-    'VIP': { name: 'VIP석', price: 160000 },
-    'R':   { name: 'R석',   price: 140000 },
-    'S':   { name: 'S석',   price: 110000 }
-  };
-
-  // [1] 행(Row)별 등급 판정
-  function getSeatGrade(rowLabel) {
-    if (['A', 'B'].includes(rowLabel)) return 'VIP';
-    if (['C', 'D', 'E', 'F'].includes(rowLabel)) return 'R';
-    return 'S';
-  }
+  //[0] 전역 데이터 초기화
+  const allSeats = generateInitialSeats();
 
   // [2] 예매대기 기능 매핑
   function openWaitingPopup() {
@@ -574,7 +564,7 @@
   });
 
   // [4] 구역 선택 진입
-  function selectZone(zoneName) {
+  async function selectZone(zoneName) { // async 추가
     currentActiveZone = zoneName;
 
     document.getElementById("section-view").style.display = "none";
@@ -585,57 +575,48 @@
     if (zoneName === 'A') directionGuide = "A 구역 [ 왼쪽 사이드 ]";
     else if (zoneName === 'B') directionGuide = "B 구역 [ 중앙 무대 정면 ]";
     else if (zoneName === 'C') directionGuide = "C 구역 [ 오른쪽 사이드 ]";
-
     document.getElementById("selected-zone-title").innerText = directionGuide;
 
-    createSeatGrid(zoneName);
+    createSeatGrid(zoneName, allSeats);
   }
 
   // [5] 동적 좌석 격자 생성
-  function createSeatGrid(zoneName) {
+  function createSeatGrid(zoneName, seatList) {
     const gridContainer = document.getElementById("seat-grid");
     if (!gridContainer) return;
     gridContainer.innerHTML = "";
 
-    const rows = 10;
-    const cols = 10;
+    // 1. 서버에서 받은 데이터 중 현재 구역(zoneName)에 해당하는 좌석만 필터링
+    const zoneSeats = seatList.filter(s => s.sectionName === zoneName);
 
-    for (let r = 1; r <= rows; r++) {
-      const rowLabel = String.fromCharCode(64 + r);
-      const grade = getSeatGrade(rowLabel);
+    // 2. 좌석 렌더링
+    zoneSeats.forEach(seat => {
+      const seatElement = document.createElement("div");
+      seatElement.classList.add("seat-circle");
 
-      for (let c = 1; c <= cols; c++) {
-        const seat = document.createElement("div");
-        seat.classList.add("seat-circle");
+      // API에서 받아온 등급 데이터로 클래스 매핑
+      seatElement.classList.add(`grade-${seat.seatGrade.toLowerCase()}`);
+      seatElement.innerText = seat.seatNum; // 좌석 번호 (A1, B2 등)
+      seatElement.setAttribute("data-seat-id", seat.seatId);
 
-        const seatCode = `${zoneName}-${rowLabel}${c}`;
-        seat.innerText = `${rowLabel}${c}`;
-        seat.setAttribute("data-seat-id", seatCode);
-        seat.classList.add(`grade-${grade.toLowerCase()}`);
-
-        // 가상 매진 데이터셋 매핑 (3번, 7번 열 매진)
-        if (c === 3 || c === 7) {
-          seat.classList.add("sold-out");
-          seat.innerText = "X";
-        }
-
-        // 타 구역 교차 예매 선택 상태 동기화 유지
-        const isAlreadySelected = selectedSeatList.some(item => item.code === seatCode);
-        if (isAlreadySelected) {
-          seat.classList.add("selected");
-        }
-
-        seat.onclick = function() {
-          toggleSeatSelection(seat, seatCode, zoneName, rowLabel, c, grade);
-        };
-
-        gridContainer.appendChild(seat);
+      // 3. 예약 상태 반영 (BOOKED이면 클릭 불가)
+      if (seat.status === "BOOKED") {
+        seatElement.classList.add("sold-out");
+        seatElement.innerText = "X";
       }
-    }
+
+      // 4. 클릭 이벤트 연결 (API 데이터를 그대로 전달)
+      seatElement.onclick = function() {
+        // 이제 toggleSeatSelection에는 API에서 받은 seat 객체 전체를 넘겨줍니다.
+        toggleSeatSelection(seatElement, seat);
+      };
+
+      gridContainer.appendChild(seatElement);
+    });
   }
 
   // [6] 좌석 클릭 토글
-  function toggleSeatSelection(seatElement, seatCode, zone, row, col, grade) {
+  function toggleSeatSelection(seatElement, seatData) {
     if (seatElement.classList.contains("sold-out")) {
       alert("이미 예매가 완료된 좌석입니다.");
       return;
@@ -645,19 +626,22 @@
 
     if (isSelected) {
       seatElement.classList.remove("selected");
-      selectedSeatList = selectedSeatList.filter(item => item.code !== seatCode);
+      selectedSeatList = selectedSeatList.filter(item => item.seatId !== seatData.seatId);
     } else {
       if (selectedSeatList.length >= 2) {
         alert("티켓은 1인당 최대 2매까지만 선택할 수 있습니다.");
         return;
       }
       seatElement.classList.add("selected");
+
+      // API에서 받은 정보를 객체에 저장
       selectedSeatList.push({
-        code: seatCode,
-        zone: zone,
-        label: `${row}열 ${col}번`,
-        gradeName: PRICE_POLICY[grade].name,
-        price: PRICE_POLICY[grade].price
+        seatId: seatData.seatId,
+        zone: seatData.sectionName, // 추가: 구역 정보 저장
+        code: `${seatData.sectionName}-${seatData.rowNum}${seatData.seatNum}`,
+        label: `${seatData.rowNum}열 ${seatData.seatNum}번`,
+        gradeName: seatData.seatGrade + '석',
+        price: seatData.price
       });
     }
 
@@ -725,6 +709,46 @@
     document.getElementById("section-view").style.display = "flex";
     document.getElementById("btn-back-to-zone").style.display = "none";
   }
+
+  // [10] 좌석 배치
+  function generateInitialSeats() {
+    const seats = [];
+    const sections = ['A', 'B', 'C'];
+
+    sections.forEach(section => {
+      for (let row = 1; row <= 10; row++) {
+        for (let num = 1; num <= 10; num++) {
+
+          // 등급 결정 로직
+          let grade = '';
+          let price = 0;
+
+          if (row >= 1 && row <= 2) { // 1~2열은 VIP
+            grade = 'VIP';
+            price = 160000;
+          } else if (row >= 3 && row <= 6) { // 3~5열은 R
+            grade = 'R';
+            price = 140000;
+          } else { // 나머지 S
+            grade = 'S';
+            price = 110000;
+          }
+
+          seats.push({
+            seatId: `${section}-${row}-${num}`,
+            sectionName: section,
+            rowNum: row,
+            seatNum: num,
+            seatGrade: grade,
+            price: price,
+            status: 'AVAILABLE'
+          });
+        }
+      }
+    });
+    return seats;
+  }
+
 </script>
 </body>
 </html>

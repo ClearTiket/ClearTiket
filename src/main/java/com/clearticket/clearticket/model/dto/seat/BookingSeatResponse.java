@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class BookSeatResponse {
+public class BookingSeatResponse {
     private Long seatId;
     private Long userId; // 실제 로그인 구현 전까지 사용할 더미 유저 ID
 }

@@ -2,8 +2,10 @@ package com.clearticket.clearticket.service;
 
 import com.clearticket.clearticket.model.dto.seat.SeatResponse;
 import com.clearticket.clearticket.model.entity.BookingSeat;
+import com.clearticket.clearticket.model.entity.Schedule;
 import com.clearticket.clearticket.model.entity.Seat;
 import com.clearticket.clearticket.model.entity.User;
+import com.clearticket.clearticket.repository.ScheduleRepository;
 import com.clearticket.clearticket.repository.UserRepository;
 import com.clearticket.clearticket.repository.BookingSeatsRepository;
 import com.clearticket.clearticket.repository.SeatRepository;
@@ -22,23 +24,23 @@ public class SeatService {
     private final SeatRepository seatRepository;
     private final BookingSeatsRepository bookingSeatsRepository;
     private final UserRepository userRepository;
+    private final ScheduleRepository scheduleRepository;
 
     // 1. 특정 공연의 모든 좌석 상태를 조회하는 로직
     @Transactional(readOnly = true)
     public List<SeatResponse> getSeatsByPerformance(Long performanceId) {
         List<Seat> allSeats = seatRepository.findByPerformancePerformanceId(performanceId);
 
-        // 기준 시간 계산: 지금으로부터 정확히 5분 전 시간!
+        // 5분 이내에 예약된 모든 좌석 ID를 미리 한 번에 조회합니다
         LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        List<Long> bookedSeatIds = bookingSeatsRepository.findSeatIdsByCreatedAtAfter(fiveMinutesAgo);
 
         return allSeats.stream().map(seat -> {
             // 5분이 지난 데이터는 선점 안 된 걸로 쳐서 다른 사람에게 "AVAILABLE(예매 가능)"으로 보여줍니다!
-            boolean isBooked = bookingSeatsRepository.existsBySeatSeatIdAndCreatedAtAfter(seat.getSeatId(), fiveMinutesAgo);
-            String status = isBooked ? "BOOKED" : "AVAILABLE";
+            String status = bookedSeatIds.contains(seat.getSeatId()) ? "BOOKED" : "AVAILABLE";
             return new SeatResponse(seat, status);
         }).collect(Collectors.toList());
     }
-
     // 2. 좌석을 임시 선점(찜)하는 로직
     @Transactional
     public void bookSeat(Long seatId, Long userId) {
@@ -64,4 +66,19 @@ public class SeatService {
 
         bookingSeatsRepository.save(bookingSeat);
     }
+    // 스케줄 정보
+    @Transactional(readOnly = true)
+    public List<SeatResponse> getSeatsBySchedule(Long scheduleId) {
+        // scheduleId로 공연 정보를 조회
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new IllegalArgumentException("스케줄 정보를 찾을 수 없습니다."));
+
+        // 해당 스케줄에 연결된 공연(Performance)의 ID 추출
+        Long performanceId = schedule.getPerformance().getPerformanceId();
+
+        // 3. 기존 메서드를 재사용하여 좌석 정보 조회
+        return getSeatsByPerformance(performanceId);
+    }
+
+
 }
