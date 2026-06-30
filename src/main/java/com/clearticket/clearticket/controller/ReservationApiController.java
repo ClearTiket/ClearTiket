@@ -26,10 +26,14 @@ public class ReservationApiController {
      * @return
      */
     @PostMapping
-    public ResponseEntity<ReservationResponseDto> createReservation(
+    public ResponseEntity<?> createReservation(
             @RequestBody ReservationRequestDto requestDto) {
-        ReservationResponseDto response = reservationService.createReservation(requestDto);
-        return ResponseEntity.ok(response);
+        try {
+            ReservationResponseDto response = reservationService.createReservation(requestDto);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     /**

@@ -542,6 +542,7 @@
         #captcha-input { width:100%; padding:15px; box-sizing:border-box; margin-bottom:20px; text-align:center; }
         .submit-btn { width:100%; padding:15px; background:#ccc; border:none; border-radius:8px; color:#fff; cursor:pointer; }
     </style>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
 
@@ -583,14 +584,14 @@
 
             <div class="ct-tab-menu-bar">
                 <button type="button" class="ct-tab-btn active" onclick="switchTab(event, 'tab-info')">공연정보</button>
-                <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-casting')">캐스팅정보</button>
+                <button id="tab-btn-casting" type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-casting')">캐스팅정보</button>
                 <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-sales')">판매정보</button>
                 <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'ct-tab-reviews')">관람후기</button>
                 <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'ct-tab-expectations')">기대평</button>
             </div>
 
-            <div id="tab-info" class="ct-tab-content">
-                <div class="ct-section-block">
+            <div id="tab-info" class="ct-tab-content" style="display: block;">
+                <div id="casting-section-main" class="ct-section-block" style="display: none;">
                     <div class="ct-section-header">
                         <h2>캐스팅</h2>
                         <button type="button" class="ct-mini-btn" onclick="document.querySelectorAll('.ct-tab-btn')[1].click();">캐스팅 일정조회</button>
@@ -650,8 +651,8 @@
                 </div>
             </div>
 
-            <div id="tab-casting" class="ct-tab-content">
-                <div id="casting-section" class="ct-section-block" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px;">
+            <div id="tab-casting" class="ct-tab-content" style="display: none;">
+                <div id="casting-section-table" class="ct-section-block" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px;">
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                         <tr>
@@ -668,7 +669,7 @@
                 </div>
             </div>
 
-            <div id="tab-sales" class="ct-tab-content">
+            <div id="tab-sales" class="ct-tab-content" style="display: none;">
                 <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; margin-top: 20px;">
                     <h3>판매 및 취소수수료 정보 안내</h3>
                     <p style="color: #6b7280; font-size: 0.9rem;">티켓 취소 및 환불 수수료 규정은 공정거래위원회 기준을 준수합니다.</p>
@@ -868,15 +869,17 @@
 <div th:replace="~{fragments/footer :: footer}"></div>
 
 <script>
+    const today = new Date();
+
     let currentSort = "latest";
     let editReviewId = null;
     let selectedScheduleId = null;
     let selectedDate = null; // 날짜 저장용
     let selectedRound = null; // 회차 저장용
-
-
-    const performanceId = getPerformanceId();
-    const mt10id = getPerformanceId();
+    let currentGenre = "";
+    let currentCalYear = today.getFullYear();
+    let currentCalMonth = today.getMonth() + 1;
+    let globalScheduleData = [];
 
     function getPerformanceId() {
         const pathSegments = window.location.pathname.split('/');
@@ -884,6 +887,211 @@
         return pathSegments[2];
     }
 
+    const performanceId = getPerformanceId();
+    const mt10id = getPerformanceId();
+
+    // [전역 함수로 정의]
+    function loadVenuePageData(id) {
+        fetch(`/api/venue/${id}/info`)
+            .then(response => response.json())
+            .then(venue => {
+                // 달력 시작일 설정
+                if (venue.period) {
+                    const startDate = venue.period.split('~')[0];
+                    const startParts = startDate.split('-');
+
+                    currentCalYear = parseInt(startParts[0]);
+                    currentCalMonth = parseInt(startParts[1]);
+
+                    console.log("데이터 반영 완료. 현재 연월:", currentCalYear, currentCalMonth);
+                } else {
+                    currentCalYear = today.getFullYear();
+                    currentCalMonth = today.getMonth() + 1;
+                    console.log("데이터 없음, 기본값 사용");
+                }
+
+
+                currentGenre = venue.genre;
+                // [UI 바인딩]
+                if (document.getElementById("perf-period")) document.getElementById("perf-period").innerText = venue.period;
+                if (document.getElementById("perf-runtime")) document.getElementById("perf-runtime").innerText = venue.runTime ? `${venue.runTime}분` : "정보없음";
+                if (document.getElementById("perf-venue-name")) document.getElementById("perf-venue-name").innerText = venue.venueName;
+                if (document.getElementById("performance-title")) document.getElementById("performance-title").innerText = venue.title;
+                if (document.getElementById("venue-name-top")) document.getElementById("venue-name-top").innerText = venue.venueName;
+                if (document.getElementById("ct-main-poster")) document.getElementById("ct-main-poster").src = venue.posterUrl || '';
+
+                // 정보 박스
+                const infoBox = document.getElementById("venue-info-box");
+                if (infoBox) {
+                    infoBox.innerHTML = `
+                <p><strong>주소:</strong> ${venue.address}</p>
+                <p><strong>장르:</strong> ${venue.genre}</p>
+                <p><strong>좌석수:</strong> ${venue.seatCount || 300}석</p>
+                <p><strong>전화번호:</strong> ${venue.telnum || '정보 없음'}</p>
+            `;
+                }
+
+                // 캐스팅 로직
+                const castingSection = document.getElementById("casting-section-main");
+                const castingTableSection = document.getElementById("casting-section-table");
+                const castingTabBtn = document.getElementById("tab-btn-casting");
+
+                const isMusical = venue.genre?.trim() === '뮤지컬';
+
+                if (!isMusical) {
+                    if (castingSection) castingSection.style.display = 'none';
+                    if (castingTableSection) castingTableSection.style.display = 'none';
+                    if (castingTabBtn) castingTabBtn.style.display = 'none';
+                } else {
+                    if (castingSection) castingSection.style.display = 'block';
+                    if (castingTabBtn) castingTabBtn.style.display = 'block';
+                    loadCastingData(id);
+                }
+
+                // 상세 이미지
+                const detailPoster = document.getElementById("ct-detail-poster");
+                if (detailPoster) {
+                    if (venue.introImageUrl) {
+                        try {
+                            let introData = typeof venue.introImageUrl === 'string' ? JSON.parse(venue.introImageUrl.replace(/'/g, '"')) : venue.introImageUrl;
+                            if (introData && introData.styurl) {
+                                detailPoster.src = Array.isArray(introData.styurl) ? introData.styurl[0] : introData.styurl;
+                                detailPoster.style.display = 'block';
+                            } else {
+                                detailPoster.style.display = 'none';
+                            }
+                        } catch (e) {
+                            console.error("이미지 파싱 에러:", e);
+                            detailPoster.style.display = 'none';
+                        }
+                    } else {
+                        detailPoster.style.display = 'none';
+                    }
+                }
+            })
+            .catch(err => console.error("공연 정보 로드 에러:", err));
+    }
+
+    // [신규 함수] 월 변경 버튼 처리를 위한 전역 핸들러 함수
+    function updateCalendar() {
+        console.log("현재 달력 기준:", currentCalYear, "년", currentCalMonth, "월");
+        // 함수 내부에서 직접 요소를 찾습니다.
+        const calendarDays = document.getElementById("calendar-days");
+
+        // 만약 요소를 찾지 못했다면 중단합니다.
+        if (!calendarDays) {
+            console.error("calendar-days 요소를 찾을 수 없습니다.");
+            return;
+        }
+
+        calendarDays.innerHTML = "";
+
+        // 1. 네비게이션 중앙 타이틀 연/월 업데이트
+        const calTitle = document.getElementById("calendar-title");
+        if (calTitle) {
+            calTitle.innerText = `${currentCalYear}. ${String(currentCalMonth).padStart(2, '0')}`;
+        }
+
+        // 2. 현재 선택된 달의 1일 시작 요일 및 전체 일수 도출
+        const firstDayIndex = new Date(currentCalYear, currentCalMonth - 1, 1).getDay();
+        const totalDays = new Date(currentCalYear, currentCalMonth, 0).getDate();
+
+        // 3. 1일 시작 전 공백 칸 메우기
+        for (let i = 0; i < firstDayIndex; i++) {
+            const emptyDiv = document.createElement("div");
+            emptyDiv.classList.add("day", "empty");
+            calendarDays.appendChild(emptyDiv);
+        }
+
+        // 4. 1일부터 말일까지 루프 돌리며 전역 데이터셋 내 연/월 일치 검사 후 바인딩
+        for (let day = 1; day <= totalDays; day++) {
+            const dayDiv = document.createElement("div");
+            dayDiv.innerText = day;
+
+            const formattedMonth = String(currentCalMonth).padStart(2, '0');
+            const formattedDay = String(day).padStart(2, '0');
+            const targetDateStr = `${currentCalYear}-${formattedMonth}-${formattedDay}`;
+
+            // 전체 리스트 중 현재 돌고 있는 날짜 객체 탐색
+            const matchedDateItem = globalScheduleData.find(item => item.date === targetDateStr);
+
+            if (matchedDateItem) {
+                const isSelectable = matchedDateItem.isAvailable === true ||
+                    matchedDateItem.isAvailable === "Y" ||
+                    matchedDateItem.available === true ||
+                    matchedDateItem.available === "Y";
+
+                if (isSelectable) {
+                    dayDiv.classList.add("day", "available");
+                    dayDiv.addEventListener("click", () => {
+                        document.querySelectorAll("#calendar-days .day").forEach(d => d.classList.remove("selected"));
+                        dayDiv.classList.add("selected");
+
+                        selectedDate = matchedDateItem.date;
+                        selectedRound = null;
+
+                        loadSchedules(mt10id, matchedDateItem.date);
+                    });
+                } else {
+                    dayDiv.classList.add("day", "unavailable");
+                }
+            } else {
+                // 서버 데이터에 잡혀있지 않은 날짜는 모두 예매 불가능 처리
+                dayDiv.classList.add("day", "unavailable");
+            }
+            calendarDays.appendChild(dayDiv);
+        }
+    }
+
+    // 캐스팅 데이터 null인 경우 공연정보 숨기기
+    function loadCastingData(id) {
+        fetch(`/api/venue/${id}/casting`)
+            .then(response => response.json())
+            .then(castingList => {
+                const castingBox = document.getElementById("casting-list");
+                const castingSection = document.getElementById("casting-section-table");
+                const castingTabBtn = document.getElementById("tab-btn-casting");
+
+                // 1. 데이터가 없거나 배열이 아닌 경우: 모두 숨김 처리
+                if (!Array.isArray(castingList) || castingList.length === 0) {
+                    if (castingSection) castingSection.style.display = 'none';
+                    if (castingTabBtn) castingTabBtn.style.display = 'none';
+
+                    // [선택 사항] 현재 캐스팅 탭에 머물러 있었다면 공연 정보 탭으로 강제 이동
+                    const activeTab = document.querySelector('.ct-tab-btn.active');
+                    if (activeTab && activeTab.id === 'tab-btn-casting') {
+                        // switchTab(null, 'tab-info'); // 필요 시 주석 해제하여 사용
+                    }
+                    return;
+                }
+
+                // 2. 데이터가 있는 경우: 모두 보임 처리 및 렌더링
+                if (castingTabBtn) castingTabBtn.style.display = 'block';
+                if (castingSection) castingSection.style.display = 'block';
+
+                if (castingBox) {
+                    castingBox.innerHTML = "";
+                    castingList.forEach(casting => {
+                        const actorCard = document.createElement("div");
+                        actorCard.classList.add("ct-actor-card");
+                        actorCard.innerHTML = `
+                        <div class="ct-actor-circle-img"></div>
+                        <div class="ct-actor-name">${casting.actorName}</div>
+                        <div style="font-size:0.75rem; color:#9ca3af;">출연자</div>
+                    `;
+                        castingBox.appendChild(actorCard);
+                    });
+                }
+            })
+            .catch(err => {
+                console.error("캐스팅 정보 로드 에러:", err);
+                // 에러 발생 시 UI 숨김
+                if (document.getElementById("casting-section-table"))
+                    document.getElementById("casting-section-table").style.display = 'none';
+                if (document.getElementById("tab-btn-casting"))
+                    document.getElementById("tab-btn-casting").style.display = 'none';
+            });
+    }
 
     function renderCastingTable(list) {
         const tbody = document.getElementById("casting-table-body");
@@ -906,11 +1114,21 @@
         const tabButtons = document.querySelectorAll('.ct-tab-btn');
         tabButtons.forEach(btn => btn.classList.remove('active'));
 
+        if (event && event.currentTarget) {
+            event.currentTarget.classList.add('active');
+        }
+
         const targetContent = document.getElementById(tabId);
         if (targetContent) targetContent.style.display = 'block';
 
-        if (event && event.currentTarget) {
-            event.currentTarget.classList.add('active');
+
+        if (tabId === 'tab-info') {
+            const castingSection = document.getElementById("casting-section-main");
+            // 장르가 '뮤지컬'이 아니면 무조건 숨김
+            if (castingSection && currentGenre && currentGenre.trim() !== '뮤지컬') {
+                castingSection.style.setProperty('display', 'none', 'important');
+            }
+
         }
 
         currentSort = "latest";
@@ -1166,7 +1384,7 @@
 
     // [7] 예매하기 버튼 클릭 이벤트 (전역 함수)
     function openSeatSelection() {
-        const popupUrl = `/seat/selection?scheduleId=${selectedScheduleId}`;
+        const popupUrl = `/venue/seat/selection?scheduleId=${selectedScheduleId}`;
         const popupName = "ClearTicket_SeatSelection";
         const popupOptions = "width=1000, height=700, resizable=no, scrollbars=yes, status=no, location=no";
 
@@ -1175,250 +1393,49 @@
 
     //[8] DOMContentLoaded 초기화 블록
     document.addEventListener("DOMContentLoaded", function() {
-        const calendarDays = document.getElementById("calendar-days");
-        console.log(document.getElementById("performance-title"))
+        loadVenuePageData(mt10id);
+        // 팝업창 공연 정보 불러오기 추가
+        const urlParams = new URLSearchParams(window.location.search);
+        const scheduleId = urlParams.get('scheduleId');
 
-        // 공연장 정보 로드
-        fetch(`/api/venue/${mt10id}/info`)
-            .then(response => response.json())
-            .then(venue => {
-                // 1. [공연 기본 정보]
-                if (document.getElementById("perf-period")) document.getElementById("perf-period").innerText = venue.period;
-                if (document.getElementById("perf-runtime")) document.getElementById("perf-runtime").innerText = venue.runTime ? `${venue.runTime}분` : "정보없음";
-                if (document.getElementById("perf-venue-name")) document.getElementById("perf-venue-name").innerText = venue.venueName;
-                // 2. [상단 요약 & 정보 박스]
-                if (document.getElementById("performance-title")) document.getElementById("performance-title").innerText = venue.title;
-                if (document.getElementById("venue-name-top")) document.getElementById("venue-name-top").innerText = venue.venueName;
-
-                const loadingMsg = document.getElementById("loading-msg");
-                if (loadingMsg) loadingMsg.style.display = 'none';
-                // venue-info-box
-                const infoBox = document.getElementById("venue-info-box");
-                if (infoBox) {
-                    // HTML에 p 태그들을 추가해서 바인딩하세요 (아래 3번 항목 참고)
-                    infoBox.innerHTML += `
-                <p><strong>주소:</strong> ${venue.address}</p>
-                <p><strong>장르:</strong> ${venue.genre}</p>
-                <p><strong>좌석수:</strong> ${venue.seatCount || 300}석</p>
-                <p><strong>전화번호:</strong> ${venue.telnum || '정보 없음'}</p>
-
-            `;
-                }
-
-                // 4. 이미지 처리 (이미지 주소값이 없을 경우를 대비한 체크)
-                if (document.getElementById("ct-main-poster")) document.getElementById("ct-main-poster").src = venue.posterUrl || '';
-
-                // 상세 이미지 파싱 로직 (기존 유지)
-                const detailPoster = document.getElementById("ct-detail-poster");
-                if (detailPoster && venue.introImageUrl) {
-                    try {
-                        let introData = typeof venue.introImageUrl === 'string' ? JSON.parse(venue.introImageUrl.replace(/'/g, '"')) : venue.introImageUrl;
-                        const imageUrl = Array.isArray(introData.styurl) ? introData.styurl[0] : introData.styurl;
-                        detailPoster.src = imageUrl;
-                    } catch (e) {
-                        console.error("이미지 파싱 실패:", e);
-                        detailPoster.style.display = 'none'; // 파싱 실패 시 숨김 처리
-                    }
-                }
-            })
-            .catch(err => console.error("공연 정보 로드 에러:", err));
-
-        // 출연진 정보 로드
-        fetch(`/api/venue/${mt10id}/casting`)
-            .then(response => response.json())
-            .then(castingList => {
-                const castingBox = document.getElementById("casting-list");
-                if (!castingBox) return;
-                castingBox.innerHTML = "";
-
-                if (castingList.length === 0) {
-                    castingBox.innerHTML = "<p style='color: #9ca3af;'>등록된 출연진 정보가 없습니다.</p>";
-                    return;
-                }
-
-                castingList.forEach(casting => {
-                    const actorCard = document.createElement("div");
-                    actorCard.classList.add("ct-actor-card");
-                    actorCard.innerHTML = `
-            <div class="ct-actor-circle-img"></div>
-            <div class="ct-actor-name">${casting.actorName}</div>
-            <div style="font-size:0.75rem; color:#9ca3af;">출연자</div>
-        `;
-                    castingBox.appendChild(actorCard);
-                });
-            });
-
-        // [추가] 동적 달력 페이징 상태 관리
-        const today = new Date();
-        let currentCalYear = today.getFullYear();
-        let currentCalMonth = today.getMonth() + 1;
-        let globalScheduleData = [];
-
-        // [수정 및 확장] 달력 로드 및 무한 이동 렌더링 시스템
-        fetch(`/api/venue/${mt10id}/dates`)
-            .then(response => response.json())
-            .then(data => {
-                globalScheduleData = data; // JPA 데이터셋 전체 캐싱
-                updateCalendar();          // 초기 달력 렌더링 구동
-            })
-            .catch(err => console.error("날짜 로드 중 장애 발생:", err));
-
-        // [신규 함수] 월 변경 버튼 처리를 위한 전역 핸들러 함수
-        function updateCalendar() {
-            if (!calendarDays) return;
-            calendarDays.innerHTML = "";
-
-            // 1. 네비게이션 중앙 타이틀 연/월 업데이트
-            const calTitle = document.getElementById("calendar-title");
-            if (calTitle) {
-                calTitle.innerText = `${currentCalYear}. ${String(currentCalMonth).padStart(2, '0')}`;
-            }
-
-            // 2. 현재 선택된 달의 1일 시작 요일 및 전체 일수 도출
-            const firstDayIndex = new Date(currentCalYear, currentCalMonth - 1, 1).getDay();
-            const totalDays = new Date(currentCalYear, currentCalMonth, 0).getDate();
-
-            // 3. 1일 시작 전 공백 칸 메우기
-            for (let i = 0; i < firstDayIndex; i++) {
-                const emptyDiv = document.createElement("div");
-                emptyDiv.classList.add("day", "empty");
-                calendarDays.appendChild(emptyDiv);
-            }
-
-            // 4. 1일부터 말일까지 루프 돌리며 전역 데이터셋 내 연/월 일치 검사 후 바인딩
-            for (let day = 1; day <= totalDays; day++) {
-                const dayDiv = document.createElement("div");
-                dayDiv.innerText = day;
-
-                const formattedMonth = String(currentCalMonth).padStart(2, '0');
-                const formattedDay = String(day).padStart(2, '0');
-                const targetDateStr = `${currentCalYear}-${formattedMonth}-${formattedDay}`;
-
-                // 전체 리스트 중 현재 돌고 있는 날짜 객체 탐색
-                const matchedDateItem = globalScheduleData.find(item => item.date === targetDateStr);
-
-                if (matchedDateItem) {
-                    const isSelectable = matchedDateItem.isAvailable === true ||
-                        matchedDateItem.isAvailable === "Y" ||
-                        matchedDateItem.available === true ||
-                        matchedDateItem.available === "Y";
-
-                    if (isSelectable) {
-                        dayDiv.classList.add("day", "available");
-                        dayDiv.addEventListener("click", () => {
-                            document.querySelectorAll("#calendar-days .day").forEach(d => d.classList.remove("selected"));
-                            dayDiv.classList.add("selected");
-
-                            selectedDate = matchedDateItem.date;
-                            selectedRound = null;
-
-                            loadSchedules(mt10id, matchedDateItem.date);
-                        });
-                    } else {
-                        dayDiv.classList.add("day", "unavailable");
-                    }
-                } else {
-                    // 서버 데이터에 잡혀있지 않은 날짜는 모두 예매 불가능 처리
-                    dayDiv.classList.add("day", "unavailable");
-                }
-                calendarDays.appendChild(dayDiv);
-            }
+        if (scheduleId) {
+            fetch(`/api/schedules/${scheduleId}`)
+                .then(res => res.json())
+                .then(data => {
+                    // HTML의 id와 일치하는지 확인하세요!
+                    document.getElementById("perf-title-display").innerText = data.title;
+                    document.getElementById("perf-schedule-display").innerText =
+                        `${data.showDate} ${data.showTime} (${data.roundNumber}회차)`;
+                })
+                .catch(err => console.error("공연 정보 로드 실패:", err));
         }
 
-        // [신규 이벤트 핸들러] 화살표 내비게이션 바인딩
+        fetch(`/api/venue/${mt10id}/dates`)
+            .then(res => res.json())
+            .then(data => {
+                globalScheduleData = data;
+
+                // 3. 모든 준비 완료 후 달력 렌더링
+                // loadVenuePageData가 먼저 실행되어 변수가 8월로 바뀌어 있으므로,
+                // 이제 updateCalendar를 부르면 정확히 8월 달력이 그려집니다.
+                console.log("달력 데이터 로드 완료, 렌더링 시작");
+                updateCalendar();
+            })
+            .catch(err => console.error("날짜 로드 실패:", err));
+        // 2. 버튼 및 모달 이벤트 바인딩
         document.getElementById("prev-month-btn")?.addEventListener("click", () => {
-            currentCalMonth--;
-            if (currentCalMonth < 1) {
-                currentCalMonth = 12;
-                currentCalYear--;
-            }
+            currentCalMonth = currentCalMonth === 1 ? 12 : currentCalMonth - 1;
+            currentCalYear = currentCalMonth === 12 ? currentCalYear - 1 : currentCalYear;
             updateCalendar();
         });
 
         document.getElementById("next-month-btn")?.addEventListener("click", () => {
-            currentCalMonth++;
-            if (currentCalMonth > 12) {
-                currentCalMonth = 1;
-                currentCalYear++;
-            }
+            currentCalMonth = currentCalMonth === 12 ? 1 : currentCalMonth + 1;
+            currentCalYear = currentCalMonth === 1 ? currentCalYear + 1 : currentCalYear;
             updateCalendar();
         });
 
-        // 상영 회차 로드 (내부 함수 수정)
-        function loadSchedules(mt10id, selectedDate) {
-            const scheduleList = document.getElementById("schedule-list");
-            if (!scheduleList) return;
-
-            selectedScheduleId = null; // 날짜 변경 시 선택된 ID 초기화
-            scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#6b7280;'>회차 정보를 불러오는 중...</p>";
-
-            fetch(`/api/venue/${mt10id}/schedules?date=${selectedDate}`)
-                .then(response => response.json())
-                .then(data => {
-                    scheduleList.innerHTML = "";
-                    if (!data || data.length === 0) {
-                        scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>해당 날짜에는 상영 스케줄이 없습니다.</p>";
-                        return;
-                    }
-                    data.forEach(schedule => {
-                        const btn = document.createElement("button");
-                        btn.classList.add("schedule-btn");
-
-                        // 🌟 [수정] 서버의 Response 필드명("scheduleId", "round", "startTime")과 정확히 일치시킴
-                        const sId = schedule.scheduleId;
-                        const round = schedule.round;
-                        const time = schedule.startTime;
-
-                        btn.innerText = `${round}회차 (${time})`;
-
-                        btn.addEventListener("click", () => {
-                            document.querySelectorAll(".schedule-btn").forEach(b => b.classList.remove("active"));
-                            btn.classList.add("active");
-                            selectedScheduleId = sId;
-                            selectedRound = round;
-                            console.log("선택된 실제 DB 스케줄 ID:", selectedScheduleId, " / 회차:", selectedRound);
-                        });
-                        scheduleList.appendChild(btn);
-                    });
-                })
-                .catch(err => {
-                    console.error("회차 로드 에러:", err);
-                    scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>회차 정보를 불러오는데 실패했습니다.</p>";
-                });
-        }
-
-        // 창 내부 제어용 바인딩 정의
-        window.openReviewModal = function(type) {
-            const modalTitle = document.getElementById('modalTitle');
-            const modalType = document.getElementById('modalType');
-            const ratingArea = document.getElementById('ratingArea');
-
-            if (modalType) modalType.value = type;
-
-            if (type === 'REVIEW') {
-                if (modalTitle) modalTitle.innerText = '관람후기 작성';
-                if (ratingArea) ratingArea.style.display = 'block';
-            } else {
-                if (modalTitle) modalTitle.innerText = '기대평 작성';
-                if (ratingArea) ratingArea.style.display = 'none';
-            }
-            const reviewModal = document.getElementById('reviewModal');
-            if (reviewModal) reviewModal.style.display = 'flex';
-        };
-
-        window.closeReviewModal = function() {
-            const reviewModal = document.getElementById('reviewModal');
-            if (reviewModal) reviewModal.style.display = 'none';
-            const reviewForm = document.getElementById('reviewForm');
-            if (reviewForm) reviewForm.reset();
-
-            const submitBtn = document.querySelector("#reviewModal button[onclick='executeEdit()']");
-            if (submitBtn) {
-                submitBtn.setAttribute("onclick", "submitReview()");
-            }
-        };
-
-        // 초기 화면 진입시 후기 탭 기본 로딩
+        // 3. 초기 후기 로드
         loadReviews(mt10id, 'REVIEW', 1);
     });
 
@@ -1468,8 +1485,49 @@
             })
             .catch(err => console.error("통신 장애 발생:", err));
     }
-    // ================== 보안 문자 로직 ====================
+        // 상영 회차 로드 (내부 함수 수정)
+        function loadSchedules(mt10id, selectedDate) {
+            const scheduleList = document.getElementById("schedule-list");
+            if (!scheduleList) return;
 
+            selectedScheduleId = null; // 날짜 변경 시 선택된 ID 초기화
+            scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#6b7280;'>회차 정보를 불러오는 중...</p>";
+
+            fetch(`/api/venue/${mt10id}/schedules?date=${selectedDate}`)
+                .then(response => response.json())
+                .then(data => {
+                    scheduleList.innerHTML = "";
+                    if (!data || data.length === 0) {
+                        scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>해당 날짜에는 상영 스케줄이 없습니다.</p>";
+                        return;
+                    }
+                    data.forEach(schedule => {
+                        const btn = document.createElement("button");
+                        btn.classList.add("schedule-btn");
+
+                        // 🌟 [수정] 서버의 Response 필드명("scheduleId", "round", "startTime")과 정확히 일치시킴
+                        const sId = schedule.scheduleId;
+                        const round = schedule.round;
+                        const time = schedule.startTime;
+
+                        btn.innerText = `${round}회차 (${time})`;
+
+                        btn.addEventListener("click", () => {
+                            document.querySelectorAll(".schedule-btn").forEach(b => b.classList.remove("active"));
+                            btn.classList.add("active");
+                            selectedScheduleId = sId;
+                            selectedRound = round;
+                            console.log("선택된 실제 DB 스케줄 ID:", selectedScheduleId, " / 회차:", selectedRound);
+                        });
+                        scheduleList.appendChild(btn);
+                    });
+                })
+                .catch(err => {
+                    console.error("회차 로드 에러:", err);
+                    scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>회차 정보를 불러오는데 실패했습니다.</p>";
+                });
+        }
+    // ================== 보안 문자 로직 ====================
     // 1. 모달 열기 및 초기화
     function openCaptchaModal() {
         // 만약 값이 없다면 알림 후 종료
@@ -1516,7 +1574,7 @@
     }
 
     // 3. 검증 및 좌석 선택 팝업 실행
-    function verifyCaptcha() {
+    async function verifyCaptcha() {
         const inputCode = document.getElementById('captcha-input').value;
 
         if (inputCode.length < 6) {
@@ -1524,28 +1582,41 @@
             return;
         }
 
-        fetch('/api/captcha/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ inputCode: inputCode })
-        })
-            .then(res => {
-                if (res.ok) {
-                    document.getElementById('captcha-modal').style.display = 'none';
-                    // 통과 시 기존 팝업 함수 호출
-                    if (typeof openSeatSelection === 'function') {
-                        openSeatSelection();
-                    } else {
-                        console.error("openSeatSelection 함수를 찾을 수 없습니다.");
-                    }
-                } else {
-                    alert("문자가 일치하지 않습니다.");
-                    document.getElementById('captcha-input').value = '';
-                    fetchNewCaptcha();
+        try {
+            const res = await fetch('/api/captcha/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inputCode: inputCode })
+            });
+
+            if (res.ok) {
+                // 1. 인증 성공 시 모달 닫기
+                document.getElementById('captcha-modal').style.display = 'none';
+
+                // 2. 현재 선택된 scheduleId 가져오기
+                const scheduleId = selectedScheduleId;
+
+                if (!scheduleId) {
+                    alert("회차를 먼저 선택해주세요.");
+                    return;
                 }
-            })
-            .catch(err => console.error("검증 통신 실패:", err));
+
+                // 3. 좌석 선택 페이지로 이동 (URL 파라미터로 전달)
+                // 이전: window.location.href = `/seat-selection?scheduleId=${scheduleId}`;
+                window.location.href = `/venue/seat/selection?scheduleId=${scheduleId}`;
+
+            } else {
+                // 4. 인증 실패 시
+                alert("문자가 일치하지 않습니다.");
+                document.getElementById('captcha-input').value = '';
+                fetchNewCaptcha();
+            }
+        } catch (err) {
+            console.error("검증 통신 실패:", err);
+            alert("서버 연결에 실패했습니다.");
+        }
     }
+
 </script>
 </body>
 </html>

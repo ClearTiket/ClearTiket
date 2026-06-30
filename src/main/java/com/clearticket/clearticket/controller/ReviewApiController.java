@@ -19,7 +19,7 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/reviews")
 @RequiredArgsConstructor
-public class ReviewAprController {
+public class ReviewApiController {
 
     private final ReviewService reviewService;
     //private final PerformanceService performanceService; // 팀원 서비스 주입 복구

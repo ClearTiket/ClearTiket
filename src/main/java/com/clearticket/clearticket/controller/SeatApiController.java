@@ -15,25 +15,38 @@ public class SeatApiController {
 
     private final SeatService seatService;
 
-    // 💡 1. 좌석 목록 조회 API (GET http://localhost:8080/api/seats?performanceId=1)
     @GetMapping
-    public ResponseEntity<List<SeatResponse>> getSeats(@RequestParam("performanceId") Long performanceId) {
-        List<SeatResponse> seats = seatService.getSeatsByPerformance(performanceId);
-        return ResponseEntity.ok(seats); // 200 OK 상태코드와 함께 좌석 포장지 묶음을 반환!
-    }
-
-    // 💡 2. 좌석 임시 선점 API (POST http://localhost:8080/api/seats/book)
-    @PostMapping("/book")
-    public ResponseEntity<String> bookSeat(@RequestParam Long seatId, @RequestParam Long userId) {
+    public ResponseEntity<?> getSeats(@RequestParam("scheduleId") Long scheduleId) {
         try {
-            seatService.bookSeat(seatId, userId);
-            return ResponseEntity.ok("좌석이 임시 선점되었습니다! 5분 내로 결제를 완료해 주세요.");
-        } catch (IllegalStateException e) {
-            // 이미 선점된 좌석일 때 예외 처리
-            return ResponseEntity.badRequest().body(e.getMessage());
+            List<SeatResponse> seats = seatService.getSeatsBySchedule(scheduleId);
+            return ResponseEntity.ok(seats);
         } catch (IllegalArgumentException e) {
-            // 좌석이나 회원이 없을 때 예외 처리
+            // scheduleId가 존재하지 않을 때 500 대신 명확한 404를 내려줍니다.
             return ResponseEntity.status(404).body(e.getMessage());
         }
+    }
+
+    @PostMapping("/book")
+    public ResponseEntity<String> bookSeat(
+            @RequestParam Long seatId,
+            @RequestParam Long userId,
+            @RequestParam Long scheduleId) {
+        try {
+            seatService.bookSeat(seatId, userId, scheduleId);
+            return ResponseEntity.ok("좌석이 임시 선점되었습니다! 5분 내로 결제를 완료해 주세요.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/release")
+    public ResponseEntity<String> releaseSeat(
+            @RequestParam Long seatId,
+            @RequestParam Long userId,
+            @RequestParam Long scheduleId) {
+        seatService.releaseSeat(seatId, userId, scheduleId);
+        return ResponseEntity.ok("좌석 선점이 해제되었습니다.");
     }
 }
