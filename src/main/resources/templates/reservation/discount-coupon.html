@@ -46,6 +46,19 @@
             </div>
 
             <div class="card">
+                <h3 class="section-title" style="font-size: 14px; margin-bottom: 10px;">선택 좌석</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div th:each="rs : ${reservation?.reservationSeats}"
+                         style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+                        <span style="color: var(--text-sub, #555); font-weight: 500;"
+                              th:text="|${rs.seat.sectionName}구역 ${rs.seat.rowNum}열 ${rs.seat.seatNum}번 (${rs.seat.seatGrade}석)|"></span>
+                        <span style="color: var(--text-main, #111); font-weight: 600;"
+                              th:text="|${#numbers.formatInteger(rs.seat.price ?: 0, 0, 'COMMA')} 원|"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
                 <table class="fee-table" style="min-height: 250px;">
                     <tr><td>상품금액</td><td th:text="|${#numbers.formatInteger(seatPriceSum ?: 0, 0, 'COMMA')} 원|"></td></tr>
                     <tr><td>할인금액</td><td id="sidebar-discount" style="color: var(--error);">0 원</td></tr>
