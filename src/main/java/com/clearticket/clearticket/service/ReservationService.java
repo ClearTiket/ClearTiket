@@ -8,7 +8,10 @@ import com.clearticket.clearticket.model.dto.ReservationResponseDto;
 import com.clearticket.clearticket.model.entity.*;
 import com.clearticket.clearticket.repository.AddressRepository;
 import com.clearticket.clearticket.repository.ReservationRepository;
+import com.clearticket.clearticket.repository.ReservationSeatsRepository;
+import com.clearticket.clearticket.repository.ScheduleRepository;
 import com.clearticket.clearticket.repository.SeatRepository;
+import com.clearticket.clearticket.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +25,9 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final SeatRepository seatRepository;
     private final AddressRepository addressRepository;
+    private final UserRepository userRepository;
+    private final ScheduleRepository scheduleRepository;
+    private final ReservationSeatsRepository reservationSeatsRepository;
 
     /**
      * 신규 티켓 예매 내역 생성 및 DB저장
@@ -30,7 +36,18 @@ public class ReservationService {
      */
     @Transactional
     public ReservationResponseDto createReservation(ReservationRequestDto reservationRequestDto) {
+        // ★ 기존 코드는 user/schedule/seat 연결 없이 Reservation만 저장해서
+        //   reservations.user_id / schedule_id NOT NULL 제약을 위반했습니다.
+        //   실제 좌석 선택 화면에서 넘어온 scheduleId, userId, seatIds를 모두 반영합니다.
+        User user = userRepository.findById(reservationRequestDto.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        Schedule schedule = scheduleRepository.findById(reservationRequestDto.getScheduleId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회차(scheduleId)입니다."));
+
         Reservation reservation = new Reservation();
+        reservation.setUser(user);
+        reservation.setSchedule(schedule);
         reservation.setStatus(ReservationStatus.WAITING);
         reservation.setTotalPrice(reservationRequestDto.getTotalPrice());
         reservation.setTicketType(reservationRequestDto.getTicketType());
@@ -38,6 +55,22 @@ public class ReservationService {
         reservation.setReservationNumber("RSV-" + System.currentTimeMillis());
 
         Reservation savedReservation = reservationRepository.save(reservation);
+
+        // 선택한 좌석들을 reservation_seats 에 연결
+        List<Long> seatIds = reservationRequestDto.getSeatIds();
+        if (seatIds != null && !seatIds.isEmpty()) {
+            for (Long seatId : seatIds) {
+                Seat seat = seatRepository.findById(seatId)
+                        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 좌석입니다. ID: " + seatId));
+
+                ReservationSeat reservationSeat = ReservationSeat.builder()
+                        .reservation(savedReservation)
+                        .seat(seat)
+                        .build();
+
+                reservationSeatsRepository.save(reservationSeat);
+            }
+        }
 
         return toResponseDto(savedReservation);
     }

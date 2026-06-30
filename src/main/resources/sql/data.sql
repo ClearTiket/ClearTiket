@@ -20,23 +20,24 @@ INSERT INTO tags (tag_id, tag_name, display_name, tag_category) VALUES
     (305, 'kids', '아이와 함께', 'WITH')
 ON CONFLICT (tag_id) DO NOTHING;
 
+-- 테스트용: 1번 공연(영웅 갈라콘서트, schedule_id=1)에 좌석을 연결합니다.
 -- seat_id 1~100 : VIP
-INSERT INTO seats (seat_id, row_num, seat_num, price, seat_grade, section_name)
+INSERT INTO seats (seat_id, row_num, seat_num, price, seat_grade, section_name, performance_id)
 SELECT ((r-1)*10 + s) AS seat_id,
-       r::varchar, s::varchar, 160000, 'VIP', 'A'
+       r::varchar, s::varchar, 160000, 'VIP', 'A', 1
 FROM generate_series(1,10) r, generate_series(1,10) s
 ON CONFLICT (seat_id) DO NOTHING;
 
 -- seat_id 101~200 : R
-INSERT INTO seats (seat_id, row_num, seat_num, price, seat_grade, section_name)
+INSERT INTO seats (seat_id, row_num, seat_num, price, seat_grade, section_name, performance_id)
 SELECT 100 + ((r-1)*10 + s) AS seat_id,
-       r::varchar, s::varchar, 140000, 'R', 'B'
+       r::varchar, s::varchar, 140000, 'R', 'B', 1
 FROM generate_series(1,10) r, generate_series(1,10) s
 ON CONFLICT (seat_id) DO NOTHING;
 
 -- seat_id 201~300 : S
-INSERT INTO seats (seat_id, row_num, seat_num, price, seat_grade, section_name)
+INSERT INTO seats (seat_id, row_num, seat_num, price, seat_grade, section_name, performance_id)
 SELECT 200 + ((r-1)*10 + s) AS seat_id,
-       r::varchar, s::varchar, 110000, 'S', 'C'
+       r::varchar, s::varchar, 110000, 'S', 'C', 1
 FROM generate_series(1,10) r, generate_series(1,10) s
 ON CONFLICT (seat_id) DO NOTHING;

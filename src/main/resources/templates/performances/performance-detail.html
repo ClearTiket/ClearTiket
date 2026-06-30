@@ -1594,7 +1594,7 @@
                 document.getElementById('captcha-modal').style.display = 'none';
 
                 // 2. 현재 선택된 scheduleId 가져오기
-                const scheduleId = document.getElementById('selected-schedule-id')?.value;
+                const scheduleId = selectedScheduleId;
 
                 if (!scheduleId) {
                     alert("회차를 먼저 선택해주세요.");
@@ -1602,7 +1602,8 @@
                 }
 
                 // 3. 좌석 선택 페이지로 이동 (URL 파라미터로 전달)
-                window.location.href = `/seat-selection?scheduleId=${scheduleId}`;
+                // 이전: window.location.href = `/seat-selection?scheduleId=${scheduleId}`;
+                window.location.href = `/venue/seat/selection?scheduleId=${scheduleId}`;
 
             } else {
                 // 4. 인증 실패 시

@@ -8,7 +8,6 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
-//
 @Repository
 public interface BookingSeatsRepository extends JpaRepository<BookingSeat, Long> {
 
@@ -16,5 +15,10 @@ public interface BookingSeatsRepository extends JpaRepository<BookingSeat, Long>
     List<Long> findSeatIdsByCreatedAtAfter(@Param("time") LocalDateTime time);
     boolean existsBySeatSeatIdAndCreatedAtAfter(Long seatId, LocalDateTime dateTime);
 
+    void deleteBySeatSeatIdAndUserUserId(Long seatId, Long userId);
 
+    @Query("SELECT b.seat.seatId FROM BookingSeat b WHERE b.createdAt < :time")
+    List<Long> findExpiredSeatIds(@Param("time") LocalDateTime time);
+
+    void deleteByCreatedAtBefore(LocalDateTime time);
 }
