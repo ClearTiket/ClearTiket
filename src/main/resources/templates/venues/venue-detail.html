@@ -278,8 +278,9 @@
 
             const cardSlot = document.querySelector(".card-slot");
             resultJson.forEach(item => {
-                const infoSubCard = document.createElement("div");
+                const infoSubCard = document.createElement("a");
                 infoSubCard.classList.add("info-sub-card");
+                infoSubCard.href = "/venue/" + item.performanceId + "/detail";
 
                 const cardImagePlace = document.createElement("div");
                 cardImagePlace.classList.add("card-image-place");

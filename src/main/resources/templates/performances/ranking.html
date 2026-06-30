@@ -401,8 +401,9 @@
     }
 
     function createCardsTop3(data, rank) {
-        const top3item = document.createElement("div");
+        const top3item = document.createElement("a");
         top3item.classList.add("top3-item");
+        top3item.href = "/venue/" + data.performance.performanceId + "/detail";
 
         const rankNum = document.createElement("h2");
         rankNum.classList.add("rank-num");
@@ -437,8 +438,9 @@
     }
 
     function createCardsLowers(data, rank) {
-        const lowerItem = document.createElement("div");
+        const lowerItem = document.createElement("a");
         lowerItem.classList.add("lower-item");
+        lowerItem.href = "/venue/" + data.performance.performanceId + "/detail";
 
         const lowerItemRankNum = document.createElement("h3");
         lowerItemRankNum.classList.add("lower-item-rank-num");
