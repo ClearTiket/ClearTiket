@@ -559,11 +559,11 @@
         swiperSlide.className = "swiper-slide";
 
         const img = document.createElement("img");
-        img.src = data.posterUrl;
-        img.alt = data.title;
+        img.src = data.performance.posterUrl;
+        img.alt = data.performance.title;
 
         const h3 = document.createElement("h3");
-        h3.textContent = data.title;
+        h3.textContent = data.performance.title;
 
         swiperSlide.appendChild(img);
         swiperSlide.appendChild(h3);
@@ -579,8 +579,8 @@
         rankSlotCardImg.classList.add("rank-slot-card-img");
 
         const img = document.createElement("img");
-        img.src = data.posterUrl;
-        img.alt = data.title;
+        img.src = data.performance.posterUrl;
+        img.alt = data.performance.title;
 
         const imgRankNum = document.createElement("span");
         imgRankNum.classList.add("img-rank-num");
@@ -590,7 +590,7 @@
         rankSlotCardText.classList.add("rank-slot-card-text");
 
         const h4 = document.createElement("h4");
-        h4.textContent = data.title;
+        h4.textContent = data.performance.title;
 
         rankSlotCardText.appendChild(h4);
 
@@ -603,9 +603,9 @@
         return rankSlotCard;
     }
 
-    async function getRankingData (genre, page) {
+    async function getRankingData (genre, period) {
         try {
-            const fetchUrl = "/api/performances/ranking?genre=" + (genre == null ? "" : genre) + "&page=" + (page == null ? "" : page);
+            const fetchUrl = "/api/performances/ranking?genre=" + (genre == null ? "" : genre) + "&period=" + (period == null ? "" : period);
             const response = await fetch(fetchUrl, {
                 method: 'GET',
                 headers: {

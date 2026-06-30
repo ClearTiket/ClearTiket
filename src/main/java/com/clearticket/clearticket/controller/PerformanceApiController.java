@@ -1,7 +1,9 @@
 package com.clearticket.clearticket.controller;
 
 import com.clearticket.clearticket.model.entity.Performance;
+import com.clearticket.clearticket.model.entity.Ranking;
 import com.clearticket.clearticket.service.PerformanceService;
+import com.clearticket.clearticket.service.RankingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,7 @@ import java.util.List;
 public class PerformanceApiController {
 
     final PerformanceService performanceService;
+    final RankingService rankingService;
 
     @GetMapping("/region")
     public ResponseEntity<List<Performance>> getPerformancesByRegion (@RequestParam String region, @RequestParam int page) {
@@ -33,16 +36,11 @@ public class PerformanceApiController {
     }
 
     @GetMapping("/ranking")
-    public ResponseEntity<List<Performance>> getPerformancesByRanking (@RequestParam(required = false) String genre, @RequestParam(required = false) Integer page) {
+    public ResponseEntity<List<Ranking>> getPerformancesByRanking (@RequestParam(required = false) String genre, @RequestParam(required = false) String period) {
 
-        if (page == null) page = 1;
-        Page<Performance> performances;
-        if (genre == null || genre.isEmpty()) {
-            performances = performanceService.findAll(page, 10);
-        } else {
-            performances = performanceService.findRankingAllByGenre(genre, page);
-        }
+        List<Ranking> performances;
+        performances = rankingService.getRanking(period, genre);
 
-        return ResponseEntity.ok(performances.getContent());
+        return ResponseEntity.ok(performances);
     }
 }
