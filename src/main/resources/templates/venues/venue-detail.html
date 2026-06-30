@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4e3af0b5c007e167ad4a72c776826ce1"></script>
 </head>
 
 <style>
@@ -83,7 +84,7 @@
     }
 
     /* 3. 이미지 공간 스타일 (높이 450px) */
-    .image-space {
+    .map-space {
         width: 100%;
         height: 450px;             /* 조건: 높이 450px */
         background-color: #f1f5f9; /* 영역 확인용 회색 배경 */
@@ -216,9 +217,8 @@
 
         <section class="info-card card-medium">
             <h3 class="card-title-fixed">시설 위치</h3>
-            <div class="image-space">
-                <p class="placeholder-text">이미지를 넣을 수 있는 공간 (높이 450px)</p>
-            </div>
+            <div class="map-space"></div>
+<!--        <p class="placeholder-text">이미지를 넣을 수 있는 공간 (높이 450px)</p>-->
         </section>
 
         <section class="info-card card-long">
@@ -243,7 +243,25 @@
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
 </body>
 
-<script>
+<script th:inline="javascript" type="text/javascript">
+
+    const lat = /*[[${venue.getLat()}]]*/ 33.450701;
+    const lon = /*[[${venue.getLon()}]]*/ 126.570667;
+    const position = new kakao.maps.LatLng(lat, lon);
+
+    const container = document.querySelector(".map-space");
+    const options = {
+        center: position,
+        level: 3
+    };
+
+    const map = new kakao.maps.Map(container, options);
+    const marker = new kakao.maps.Marker({
+        position: position
+    });
+
+    marker.setMap(map)
+
     async function getPerformancesData(venueId) {
         try {
 
@@ -256,6 +274,7 @@
             });
 
             const resultJson = await response.json();
+            console.log(resultJson);
 
             const cardSlot = document.querySelector(".card-slot");
             resultJson.forEach(item => {
@@ -300,7 +319,6 @@
     const venueId = segments.at(-1);
     if (venueId) {
         getPerformancesData(venueId);
-
     }
 </script>
 
