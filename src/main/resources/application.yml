@@ -5,12 +5,12 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${mail.username}
+    username: "tjoeun.jr5@gmail.com"
     # 아래 password 값을 Gmail 앱 비밀번호 16자리로 교체하세요.
     # 앱 비밀번호 발급:
     #   Google 계정 → 보안 → 2단계 인증 활성화 →
     #   앱 비밀번호 → "기타(직접 입력)" 선택 → 생성된 16자리 복사
-    password: ${mail.password}
+    password: "akdq wcwe vcug titm"
     properties:
       mail:
         smtp:
@@ -29,8 +29,8 @@ spring:
     import: optional:file:./config.yml
   datasource:
     url: jdbc:postgresql://localhost:5432/clearticket
-    username: ${db.username}
-    password: ${db.password}
+    username: postgres
+    password: clearticket
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -58,7 +58,7 @@ spring:
         - "classpath:sql/performances_20260622.sql"
         - "classpath:sql/schedules_20260622.sql"
 lemonsqueezy:
-  api-key: ${LEMON_SQUEEZY_API_KEY}
+  api-key: ""
   store-id: "410829"
   variant-id: "1806370"
 

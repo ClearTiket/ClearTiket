@@ -10,6 +10,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     boolean existsByPhone(String phone);
 
+    // 마이페이지 수정용: 본인 제외 중복 체크
+    boolean existsByEmailAndUserIdNot(String email, Long userId);
+    boolean existsByPhoneAndUserIdNot(String phone, Long userId);
+
     // 이메일 찾기: 이름 + 생년월일
     Optional<User> findByNameAndBirthdate(String name, String birthdate);
 

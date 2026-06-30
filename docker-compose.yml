@@ -6,7 +6,7 @@ services:
     container_name: clearticket-es
     environment:
       - discovery.type=single-node
-      - ES_JAVA_OPTS=Xms1g -Xmx1g
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
       - xpack.security.enabled=false
     ports:
       - "9200:9200"

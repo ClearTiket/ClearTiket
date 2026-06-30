@@ -56,7 +56,7 @@
         </div>
 
         <div class="skip-row">
-            <button class="skip-link" th:onclick="|location.href='@{/login}'|">다음에 할게요 Skip</button>
+            <button class="skip-link" th:onclick="|location.href='@{/logout}'|">다음에 할게요 Skip</button>
         </div>
     </div>
 
@@ -84,14 +84,26 @@
     }
 
     function updateCta() {
-        // 보완: Q1, Q2, Q3 세 항목 모두 최소 한 개 이상 선택 시 버튼 활성화
         const ready = state.q1.length >= 1 && state.q2.length >= 1 && state.q3.length >= 1;
         document.getElementById('cta-btn').classList.toggle('ready', ready);
     }
 
     function goResult() {
         if (!document.getElementById('cta-btn').classList.contains('ready')) return;
-        location.href = /*[[@{/login}]]*/ '/login';
+
+        // 설문 결과 저장
+        fetch(/*[[@{/survey}]]*/ '/survey', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                genres: state.q1.map(b => b.textContent.trim()),
+                moods: state.q2.map(b => b.textContent.trim()),
+                companion: state.q3.map(b => b.textContent.trim())[0] || ''
+            })
+        }).finally(() => {
+            // 설문 끝나면 임시 세션 끊고 로그인 페이지로 이동
+            location.href = /*[[@{/logout}]]*/ '/logout';
+        });
     }
 </script>
 </body>

@@ -132,10 +132,11 @@
                             <line x1="3" y1="10" x2="21" y2="10"/>
                         </svg>
                     </span>
-                    <input type="text" class="r-input" name="birthdate"
+                    <input type="text" class="r-input" name="birthdate" id="birthdate_input"
                            placeholder="생년월일 (예) 20010101"
-                           maxlength="8" oninput="this.value=this.value.replace(/\D/g,'')">
+                           maxlength="8" oninput="this.value=this.value.replace(/\D/g,''); validateBirthdate()">
                 </div>
+                <p class="r-msg" id="birthdate-msg"></p>
 
                 <!-- 주소 검색 (카카오 우편번호 API) -->
                 <div class="r-field">
@@ -375,9 +376,38 @@
         }
     }
 
+    // 생년월일 형식 + 실존 날짜 + 미래날짜 여부 검증
+    function isValidBirthdate(v) {
+        if (!/^(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])$/.test(v)) return false;
+        const y = +v.slice(0, 4), m = +v.slice(4, 6), d = +v.slice(6, 8);
+        const date = new Date(y, m - 1, d);
+        const isRealCalendarDate = date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
+        const isNotFuture = date <= new Date();
+        return isRealCalendarDate && isNotFuture;
+    }
+
+    function validateBirthdate() {
+        const v = document.getElementById('birthdate_input').value;
+        const el = document.getElementById('birthdate_input');
+        if (!v) {
+            setMsg('birthdate-msg', '', '');
+            el.classList.remove('ok', 'error');
+            return;
+        }
+        const ok = v.length === 8 && isValidBirthdate(v);
+        setMsg('birthdate-msg', ok ? '' : '올바른 생년월일이 아닙니다. (예: 20010101)', ok ? '' : 'err');
+        el.classList.toggle('ok', ok);
+        el.classList.toggle('error', !ok);
+    }
+
     function submitRegister() {
         if (!emailVerified) {
             alert('이메일 인증을 완료해 주세요.');
+            return;
+        }
+        const birthdate = document.getElementById('birthdate_input').value;
+        if (!isValidBirthdate(birthdate)) {
+            alert('올바른 생년월일을 입력해 주세요. (예: 20010101)');
             return;
         }
         if (!phoneAvailable) {

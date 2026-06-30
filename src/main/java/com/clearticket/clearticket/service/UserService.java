@@ -10,6 +10,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Optional;
 
 @Service
@@ -23,9 +26,11 @@ public class UserService {
     // 검증 정규식 (프론트 JS와 동일한 패턴)
     // ─────────────────────────────────────────────
 
-    private static final String EMAIL_REGEX    = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
-    private static final String PHONE_REGEX     = "^01[0-9]-\\d{3,4}-\\d{4}$";
-    private static final String PASSWORD_REGEX  = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_]).{8,20}$";
+    private static final String EMAIL_REGEX     = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
+    private static final String PHONE_REGEX      = "^01[0-9]-\\d{3,4}-\\d{4}$";
+    private static final String PASSWORD_REGEX   = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_]).{8,20}$";
+    // YYYYMMDD, 연도 1900~2099, 월 01~12, 일 01~31 형식까지만 1차로 거름 (실존 날짜 여부는 isRealDate에서 추가 확인)
+    private static final String BIRTHDATE_REGEX  = "^(19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])$";
 
     // ─────────────────────────────────────────────
     // 중복 확인
@@ -61,6 +66,10 @@ public class UserService {
         if (dto.getPhone() == null || !dto.getPhone().matches(PHONE_REGEX)) {
             throw new IllegalArgumentException("올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)");
         }
+        if (dto.getBirthdate() == null || !dto.getBirthdate().matches(BIRTHDATE_REGEX)
+                || !isRealDate(dto.getBirthdate())) {
+            throw new IllegalArgumentException("올바른 생년월일이 아닙니다. (예: 20010101)");
+        }
         if (existsByEmail(dto.getEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
@@ -86,6 +95,19 @@ public class UserService {
                 .build();
 
         return userRepository.save(user);
+    }
+
+    /**
+     * 정규식으로 거른 YYYYMMDD 문자열이 실제로 존재하는 날짜인지(2/30, 4/31 같은 값 차단)
+     * + 미래 날짜가 아닌지 확인
+     */
+    private boolean isRealDate(String birthdate) {
+        try {
+            LocalDate date = LocalDate.parse(birthdate, DateTimeFormatter.ofPattern("yyyyMMdd"));
+            return !date.isAfter(LocalDate.now());
+        } catch (DateTimeParseException e) {
+            return false; // 2/30, 4/31 등 정규식은 통과해도 실존하지 않는 날짜
+        }
     }
 
     // ─────────────────────────────────────────────
@@ -147,8 +169,8 @@ public class UserService {
     // ─────────────────────────────────────────────
 
     @Transactional
-    public void saveSurvey(String email, SurveyRequestDto dto) {
-        userRepository.findByEmail(email).ifPresent(user -> {
+    public void saveSurvey(Long userId, SurveyRequestDto dto) {
+        userRepository.findById(userId).ifPresent(user -> {
             if (dto.getGenres() != null && !dto.getGenres().isEmpty()) {
                 user.setPreferenceGenre(String.join(",", dto.getGenres()));
             }

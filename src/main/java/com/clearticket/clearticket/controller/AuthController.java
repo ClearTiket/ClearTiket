@@ -12,7 +12,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
-import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
@@ -50,7 +49,9 @@ public class AuthController {
         return userService.login(email, password)
                 .map(userSession -> {
                     session.setAttribute("loginUser", userSession);
-                    return "redirect:/mypage";
+                    // 로그인 성공 시 항상 메인페이지로 이동
+                    // (취향 설문은 회원가입 직후에만 별도로 진행되는 흐름이라 여기선 분기하지 않음)
+                    return "redirect:/";
                 })
                 .orElseGet(() -> {
                     model.addAttribute("error", "이메일 혹은 비밀번호가 일치하지 않습니다.");
@@ -90,8 +91,13 @@ public class AuthController {
         try {
             User user = userService.register(dto);
             session.removeAttribute(EmailVerificationController.SESSION_VERIFIED_EMAIL);
+
+            // 설문 저장을 위해 임시로 세션을 만들어 둠.
+            // 이 세션은 "정식 로그인"이 아니라 설문 작성용이며,
+            // 설문이 끝나면(스킵/완료 모두) /logout으로 끊고 로그인 페이지로 보낸다.
             session.setAttribute("loginUser",
                     new UserSession(String.valueOf(user.getUserId()), user.getName(), user.getEmail(), user.getPhone()));
+
             return "redirect:/survey";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -99,7 +105,7 @@ public class AuthController {
         }
     }
 
-    // ─── 취향 설문 (회원가입 직후 / 신규 → 저장값 없음) ──────────────────
+    // ─── 취향 설문 (회원가입 직후 진입) ──────────────────────────────────
 
     @GetMapping("/survey")
     public String survey(HttpSession session, Model model) {
@@ -107,7 +113,7 @@ public class AuthController {
         if (loginUser == null) return "redirect:/login";
         model.addAttribute("loginUser", loginUser);
 
-       model.addAttribute("savedGenres", Collections.emptyList());
+        model.addAttribute("savedGenres", Collections.emptyList());
         model.addAttribute("savedMoods", Collections.emptyList());
         model.addAttribute("savedCompanion", "");
 
@@ -119,7 +125,7 @@ public class AuthController {
     public String saveSurvey(@RequestBody SurveyRequestDto dto, HttpSession session) {
         UserSession loginUser = (UserSession) session.getAttribute("loginUser");
         if (loginUser == null) return "FAIL";
-        userService.saveSurvey(loginUser.getEmail(), dto);
+        userService.saveSurvey(Long.parseLong(loginUser.getId()), dto);
         return "SUCCESS";
     }
 
