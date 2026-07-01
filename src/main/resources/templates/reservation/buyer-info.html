@@ -131,7 +131,6 @@
     </div>
   </div>
 </div>
-
 <script th:inline="javascript">
   const seatPriceSum = /*[[${seatPriceSum ?: 0}]]*/ 0;
   const discountAmount = /*[[${discountAmount ?: 0}]]*/ 0;
@@ -142,7 +141,6 @@
     updateTotalPrice();
   });
 
-  // 라디오 버튼 체인지 이벤트 함수 (배송 vs 현장수령)
   function changeShippingFee(radio) {
     const items = document.querySelectorAll('.receipt-item');
 
@@ -164,10 +162,7 @@
     document.getElementById('sidebar-total').innerText = `${finalTotal.toLocaleString()} 원`;
   }
 
-
-  // 🚚 [1] 변경 버튼 클릭 시 새창 팝업 띄우기
   document.getElementById('btn-change-address').addEventListener('click', function() {
-    // 🎯 아까 컨트롤러에 뚫어놓은 팝업 전용 URL 주소로 매칭!
     const popupUrl = '/mypage/address-popup';
     const popupName = 'addressPopup';
 
@@ -179,13 +174,10 @@
     window.open(popupUrl, popupName, `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`);
   });
 
-  // 🚚 [2] 팝업창에서 주소를 선택했을 때 데이터를 넘겨받는 전역 함수 (콜백)
   window.receiveAddress = function(data) {
-    // 1. 화면에 보이는 텍스트 변경
     const displayEl = document.getElementById('display-address');
     displayEl.innerText = `[${data.zonecode}] ${data.roadAddress} ${data.detailAddress}`;
 
-    // 2. 백엔드로 전송할 히든 필드 값 세팅
     document.getElementById('recipientName').value = data.recipientName;
     document.getElementById('recipientPhone').value = data.recipientPhone;
     document.getElementById('zonecode').value = data.zonecode;
@@ -193,9 +185,7 @@
     document.getElementById('detailAddress').value = data.detailAddress;
   };
 
-
-  // 🎯 [3] 다음 단계 이동시 데이터 조립 후 백엔드로 최종 전송 (통합본)
-  document.getElementById('next-btn').addEventListener('click', function() {
+  document.getElementById('next-btn').addEventListener('click', async function() {
     const reservationId = /*[[${reservation?.reservationId}]]*/ null;
 
     if (!reservationId) {
@@ -207,7 +197,6 @@
     const ticketType = selectedRadio ? selectedRadio.value : 'DELIVERY';
     const finalTotal = seatPriceSum - discountAmount + currentShippingFee;
 
-    // 💡 현장수령이 아니고 '배송'인데 주소가 비어있으면 막아세우기
     if (ticketType === 'DELIVERY') {
       const zonecode = document.getElementById('zonecode').value;
       if (!zonecode) {
@@ -216,7 +205,6 @@
       }
     }
 
-    // 🚀 혜인님이 작성하셨던 DTO 양식에 맞게 팝업으로 선택한 주소 데이터까지 전부 묶어서 쏩니다!
     const payload = {
       ticketType: ticketType,
       shippingFee: currentShippingFee,
@@ -228,25 +216,25 @@
       totalPrice: finalTotal
     };
 
-    fetch(`/api/reservations/${reservationId}/buyer-info`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-            .then(res => {
-              if (res.ok) {
-                // 성공 시 다음 결제 페이지로 스무스하게 이동!
-                location.href = `/reservations/${reservationId}/payment`;
-              } else {
-                res.text().then(msg => alert("주문 정보 저장 실패: " + msg));
-              }
-            })
-            .catch(err => {
-              console.error("통신 에러:", err);
-              alert("서버 연결에 실패했습니다.");
-            });
+    try {
+      const res = await fetch(`/api/reservations/${reservationId}/buyer-info`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        location.href = `/reservations/${reservationId}/payment`;
+      } else {
+        const msg = await res.text();
+        alert("주문 정보 저장 실패: " + msg);
+      }
+    } catch (err) {
+      console.error("통신 에러:", err);
+      alert("서버 연결에 실패했습니다.");
+    }
   });
 </script>
 </body>

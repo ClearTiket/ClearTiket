@@ -165,7 +165,7 @@
 
     let paymentPopup = null;
 
-    function submitPayment() {
+    async function submitPayment() {
         const isAgreed = document.getElementById('agree-check').checked;
         if (!isAgreed) {
             alert("결제 진행 및 예매 안내 동의에 체크해 주세요.");
@@ -182,89 +182,80 @@
         }
 
         if (selectedMethod === 'CARD') {
-            console.log("레몬스퀴지 연동 시작 - 총 금액:", totalPrice);
-
-            fetch('/api/payments/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reservationId: reservationId })
-            })
-                .then(res => {
-                    if (res.ok) return res.json();
-                    throw new Error("체크아웃 창 생성 실패");
-                })
-                .then(data => {
-                    if (data && data.checkoutUrl) {
-                        const width = 500;
-                        const height = 650;
-                        const left = (window.screen.width / 2) - (width / 2);
-                        const top = (window.screen.height / 2) - (height / 2);
-
-                        paymentPopup = window.open(
-                            data.checkoutUrl,
-                            'LemonSqueezyCheckout',
-                            `width=${width}, height=${height}, top=${top}, left=${left}, resizable=yes, scrollbars=yes`
-                        );
-
-                        startPaymentCheck(reservationId);
-                    } else {
-                        alert("결제창 주소를 불러오지 못했습니다.");
-                    }
-                })
-                .catch(err => {
-                    console.error("레몬스퀴지 통신 에러:", err);
-                    alert("신용카드 결제 시스템 연결에 실패했습니다.");
+            try {
+                const res = await fetch('/api/payments/checkout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reservationId: reservationId })
                 });
+
+                if (!res.ok) throw new Error("체크아웃 창 생성 실패");
+                const data = await res.json();
+
+                if (data && data.checkoutUrl) {
+                    const width = 500;
+                    const height = 650;
+                    const left = (window.screen.width / 2) - (width / 2);
+                    const top = (window.screen.height / 2) - (height / 2);
+
+                    paymentPopup = window.open(
+                        data.checkoutUrl,
+                        'LemonSqueezyCheckout',
+                        `width=${width}, height=${height}, top=${top}, left=${left}, resizable=yes, scrollbars=yes`
+                    );
+
+                    startPaymentCheck(reservationId);
+                } else {
+                    alert("결제창 주소를 불러오지 못했습니다.");
+                }
+            } catch (err) {
+                console.error("레몬스퀴지 통신 에러:", err);
+                alert("신용카드 결제 시스템 연결에 실패했습니다.");
+            }
 
         } else {
-            fetch(`/api/payments/bank-transfer`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    reservationId: reservationId,
-                    paymentMethod: selectedMethod,
-                    bankName: bankName,
-                    amount: totalPrice
-                })
-            })
-                .then(res => {
-                    if (res.ok) {
-                        location.href = `/reservations/${reservationId}/complete`;
-                    } else {
-                        alert("결제 정보 처리에 실패했습니다. 다시 시도해 주세요.");
-                    }
-                })
-                .catch(err => {
-                    console.error("통신 에러 발생:", err);
-                    alert("서버 연결에 실패했습니다.");
+            try {
+                const res = await fetch(`/api/payments/bank-transfer`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        reservationId: reservationId,
+                        paymentMethod: selectedMethod,
+                        bankName: bankName,
+                        amount: totalPrice
+                    })
                 });
+
+                if (res.ok) {
+                    location.href = `/reservations/${reservationId}/complete`;
+                } else {
+                    alert("결제 정보 처리에 실패했습니다. 다시 시도해 주세요.");
+                }
+            } catch (err) {
+                console.error("통신 에러 발생:", err);
+                alert("서버 연결에 실패했습니다.");
+            }
         }
     }
 
     function startPaymentCheck(resId) {
-        console.log("⏱️ 결제 상태 감지 타이머 기동 - 예약 ID:", resId);
+        const paymentTimer = setInterval(async function() {
+            try {
+                const res = await fetch(`/api/reservations/${resId}`);
+                if (!res.ok) throw new Error("상태 조회 실패");
+                const reservationDto = await res.json();
 
-        const paymentTimer = setInterval(function() {
-            fetch(`/api/reservations/${resId}`)
-                .then(res => {
-                    if (!res.ok) throw new Error("상태 조회 실패");
-                    return res.json();
-                })
-                .then(reservationDto => {
-                    console.log("🔍 현재 예약 상태 데이터 확인:", reservationDto);
-
-                    if (reservationDto && (reservationDto.status === 'CONFIRMED' || reservationDto.status === 'PAID')) {
-                        console.log("[검증 완료] 백엔드 결제 처리 확인됨! 완공 페이지로 이동합니다.");
-
-                        if (paymentPopup && !paymentPopup.closed) {
-                            paymentPopup.close();
-                        }
-
-                        clearInterval(paymentTimer);
-                        location.href = `/reservations/${resId}/complete`;
+                if (reservationDto && (reservationDto.status === 'CONFIRMED' || reservationDto.status === 'PAID')) {
+                    if (paymentPopup && !paymentPopup.closed) {
+                        paymentPopup.close();
                     }
-                })
-                .catch(err => console.log("⏳ 결제 완료 대기 중..."));
+
+                    clearInterval(paymentTimer);
+                    location.href = `/reservations/${resId}/complete`;
+                }
+            } catch (err) {
+                console.log("⏳ 결제 완료 대기 중...");
+            }
         }, 3000);
     }
 </script>

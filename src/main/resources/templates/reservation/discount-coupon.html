@@ -83,9 +83,7 @@
             </div>
         </div>
     </div>
-</div>
-
-<script th:inline="javascript">
+</div><script th:inline="javascript">
     const originalPrice = /*[[${seatPriceSum ?: 0}]]*/ 0;
     const shippingFee = 0;
     const gradeList = /*[[${seatGradeList}]]*/ [];
@@ -95,66 +93,65 @@
         loadCoupons();
     });
 
-    function loadCoupons() {
-        fetch('/api/coupons')
-            .then(res => res.json())
-            .then(list => {
-                const container = document.getElementById('coupon-container');
+    async function loadCoupons() {
+        try {
+            const res = await fetch('/api/coupons');
+            const list = await res.json();
 
-                container.innerHTML = '';
+            const container = document.getElementById('coupon-container');
+            container.innerHTML = '';
 
-                const noneLabel = document.createElement('label');
-                noneLabel.className = 'coupon-item';
-                noneLabel.style.display = 'flex';
-                noneLabel.style.alignItems = 'center';
-                noneLabel.style.gap = '8px';
+            const noneLabel = document.createElement('label');
+            noneLabel.className = 'coupon-item';
+            noneLabel.style.display = 'flex';
+            noneLabel.style.alignItems = 'center';
+            noneLabel.style.gap = '8px';
+            noneLabel.innerHTML = `
+                <input type="radio" name="couponSelect" value="NONE" data-discount="0" checked onchange="calculateDiscount(this)">
+                <span style="font-size: 14px; font-weight: 500; color: var(--text-main, #111);">적용 안 함</span>
+            `;
+            container.appendChild(noneLabel);
 
-                noneLabel.innerHTML = `
-                    <input type="radio" name="couponSelect" value="NONE" data-discount="0" checked onchange="calculateDiscount(this)">
-                    <span style="font-size: 14px; font-weight: 500; color: var(--text-main, #111);">적용 안 함</span>
-                `;
-                container.appendChild(noneLabel);
+            if (!list || list.length === 0) {
+                const noCoupon = document.createElement('div');
+                noCoupon.className = 'no-coupon-msg';
+                noCoupon.innerText = '보유하신 쿠폰이 없습니다.';
+                noCoupon.style.padding = '8px 0';
+                noCoupon.style.color = '#999';
+                container.appendChild(noCoupon);
+                return;
+            }
 
-                if (!list || list.length === 0) {
-                    const noCoupon = document.createElement('div');
-                    noCoupon.className = 'no-coupon-msg';
-                    noCoupon.innerText = '보유하신 쿠폰이 없습니다.';
-                    noCoupon.style.padding = '8px 0';
-                    noCoupon.style.color = '#999';
-                    container.appendChild(noCoupon);
-                    return;
+            list.forEach(c => {
+                const type = c.discountType;
+                const discount = c.discountValue || 0;
+
+                const label = document.createElement('label');
+                label.className = 'coupon-item';
+                label.style.display = 'flex';
+                label.style.alignItems = 'center';
+                label.style.gap = '8px';
+
+                let displayText = "";
+                if (type === "PERCENT") {
+                    displayText = `${c.couponName} (${discount}% 할인)`;
+                } else {
+                    displayText = `${c.couponName} (${discount.toLocaleString()}원 할인)`;
                 }
 
-                list.forEach(c => {
-                    const type = c.discountType;
-                    const discount = c.discountValue || 0;
-
-                    const label = document.createElement('label');
-                    label.className = 'coupon-item';
-                    label.style.display = 'flex';
-                    label.style.alignItems = 'center';
-                    label.style.gap = '8px';
-
-                    let displayText = "";
-                    if (type === "PERCENT") {
-                        displayText = `${c.couponName} (${discount}% 할인)`;
-                    } else {
-                        displayText = `${c.couponName} (${discount.toLocaleString()}원 할인)`;
-                    }
-
-                    label.innerHTML = `
-                        <input type="radio" name="couponSelect" value="${c.couponId}"
-                               data-type="${type}"
-                               data-value="${discount}"
-                               onchange="calculateDiscount(this)">
-                        <span style="font-size: 14px;">${displayText}</span>
-                    `;
-                    container.appendChild(label);
-                });
-            })
-            .catch(err => {
-                console.error("쿠폰 로딩 실패:", err);
+                label.innerHTML = `
+                    <input type="radio" name="couponSelect" value="${c.couponId}"
+                           data-type="${type}"
+                           data-value="${discount}"
+                           onchange="calculateDiscount(this)">
+                    <span style="font-size: 14px;">${displayText}</span>
+                `;
+                container.appendChild(label);
             });
+
+        } catch (err) {
+            console.error("쿠폰 로딩 실패:", err);
+        }
     }
 
     function calculateDiscount(radio) {
@@ -176,18 +173,16 @@
         document.getElementById('sidebar-total').innerText = `${(originalPrice - calculatedDiscount).toLocaleString()} 원`;
     }
 
-    document.getElementById('next-btn').addEventListener('click', function () {
+    document.getElementById('next-btn').addEventListener('click', async function () {
         const selectedRadio = document.querySelector('input[name="couponSelect"]:checked');
         if (!selectedRadio) {
-            alert("쿠폰 선택 정보가 올바르지 않습니다.");
+            alert("coupon 정보가 올바르지 않습니다.");
             return;
         }
 
         const couponId = selectedRadio.value;
-
         const totalText = document.getElementById('sidebar-total').innerText;
         const totalPrice = parseInt(totalText.replace(/[^0-9]/g, '')) || 0;
-
         const reservationId = /*[[${reservation?.reservationId}]]*/ null;
 
         if (!reservationId) {
@@ -195,27 +190,28 @@
             return;
         }
 
-        fetch(`/api/reservations/${reservationId}/coupon`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                couponId: couponId,
-                totalPrice: totalPrice
-            })
-        })
-            .then(res => {
-                if (res.ok) {
-                    location.href = `/reservations/${reservationId}/buyer-info`;
-                } else {
-                    alert("쿠폰 정보 저장에 실패했습니다. 다시 시도해 주세요.");
-                }
-            })
-            .catch(err => {
-                console.error("네트워크 에러 발생:", err);
-                alert("서버 통신 중 오류가 발생했습니다.");
+        try {
+            const res = await fetch(`/api/reservations/${reservationId}/coupon`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    couponId: couponId,
+                    totalPrice: totalPrice
+                })
             });
+
+            if (res.ok) {
+                location.href = `/reservations/${reservationId}/buyer-info`;
+            } else {
+                alert("쿠폰 정보 저장에 실패했습니다. 다시 시도해 주세요.");
+            }
+
+        } catch (err) {
+            console.error("네트워크 에러 발생:", err);
+            alert("서버 통신 중 오류가 발생했습니다.");
+        }
     });
 </script>
 </body>
