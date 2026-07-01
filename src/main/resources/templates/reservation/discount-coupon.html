@@ -65,7 +65,7 @@
                 <h3 class="section-title" style="font-size: 15px; margin-bottom: 12px;">등급선택</h3>
                 <div style="display: flex; flex-direction: column; gap: 22px; font-size: 14px; background-color: #ffffff; padding: 16px; border: 1px solid var(--border, #e5e7eb); border-radius: 12px; margin-top: 8px;">
                     <div th:each="item : ${selectedGrades}" style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: var(--text-sub, #555); font-weight: 500;" th:text="|${item.seatGrade} 1매|"></span>
+                        <span style="color: var(--text-sub, #555); font-weight: 500;" th:text="|${item.grade} ${item.count}매|"></span>
                         <span style="color: var(--text-main, #111); font-weight: 600;" th:text="|${#numbers.formatInteger(item.price ?: 0, 0, 'COMMA')} 원|"></span>
                     </div>
                 </div>
