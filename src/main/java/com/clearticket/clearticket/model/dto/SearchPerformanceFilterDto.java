@@ -3,6 +3,7 @@ package com.clearticket.clearticket.model.dto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -13,4 +14,6 @@ public class SearchPerformanceFilterDto {
     List<String> tagsWith;
     List<String> statuses;
     List<String> regions;
+    LocalDate startDate;
+    LocalDate endDate;
 }
