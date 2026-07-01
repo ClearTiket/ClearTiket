@@ -53,23 +53,28 @@ public class OcrService {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode root = objectMapper.readTree(jsonResponse);
 
-            // 🌟 수정: 모든 'images' 내부의 'fields'를 찾아서 합치기
-            StringBuilder sb = new StringBuilder();
+            // 1. 네이버 OCR 응답의 핵심 구조: 'images' 배열 안에 'fields'가 들어있음
             JsonNode images = root.path("images");
+            StringBuilder fullText = new StringBuilder();
 
             for (JsonNode image : images) {
                 JsonNode fields = image.path("fields");
                 for (JsonNode field : fields) {
+                    // 2. 'inferText' 값을 정확히 추출
                     String text = field.path("inferText").asText();
                     if (text != null && !text.isEmpty()) {
-                        sb.append(text).append(" ");
+                        fullText.append(text).append(" ");
                     }
                 }
             }
-            return sb.toString().trim();
+
+            String result = fullText.toString();
+            System.out.println(">>> [DEBUG] 최종 추출된 텍스트 전체: " + result);
+            return result;
 
         } catch (Exception e) {
-            return "추출 실패: " + e.getMessage();
+            e.printStackTrace();
+            return "텍스트 추출 실패";
         }
     }
     
