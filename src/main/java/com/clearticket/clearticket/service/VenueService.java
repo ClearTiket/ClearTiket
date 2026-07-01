@@ -89,7 +89,9 @@ public class VenueService {
                 perf.getIntroImageUrl(),
                 perf.getStartDate() + " ~ " + perf.getEndDate(),
                 perf.getRuntime(),
-                perf.getGenre()
+                perf.getGenre(),
+                perf.getExtractedText(),
+                perf.getSummaryText()
         );
     }
 

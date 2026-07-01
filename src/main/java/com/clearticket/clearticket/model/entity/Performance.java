@@ -2,8 +2,6 @@ package com.clearticket.clearticket.model.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -66,6 +64,19 @@ public class Performance {
     @Column(columnDefinition = "TEXT")
     String extractedText;
 
+    @Column(columnDefinition = "TEXT")
+    String summaryText;
+
     @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", updatable = false)
     LocalDateTime createdAt;
+
+    // OCR 원문 저장용 setter (@Setter를 클래스 전체에 붙이지 않고 필요한 두 필드만 명시적으로 열어둠)
+    public void setExtractedText(String extractedText) {
+        this.extractedText = extractedText;
+    }
+
+    // AI 3줄 요약 결과 저장용 setter
+    public void setSummaryText(String summaryText) {
+        this.summaryText = summaryText;
+    }
 }
