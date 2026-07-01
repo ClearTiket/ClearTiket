@@ -201,6 +201,7 @@
 
     .facility-table tbody tr:hover {
         background-color: #f8f9fa;
+        cursor: pointer;
     }
 
     /* 8. 페이지네이션 스타일 */
@@ -354,7 +355,8 @@
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="venue : ${venueList}">
+                <tr th:each="venue : ${venueList}"
+                    th:data-url="@{/venue/{id}(id=${venue.venueId})}">
                     <td th:text="${venue.getRegion()}"></td>
                     <td th:text="${venue.getName()}"></td>
                     <td th:text="${venue.getAddress()}"></td>
@@ -378,6 +380,12 @@
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
 </body>
 <script>
+    document.querySelectorAll(".facility-table tbody tr").forEach(tr => {
+       tr.addEventListener("click", () => {
+           location.href = tr.dataset.url;
+       });
+    });
+
     function toggleDropdown(button) {
         const currentContainer = button.parentElement;
         const allContainers = document.querySelectorAll('.tab-item-container');
