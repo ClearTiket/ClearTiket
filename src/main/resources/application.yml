@@ -5,12 +5,12 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${mail.username}
+    username: "tjoeun.jr5@gmail.com"
     # 아래 password 값을 Gmail 앱 비밀번호 16자리로 교체하세요.
     # 앱 비밀번호 발급:
     #   Google 계정 → 보안 → 2단계 인증 활성화 →
     #   앱 비밀번호 → "기타(직접 입력)" 선택 → 생성된 16자리 복사
-    password: ${mail.password}
+    password: "akdq wcwe vcug titm"
     properties:
       mail:
         smtp:
@@ -53,14 +53,15 @@ spring:
     init:
       mode: always
       data-locations:
-        - "classpath:sql/data.sql"
         - "classpath:sql/venues_20260622.sql"
         - "classpath:sql/performances_20260622.sql"
         - "classpath:sql/schedules_20260622.sql"
+        - "classpath:sql/data.sql"
 lemonsqueezy:
   api-key: ${LEMON_SQUEEZY_API_KEY}
   store-id: "410829"
   variant-id: "1806370"
+
 
 
 # 세션 타임아웃 30분 (비활동 시 자동 로그아웃)

@@ -5,7 +5,7 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 config.yml
-config.yml
+
 
 ### STS ###
 .apt_generated

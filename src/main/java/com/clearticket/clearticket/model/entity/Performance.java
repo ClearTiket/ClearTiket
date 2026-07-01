@@ -11,11 +11,11 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "performances")
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class Performance {
-
     // Primary Key
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -65,6 +65,9 @@ public class Performance {
 
     @Column(columnDefinition = "TEXT")
     String extractedText;
+
+    @Column(columnDefinition = "TEXT")
+    String summaryText;
 
     @Column(columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP", updatable = false)
     LocalDateTime createdAt;

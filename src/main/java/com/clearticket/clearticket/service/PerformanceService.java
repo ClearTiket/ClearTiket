@@ -4,7 +4,7 @@ import com.clearticket.clearticket.model.dto.performance.AvailableDateResponse;
 import com.clearticket.clearticket.model.dto.performance.ScheduleResponse;
 import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.repository.PerformanceRepository;
-import com.clearticket.clearticket.repository.ScheduleRepository; // 🌟 주입 완료
+import com.clearticket.clearticket.repository.ScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +27,8 @@ public class PerformanceService {
 
     private final PerformanceRepository performanceRepository;
     private final ScheduleRepository scheduleRepository;
+    private final OcrService ocrService;
+    private final OpenAiService openAiService;
 
     int defaultPageSize = 20;
 
@@ -81,6 +83,7 @@ public class PerformanceService {
                 ))
                 .collect(Collectors.toList());
     }
+
     public Page<Performance> findAllByRegion(String region, int page) {
 
         List<String> regions = new ArrayList<>();
@@ -103,4 +106,51 @@ public class PerformanceService {
         // TODO: 현재는 단순 장르 필터링만 -> 예매율 계산 + 정렬 로직 작성 필요
         return performanceRepository.findAllByGenre(genre, validPageable(page, 10));
     }
+    // 포스터 분석 로직 추가
+    @Transactional
+    public void analyzePoster(Long performanceId) {
+        try {
+            Performance p = performanceRepository.findById(performanceId)
+                    .orElseThrow(() -> new IllegalArgumentException("공연 없음"));
+            System.out.println(">>> 1. 공연 찾음: " + p.getTitle());
+
+            String rawJson = ocrService.callOcr(p.getPosterUrl());
+            System.out.println(">>> 2. 네이버 응답 완료");
+
+            String extractedText = ocrService.extractTextFromOcr(rawJson);
+            System.out.println(">>> 3. 추출된 텍스트: " + (extractedText != null ? extractedText.length() : "null"));
+
+            p.setExtractedText(extractedText);
+            performanceRepository.save(p);
+            System.out.println(">>> 4. 저장 완료");
+
+        } catch (Exception e) {
+            System.out.println(">>> 에러 발생! 상세 내용: " + e.getMessage());
+            e.printStackTrace(); // 🌟 이 부분이 콘솔에 꼭 찍혀야 합니다!
+        }
+    }
+    // 포스터 OCR로 원본 저장
+    @Transactional
+    public String testOcrAndSave(Long performanceId) {
+        System.out.println(">>> 1. 메서드 진입 확인: " + performanceId); // 로그 1
+
+        Performance p = performanceRepository.findById(performanceId)
+                .orElseThrow(() -> new IllegalArgumentException("공연 없음"));
+
+        // 2. OCR 호출
+        String rawJson = ocrService.callOcr(p.getPosterUrl());
+        System.out.println(">>> 2. OCR 결과: " + rawJson); // 로그 2
+
+        // 3. 텍스트 추출
+        String extractedText = ocrService.extractTextFromOcr(rawJson);
+        System.out.println(">>> 3. 추출된 텍스트: " + extractedText); // 로그 3
+
+        // 4. DB 저장
+        p.setExtractedText(extractedText);
+        performanceRepository.saveAndFlush(p);
+        System.out.println(">>> 4. DB 저장 완료!"); // 로그 4
+
+        return "추출된 텍스트: " + extractedText;
+    }
+
 }
