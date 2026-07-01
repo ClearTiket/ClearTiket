@@ -555,8 +555,9 @@
     });
 
     function createBannerSlide(data) {
-        const swiperSlide = document.createElement("div");
+        const swiperSlide = document.createElement("a");
         swiperSlide.className = "swiper-slide";
+        swiperSlide.href = "/venue/" + data.performance.performanceId + "/detail";
 
         const img = document.createElement("img");
         img.src = data.performance.posterUrl;
@@ -572,8 +573,9 @@
     }
 
     function createRankSlotCard(data, rankNum) {
-        const rankSlotCard = document.createElement("div");
+        const rankSlotCard = document.createElement("a");
         rankSlotCard.classList.add("rank-slot-card");
+        rankSlotCard.href = "/venue/" + data.performance.performanceId + "/detail";
 
         const rankSlotCardImg = document.createElement("div");
         rankSlotCardImg.classList.add("rank-slot-card-img");
