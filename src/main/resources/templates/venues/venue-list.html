@@ -255,11 +255,11 @@
         <div class="venue-list-tab-group">
 
             <div class="tab-item-container">
-                <a href="?"><button class="venue-list-tab-btn active">전체</button></a>
+                <a href="?"><button class="venue-list-tab-btn active" data-region="전체">전체</button></a>
             </div>
 
             <div class="tab-item-container">
-                <button class="venue-list-tab-btn" onclick="toggleDropdown(this)">
+                <button class="venue-list-tab-btn" data-region="서울" onclick="toggleDropdown(this)">
                     서울 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
@@ -268,7 +268,7 @@
             </div>
 
             <div class="tab-item-container">
-                <button class="venue-list-tab-btn" onclick="toggleDropdown(this)">
+                <button class="venue-list-tab-btn" data-region="인천, 경기" onclick="toggleDropdown(this)">
                     경기 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
@@ -278,7 +278,7 @@
             </div>
 
             <div class="tab-item-container">
-                <button class="venue-list-tab-btn" onclick="toggleDropdown(this)">
+                <button class="venue-list-tab-btn" data-region="강원" onclick="toggleDropdown(this)">
                     강원 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
@@ -287,7 +287,7 @@
             </div>
 
             <div class="tab-item-container">
-                <button class="venue-list-tab-btn" onclick="toggleDropdown(this)">
+                <button class="venue-list-tab-btn" data-region="충청, 대전, 충북, 충남, 세종" onclick="toggleDropdown(this)">
                     충청 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
@@ -300,7 +300,7 @@
             </div>
 
             <div class="tab-item-container">
-                <button class="venue-list-tab-btn" onclick="toggleDropdown(this)">
+                <button class="venue-list-tab-btn" data-region="전라, 광주, 전북, 전남" onclick="toggleDropdown(this)">
                     전라 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
@@ -312,7 +312,7 @@
             </div>
 
             <div class="tab-item-container">
-                <button class="venue-list-tab-btn" onclick="toggleDropdown(this)">
+                <button class="venue-list-tab-btn" data-region="경상, 부산, 대구, 울산, 경북, 경남" onclick="toggleDropdown(this)">
                     경상 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
@@ -326,7 +326,7 @@
             </div>
 
             <div class="tab-item-container">
-                <button class="venue-list-tab-btn" onclick="toggleDropdown(this)">
+                <button class="venue-list-tab-btn" data-region="제주" onclick="toggleDropdown(this)">
                     제주 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
@@ -335,7 +335,7 @@
             </div>
 
             <div class="tab-item-container">
-                <button class="venue-list-tab-btn" onclick="toggleDropdown(this)">
+                <button class="venue-list-tab-btn" data-region="해외" onclick="toggleDropdown(this)">
                     기타 <span class="arrow">▼</span>
                 </button>
                 <ul class="dropdown-menu">
@@ -409,5 +409,16 @@
             });
         }
     });
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const region = urlParams.get('region');
+
+    document.querySelectorAll(".venue-list-tab-btn").forEach(btn => {
+        btn.classList.remove('active');
+    })
+    let targetRegionTabBtn;
+    if (!region) targetRegionTabBtn = document.querySelector(`.venue-list-tab-btn[data-region*="전체"]`);
+    else targetRegionTabBtn = document.querySelector(`.venue-list-tab-btn[data-region*="${region}"]`);
+    if (targetRegionTabBtn) targetRegionTabBtn.classList.add("active");
 </script>
 </html>
