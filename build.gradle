@@ -24,6 +24,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 
     // ── 이메일 발송 (JavaMailSender) ──────────────────
     implementation 'org.springframework.boot:spring-boot-starter-mail'
