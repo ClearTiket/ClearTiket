@@ -851,7 +851,8 @@
       const reservation = await res.json();
 
       // 다음 단계(수령/주문자 정보 입력)로 이동
-      window.location.href = `/reservations/${reservation.reservationId}/buyer-info`;
+      // window.location.href = `/reservations/${reservation.reservationId}/buyer-info`;
+      window.location.href = `/coupons?reservationId=${reservation.reservationId}`;
     } catch (err) {
       console.error(err);
       alert(`예매를 진행하는 중 오류가 발생했습니다.\n${err.message}`);
