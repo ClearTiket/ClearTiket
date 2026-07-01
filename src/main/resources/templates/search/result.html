@@ -95,6 +95,29 @@
         color: #ffffff;
     }
 
+    .filter-section.re-search-section {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .re-search {
+        width: 120px;
+        height: 50px;
+        border: 1px solid #4154FF;
+        border-radius: 8px;
+        background-color: #4154FF;
+        color: #ffffff;
+        padding: 0 16px;
+        font-size: 18px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .re-search:hover {
+        background-color: #3443CC;
+        border-color: #3443CC;
+    }
+
     /* 5. 우측 메인 콘텐츠 영역 (자동 너비 계산: 1200 - 300 - 25 = 875px) */
     .main-content {
         flex: 1;
@@ -286,6 +309,17 @@
                     <button class="toggle-btn">가족과</button>
                 </div>
             </section>
+            <hr>
+
+            <section class="filter-section">
+                <label for="date-input">날짜 선택:</label>
+                <input type="date" id="date-input" name="user-date">
+            </section>
+            <hr>
+
+            <section class="filter-section re-search-section">
+                <button class="re-search">재검색</button>
+            </section>
         </aside>
 
         <div class="main-content">
@@ -346,6 +380,7 @@
 
             // card-grid 요소 선택
             const cardGrid = document.querySelector('.card-grid');
+            cardGrid.replaceChildren();
 
             // 데이터 반복 처리
             resultJson.forEach(item => {
