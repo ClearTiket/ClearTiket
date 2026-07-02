@@ -78,9 +78,21 @@ public class AutocorrectSearchService {
                 "to_char(p.start_date, 'YYYYMMDD') as start_date, " +
                 "to_char(p.end_date, 'YYYYMMDD') as end_date, " +
                 "p.castings, p.poster_url, p.extracted_text, " +
-                "v.name as venue_name " +
+                "v.name as venue_name, " +
+                "COALESCE(" + // 분위기 태그 배열 join
+                "  array_agg(t.tag_id) " +
+                "    FILTER (WHERE t.tag_id BETWEEN 201 AND 209), " +
+                "  '{}'" +
+                ") AS tags_vibe, " +
+                "COALESCE(" + // 동행 태그 배열 join
+                "  array_agg(t.tag_id) " +
+                "    FILTER (WHERE t.tag_id BETWEEN 301 AND 305), " +
+                "  '{}'" +
+                ") AS tags_with " +
                 "FROM performances p " +
-                "LEFT JOIN venues v ON p.venue_id = v.venue_id"; // 외래키 연결 조인
+                "LEFT JOIN venues v ON p.venue_id = v.venue_id " + // 외래키 연결 조인
+                "LEFT JOIN performance_tags t ON p.performance_id = t.performance_id " +
+                "GROUP BY p.performance_id, v.name";
 
         try {
             List<PerformanceDocument> dbData = jdbcTemplate.query(sql, (rs, rowNum) -> {
@@ -98,6 +110,9 @@ public class AutocorrectSearchService {
                 doc.setExtractedText(rs.getString("extracted_text"));
 
                 doc.setVenueName(rs.getString("venue_name"));
+
+                doc.setTagsVibe(java.util.Arrays.asList((Integer[]) rs.getArray("tags_vibe").getArray()));
+                doc.setTagsWith(java.util.Arrays.asList((Integer[]) rs.getArray("tags_with").getArray()));
 
                 return doc;
             });
