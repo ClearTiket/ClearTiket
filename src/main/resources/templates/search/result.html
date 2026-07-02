@@ -375,12 +375,13 @@
         // card-grid 요소 선택
         const cardGrid = document.querySelector('.card-grid');
         cardGrid.replaceChildren();
-
+        console.log(resultJson);
         // 데이터 반복 처리
         resultJson.forEach(item => {
             // prod-card 생성
-            const prodCard = document.createElement('div');
+            const prodCard = document.createElement('a');
             prodCard.classList.add('prod-card');
+            prodCard.href = "/venue/" + item.performanceId + "/detail"
 
             // 이미지 영역
             const imgWrapper = document.createElement('div');
@@ -406,7 +407,7 @@
 
             const desc = document.createElement('p');
             desc.classList.add('prod-desc');
-            desc.textContent = "description";//item.description;
+            desc.textContent = item.venueName;
 
             textArea.appendChild(title);
             textArea.appendChild(desc);
