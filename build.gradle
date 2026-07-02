@@ -16,6 +16,8 @@ java {
 
 repositories {
     mavenCentral()
+    maven { url 'https://repo.spring.io/milestone' }
+    maven { url 'https://repo.spring.io/snapshot' }
 }
 
 dependencies {
@@ -45,8 +47,18 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testAnnotationProcessor 'org.projectlombok:lombok'
-}
 
+    // ── Redis(인메모리DB) / Groq API 연동용 ─────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.ai:spring-ai-openai-spring-boot-starter:1.0.0-SNAPSHOT'
+    implementation 'org.springframework.ai:spring-ai-openai:1.0.0-SNAPSHOT'
+    implementation 'org.springframework.ai:spring-ai-core:1.0.0-SNAPSHOT'
+}
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:1.0.0-SNAPSHOT"
+    }
+}
 tasks.named('test') {
     useJUnitPlatform()
 }
