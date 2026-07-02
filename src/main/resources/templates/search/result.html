@@ -255,58 +255,63 @@
         <aside class="sidebar">
             <section class="filter-section">
                 <h5>장르</h5>
-                <div class="toggle-group">
-                    <button class="toggle-btn">뮤지컬</button>
-                    <button class="toggle-btn">콘서트</button>
-                    <button class="toggle-btn">클래식</button>
+                <div class="toggle-group genre">
+                    <button class="toggle-btn" data-filter="tagsGenre" data-tag="뮤지컬">뮤지컬</button>
+                    <button class="toggle-btn" data-filter="tagsGenre" data-tag="콘서트">콘서트</button>
+                    <button class="toggle-btn" data-filter="tagsGenre" data-tag="클래식">클래식</button>
                 </div>
             </section>
             <hr>
 
             <section class="filter-section">
                 <h5>지역</h5>
-                <div class="toggle-group">
-                    <button class="toggle-btn">서울</button>
-                    <button class="toggle-btn">경기</button>
-                    <button class="toggle-btn">강원</button>
-                    <button class="toggle-btn">충청</button>
-                    <button class="toggle-btn">전라</button>
-                    <button class="toggle-btn">경상</button>
-                    <button class="toggle-btn">제주</button>
-                    <button class="toggle-btn">해외</button>
+                <div class="toggle-group region">
+                    <button class="toggle-btn" data-filter="regions" data-tag="서울특별시">서울</button>
+                    <button class="toggle-btn" data-filter="regions" data-tag="인천광역시,경기도">경기</button>
+                    <button class="toggle-btn" data-filter="regions" data-tag="강원특별자치도">강원</button>
+                    <button class="toggle-btn" data-filter="regions" data-tag="대전광역시,충청북도,충청남도,세종특별자치시">충청</button>
+                    <button class="toggle-btn" data-filter="regions" data-tag="광주광역시,전북특별자치도,전라남도">전라</button>
+                    <button class="toggle-btn" data-filter="regions" data-tag="부산광역시,대구광역시,울산광역시,경상북도,경상남도">경상</button>
+                    <button class="toggle-btn" data-filter="regions" data-tag="제주특별자치도">제주</button>
+                    <button class="toggle-btn" data-filter="regions" data-tag="해외">해외</button>
                 </div>
             </section>
             <hr>
 
             <section class="filter-section">
                 <h5>판매 상태</h5>
-                <div class="toggle-group">
-                    <button class="toggle-btn">판매 종료</button>
-                    <button class="toggle-btn active">공연중</button>
-                    <button class="toggle-btn active">공연 예정</button>
+                <div class="toggle-group status">
+                    <button class="toggle-btn" data-filter="statuses" data-tag="CLOSED">판매 종료</button>
+                    <button class="toggle-btn active" data-filter="statuses" data-tag="ON_SALE">공연중</button>
+                    <button class="toggle-btn active" data-filter="statuses" data-tag="PREPARING">공연 예정</button>
                 </div>
             </section>
             <hr>
 
             <section class="filter-section">
                 <h5>분위기</h5>
-                <div class="toggle-group">
-                    <button class="toggle-btn">로맨틱</button>
-                    <button class="toggle-btn">활기찬</button>
-                    <button class="toggle-btn">감동적인</button>
-                    <button class="toggle-btn">신나는</button>
-                    <button class="toggle-btn">편안한</button>
+                <div class="toggle-group vibe">
+                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="201">201</button>
+                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="202">202</button>
+                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="203">203</button>
+                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="204">204</button>
+                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="205">205</button>
+                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="206">206</button>
+                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="207">207</button>
+                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="208">208</button>
+                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="209">209</button>
                 </div>
             </section>
             <hr>
 
             <section class="filter-section">
                 <h5>동행</h5>
-                <div class="toggle-group">
-                    <button class="toggle-btn">혼자</button>
-                    <button class="toggle-btn">친구와</button>
-                    <button class="toggle-btn">연인과</button>
-                    <button class="toggle-btn">가족과</button>
+                <div class="toggle-group with">
+                    <button class="toggle-btn" data-filter="tagsWith" data-tag="301">혼자</button>
+                    <button class="toggle-btn" data-filter="tagsWith" data-tag="302">연인과</button>
+                    <button class="toggle-btn" data-filter="tagsWith" data-tag="303">부모님과</button>
+                    <button class="toggle-btn" data-filter="tagsWith" data-tag="304">친구와</button>
+                    <button class="toggle-btn" data-filter="tagsWith" data-tag="305">아이와</button>
                 </div>
             </section>
             <hr>
@@ -324,11 +329,11 @@
 
         <div class="main-content">
 
-            <div class="sort-bar">
-                <button class="sort-btn active">판매량</button>
-                <button class="sort-btn">예매율</button>
-                <button class="sort-btn">가까운 날짜</button>
-            </div>
+<!--            <div class="sort-bar">-->
+<!--                <button class="sort-btn active">판매량</button>-->
+<!--                <button class="sort-btn">예매율</button>-->
+<!--                <button class="sort-btn">가까운 날짜</button>-->
+<!--            </div>-->
 
             <div class="card-grid">
 
@@ -353,18 +358,67 @@
 </body>
 
 <script>
-    document.querySelectorAll('.toggle-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            this.classList.toggle('active');
-        });
-    });
+    // document.querySelectorAll('.toggle-btn').forEach(btn => {
+    //     // btn.addEventListener('click', function() {
+    //     //     this.classList.toggle('active');
+    //     // });
+    // });
 
-    document.querySelectorAll('.sort-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+    // document.querySelectorAll('.sort-btn').forEach(btn => {
+    //     btn.addEventListener('click', function() {
+    //         document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    //         this.classList.add('active');
+    //     });
+    // });
+
+    async function createCards(resultJson) {
+        // card-grid 요소 선택
+        const cardGrid = document.querySelector('.card-grid');
+        cardGrid.replaceChildren();
+
+        // 데이터 반복 처리
+        resultJson.forEach(item => {
+            // prod-card 생성
+            const prodCard = document.createElement('div');
+            prodCard.classList.add('prod-card');
+
+            // 이미지 영역
+            const imgWrapper = document.createElement('div');
+            imgWrapper.classList.add('card-img-wrapper');
+
+            const imgPlaceholder = document.createElement('div');
+            imgPlaceholder.classList.add('card-img-placeholder');
+
+            const img = document.createElement('img');
+            img.src = item.posterUrl;
+            img.alt = item.title;
+
+            imgPlaceholder.appendChild(img);
+            imgWrapper.appendChild(imgPlaceholder);
+
+            // 텍스트 영역
+            const textArea = document.createElement('div');
+            textArea.classList.add('card-text-area');
+
+            const title = document.createElement('h4');
+            title.classList.add('prod-title');
+            title.textContent = item.title;
+
+            const desc = document.createElement('p');
+            desc.classList.add('prod-desc');
+            desc.textContent = "description";//item.description;
+
+            textArea.appendChild(title);
+            textArea.appendChild(desc);
+
+            // prod-card에 추가
+            prodCard.appendChild(imgWrapper);
+            prodCard.appendChild(textArea);
+
+            // card-grid에 추가
+            cardGrid.appendChild(prodCard);
         });
-    });
+    }
 
     async function getSearchData(keyword) {
         try {
@@ -377,53 +431,26 @@
             });
 
             const resultJson = await response.json();
+            await createCards(resultJson);
 
-            // card-grid 요소 선택
-            const cardGrid = document.querySelector('.card-grid');
-            cardGrid.replaceChildren();
+        } catch (err) {
+            console.log(err);
+        }
+    }
 
-            // 데이터 반복 처리
-            resultJson.forEach(item => {
-                // prod-card 생성
-                const prodCard = document.createElement('div');
-                prodCard.classList.add('prod-card');
-
-                // 이미지 영역
-                const imgWrapper = document.createElement('div');
-                imgWrapper.classList.add('card-img-wrapper');
-
-                const imgPlaceholder = document.createElement('div');
-                imgPlaceholder.classList.add('card-img-placeholder');
-
-                const img = document.createElement('img');
-                img.src = item.posterUrl;
-                img.alt = item.title;
-
-                imgPlaceholder.appendChild(img);
-                imgWrapper.appendChild(imgPlaceholder);
-
-                // 텍스트 영역
-                const textArea = document.createElement('div');
-                textArea.classList.add('card-text-area');
-
-                const title = document.createElement('h4');
-                title.classList.add('prod-title');
-                title.textContent = item.title;
-
-                const desc = document.createElement('p');
-                desc.classList.add('prod-desc');
-                desc.textContent = "description";//item.description;
-
-                textArea.appendChild(title);
-                textArea.appendChild(desc);
-
-                // prod-card에 추가
-                prodCard.appendChild(imgWrapper);
-                prodCard.appendChild(textArea);
-
-                // card-grid에 추가
-                cardGrid.appendChild(prodCard);
+    async function postSearchData(keyword, jsonData) {
+        try {
+            const fetchUrl = "/api/search/performance?keyword=" + keyword;
+            const response = await fetch(fetchUrl, {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(jsonData)
             });
+
+            const resultJson = await response.json();
+            await createCards(resultJson);
         } catch (err) {
             console.log(err);
         }
@@ -434,6 +461,35 @@
     if (keyword) {
         getSearchData(keyword);
     }
+
+    document.querySelector('.search-wrap input').value = keyword;
+
+    const filterData = {
+        "tagsGenre": [],
+        "tagsVibe": [],
+        "tagsWith": [],
+        "statuses": ["ON_SALE", "PREPARING"],
+        "regions": [],
+        "startDate": "",
+        "endDate": ""
+    }
+
+    document.querySelectorAll(".toggle-btn").forEach(btn => {
+        const key = btn.dataset.filter;
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('active');
+            const split = btn.dataset.tag.split(',');
+            if (btn.classList.contains('active')) {
+                filterData[key].push(...split);
+            } else {
+                filterData[key] = filterData[key].filter(item => !split.includes(item));
+            }
+        });
+    });
+
+    document.querySelector(".re-search").addEventListener('click', () => {
+        postSearchData(keyword, filterData);
+    });
 
 </script>
 
