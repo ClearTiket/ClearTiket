@@ -53,10 +53,10 @@ spring:
     init:
       mode: always
       data-locations:
-        - "classpath:sql/data.sql"
         - "classpath:sql/venues_20260622.sql"
         - "classpath:sql/performances_20260622.sql"
         - "classpath:sql/schedules_20260622.sql"
+        - "classpath:sql/data.sql"
 lemonsqueezy:
   api-key: ${LEMON_SQUEEZY_API_KEY}
   store-id: "410829"
