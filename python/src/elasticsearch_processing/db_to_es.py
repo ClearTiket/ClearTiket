@@ -69,7 +69,9 @@ def create_es_index_with_nori():
                 "extracted_text": {
                     "type": "text",
                     "analyzer": "nori_korean_analyzer"  # 상세 설명 nori 적용
-                }
+                },
+                "tagsVibe": {"type": "keyword"},
+                "tagsWith": {"type": "keyword"}
             }
         }
     }
@@ -121,6 +123,23 @@ def migrate_data_to_es():
     pg_cursor.execute(query_performances)
     rows_performances = pg_cursor.fetchall()
 
+    query_tags = "SELECT performance_id, tag_id FROM performance_tags"
+    pg_cursor.execute(query_tags)
+    rows_tags = pg_cursor.fetchall()
+
+    tags_vibe_dict = {}
+    tags_with_dict = {}
+    for row in rows_tags:
+        pid, tid = row[0], row[1]
+        if 200 < int(tid) < 300:
+            if pid not in tags_vibe_dict:
+                tags_vibe_dict[pid] = []
+            tags_vibe_dict[pid].append(tid)
+        elif 300 < int(tid):
+            if pid not in tags_with_dict:
+                tags_with_dict[pid] = []
+            tags_with_dict[pid].append(tid)
+
     query_venues = "SELECT venue_id, name, region, telnum, capacity, address, relateurl, lat, lon FROM venues"
     pg_cursor.execute(query_venues)
     rows_venues = pg_cursor.fetchall()
@@ -133,11 +152,15 @@ def migrate_data_to_es():
     # ES 벌크 api 규격에 맞춰 제너레이터 형태로 변환
     def generate_actions_performances():
         for row in rows_performances:
+            performance_id = row[0]
+            performance_tags_vibe = tags_vibe_dict.get(performance_id, [])
+            performance_tags_with = tags_with_dict.get(performance_id, [])
+
             yield {
                 "_index": INDEX_NAME_PERFORMANCES,
-                "_id": row[0],
+                "_id": performance_id,
                 "_source": {
-                    "performance_id": row[0],
+                    "performance_id": performance_id,
                     "title": row[1],
                     "start_date": row[2],
                     "end_date": row[3],
@@ -146,7 +169,9 @@ def migrate_data_to_es():
                     "status": row[6],
                     "castings": row[7],
                     "poster_url": row[8],
-                    "extracted_text": row[9]
+                    "extracted_text": row[9],
+                    "tags_vibe": performance_tags_vibe,
+                    "tags_with": performance_tags_with
                 }
             }
 
