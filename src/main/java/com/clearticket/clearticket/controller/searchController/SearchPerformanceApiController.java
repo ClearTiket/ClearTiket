@@ -21,12 +21,12 @@ public class SearchPerformanceApiController {
 
     @GetMapping("")
     public ResponseEntity<List<PerformanceDocument>> performanceSearch(@RequestParam String keyword) {
-        return ResponseEntity.ok(searchPerformanceService.searchPerformances(keyword));
+        return ResponseEntity.ok(searchPerformanceService.searchPerformances(keyword, new SearchPerformanceFilterDto()));
     }
 
     @PostMapping("")
     public ResponseEntity<List<PerformanceDocument>> performanceSearch(@RequestParam String keyword, @RequestBody SearchPerformanceFilterDto filterDto) {
-        return null;
+        return ResponseEntity.ok(searchPerformanceService.searchPerformances(keyword, filterDto));
     }
 
     @GetMapping("/autocorrect")
