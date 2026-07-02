@@ -541,8 +541,42 @@
         .refresh-btn { cursor:pointer; border:none; background:none; font-size:20px; }
         #captcha-input { width:100%; padding:15px; box-sizing:border-box; margin-bottom:20px; text-align:center; }
         .submit-btn { width:100%; padding:15px; background:#ccc; border:none; border-radius:8px; color:#fff; cursor:pointer; }
+
+        /* ==========================================================================
+                 실시간 매진 전광판 컴포넌트 커스텀 스타일
+              ========================================================================== */
+        .soldout-banner-container {
+            margin: 12px 0;
+            padding: 14px 16px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 8px;
+            color: #856404;
+        }
+        .soldout-title {
+            font-weight: bold;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+        }
+        .soldout-content {
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        .blink-effect {
+            animation: blink-animation 1.2s steps(5, start) infinite;
+            color: #dc3545;
+            margin-right: 6px;
+            font-weight: bold;
+        }
+        @keyframes blink-animation {
+            to { visibility: hidden; }
+        }
     </style>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
 <body>
 
@@ -759,6 +793,16 @@
             <div class="ct-sticky-panel-box">
                 <div class="ct-panel-section">
                     <div class="ct-panel-toggle-title"> 관람일 선택</div>
+                    <!--  [실시간 매진 전광판]  -->
+                    <div class="soldout-banner-container" id="soldoutBanner" style="display: none;">
+                        <div class="soldout-title">
+                            <span class="blink-effect">🚨 실시간 상황:</span>
+                            <span id="soldoutSectionName">-</span>
+                        </div>
+                        <div class="soldout-content" id="soldoutMessage">
+                            좌석 매진 상황을 알려드립니다.
+                        </div>
+                    </div>
                     <input type="hidden" id="venueKopisId" th:value="${venueKopisId}">
 
                     <div class="ct-calendar-wrapper">
@@ -1603,7 +1647,11 @@
 
                 // 3. 좌석 선택 페이지로 이동 (URL 파라미터로 전달)
                 // 이전: window.location.href = `/seat-selection?scheduleId=${scheduleId}`;
-                window.location.href = `/venue/seat/selection?scheduleId=${scheduleId}`;
+                const popupUrl = `/venue/seat/selection?scheduleId=${scheduleId}`;
+                const popupName = "ClearTicket_SeatSelection";
+                const popupOptions = "width=1000, height=700, resizable=no, scrollbars=yes, status=no, location=no";
+
+                window.open(popupUrl, popupName, popupOptions);
 
             } else {
                 // 4. 인증 실패 시
@@ -1616,7 +1664,46 @@
             alert("서버 연결에 실패했습니다.");
         }
     }
+    // ================== 실시간 매진 알림 웹소켓 STOMP 로직 ====================
+    let stompClient = null;
 
+    function connectWebSocket() {
+        // 백엔드에서 생성해둔 웹소켓 주소 바인딩
+        const socket = new SockJS('/ws-seats');
+        stompClient = Stomp.over(socket);
+
+        // 콘솔에 디버그 로그가 과하게 찍히는 것을 방지
+        stompClient.debug = null;
+
+        stompClient.connect({}, function (frame) {
+            console.log('✅ [ClearTicket AI] 실시간 예매 채널 연결 완료');
+
+            // 현재 유저가 머물고 있는 공연 ID 기반으로 토픽 구독 채널 뚫기
+            const destination = '/topic/soldout/' + performanceId;
+
+            stompClient.subscribe(destination, function (response) {
+                const data = JSON.parse(response.body);
+
+                if (data.status === 'SOLD_OUT') {
+                    // 서버 장부에서 넘겨받은 텍스트 요소를 전광판 레이아웃에 직접 매칭
+                    document.getElementById('soldoutSectionName').innerText = data.section + " 매진";
+                    document.getElementById('soldoutMessage').innerText = data.notice;
+
+                    // 기본 display:none 상태였던 전광판 배너 활성화
+                    const banner = document.getElementById('soldoutBanner');
+                    if (banner) banner.style.display = 'block';
+                }
+            });
+        }, function (error) {
+            console.warn('❌ 웹소켓 통신 연결 장애 발생. 5초 뒤 복구를 시도합니다.', error);
+            setTimeout(connectWebSocket, 5000); // 자동 단선 방지 및 재접속 트리거
+        });
+    }
+
+    // 기존 타임리프 DOM 로드가 완전히 완료되는 시점에 웹소켓 통신 가동
+    window.addEventListener("load", function() {
+        connectWebSocket();
+    });
 </script>
 </body>
 </html>
