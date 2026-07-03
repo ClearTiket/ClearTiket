@@ -62,6 +62,23 @@ lemonsqueezy:
   store-id: "410829"
   variant-id: "1806370"
 
+# 네이버 클라우드 플랫폼 CLOVA OCR (General) 설정
+# invoke-url : CLOVA OCR 도메인 > API Gateway 연동 후 발급되는 Invoke URL
+# secret-key : 위 연동 화면에서 발급되는 Secret Key (X-OCR-SECRET 헤더 값)
+naver:
+  ocr:
+    invoke-url: ${naver.ocr.invoke-url:}
+    secret-key: ${naver.ocr.secret-key:}
+
+# 포스터 원문(OCR) 3줄 요약에 사용할 AI 공급자. gemini선택.
+ai:
+  summary:
+    provider: ${ai.summary.provider:openai}
+
+gemini:
+  api-key: ${gemini.api-key:}
+  model: ${gemini.model:}
+
 
 
 # 세션 타임아웃 30분 (비활동 시 자동 로그아웃)

@@ -1,7 +1,9 @@
 package com.clearticket.clearticket.service.searchService;
 
 import co.elastic.clients.elasticsearch._types.Time;
+import co.elastic.clients.elasticsearch._types.TimeUnit;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.json.JsonData;
 import com.clearticket.clearticket.model.document.PerformanceDocument;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +36,7 @@ public class SearchPerformanceService {
      */
     public List<PerformanceDocument> searchPerformances(String searchText) {
 
-        // 공백 기준 검색어를 키워드로 부리
+        // 공백 기준 검색어를 키워드로 분리
         List<String> keywords = Arrays.stream(searchText.split("\\s+"))
                 .filter(word -> !word.isEmpty())
                 .toList();
@@ -42,8 +44,8 @@ public class SearchPerformanceService {
         // 검색어가 없거나 공백만 존재하는 경우 빈 List 반환
         if (keywords.isEmpty()) return new ArrayList<>();
 
-        List<Query> mustQueries = new ArrayList<>(); // 모두 만족해야 하는 조건들
-        List<Query> shouldQueries = new ArrayList<>(); // 하나라도 만족하면 통과인 조건들
+        List<Query> mustQueries = new ArrayList<>();   // 모두 만족해야 하는 조건들
+        List<Query> shouldQueries = new ArrayList<>();  // 하나라도 만족하면 통과인 조건들
 
         for (String keyword : keywords) {
             mustQueries.add(Query.of(
@@ -52,18 +54,22 @@ public class SearchPerformanceService {
 
         String todayStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
+        // pivot()은 람다가 아니라 완성된 Time 객체를 직접 받음
+        Time pivotTime = Time.of(t -> t.time(7, TimeUnit.Days));
+
+        // boost()는 .date(...) 바깥이 아니라 d 람다 안에서 설정해야 함
         Query dateBoostQuery = Query.of(q -> q
                 .distanceFeature(df -> df
                         .date(d -> d
                                 .field("start_date")
                                 .origin(todayStr)
-                                .pivot(Time.of(t -> t.time("7d")))
-                                .boost(2.0f))
+                                .pivot(pivotTime)
+                                .boost(2.0f)
+                        )
                 )
         );
 
         shouldQueries.add(dateBoostQuery);
-
 
         Query endedFilterQuery = Query.of(q -> q.bool(
                 b -> b.filter(
@@ -93,6 +99,5 @@ public class SearchPerformanceService {
                 .map(SearchHit::getContent)
                 .collect(Collectors.toList());
     }
-
 
 }

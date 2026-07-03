@@ -190,9 +190,9 @@
             margin-top: 20px;
             font-size: 0.9rem;
         }
-    /* ==========================================================================
-       6. 우측 사이드바 달력 & 회차 컴포넌트 (보완 완료)
-    ========================================================================== */
+        /* ==========================================================================
+           6. 우측 사이드바 달력 & 회차 컴포넌트 (보완 완료)
+        ========================================================================== */
         .ct-panel-section {
             margin-bottom: 24px;
             border-bottom: 1px solid #f3f4f6;
@@ -605,7 +605,7 @@
                 <div class="ct-detail-body-wrapper" style="display: flex; flex-direction: column; gap: 40px; margin-top: 20px;">
                     <div class="ct-body-section" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; text-align: left;">
                         <h3 style="font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; color: #ef4444; display: flex; align-items: center; gap: 8px;">
-                             꼭 확인해주세요! (공지사항)
+                            꼭 확인해주세요! (공지사항)
                         </h3>
                         <div style="font-size: 0.9rem; color: #4b5563; line-height: 1.8; display: flex; flex-direction: column; gap: 12px;">
                             <p style="margin: 0; font-weight: 600; color: #111827;">※ 무통장입금 취소 기한 안내</p>
@@ -644,9 +644,19 @@
 
                     <div class="ct-body-section" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; text-align: center;">
                         <h3 style="font-size: 1.2rem; font-weight: bold; margin-bottom: 24px; color: #111827; text-align: left;">공연 상세 소개</h3>
-                            <div class="ct-poster-container" style="width: 100%; text-align: center;">
-                                <img id="ct-detail-poster" src="" alt="상세 이미지">
-                            </div>
+                        <div class="ct-poster-container" style="width: 100%; text-align: center;">
+                            <img id="ct-detail-poster" src="" alt="상세 이미지">
+                        </div>
+                    </div>
+
+                    <div id="poster-summary-section" class="ct-body-section" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 32px; text-align: left; display: none;">
+                        <h3 style="font-size: 1.2rem; font-weight: bold; margin-bottom: 16px; color: #111827;"> 포스터 한눈에 보기 (AI 3줄 요약)</h3>
+                        <p id="perf-summary-text" style="font-size: 0.95rem; color: #111827; line-height: 1.8; white-space: pre-line; margin: 0 0 20px 0;"></p>
+
+                        <details>
+                            <summary style="cursor: pointer; font-size: 0.85rem; color: #6b7280;">OCR 원문 전체 보기</summary>
+                            <p id="perf-extracted-text" style="font-size: 0.85rem; color: #4b5563; line-height: 1.7; white-space: pre-line; margin-top: 12px;"></p>
+                        </details>
                     </div>
                 </div>
             </div>
@@ -967,6 +977,16 @@
                     } else {
                         detailPoster.style.display = 'none';
                     }
+                }
+
+                // 포스터 OCR 원문 + AI 3줄 요약
+                const summarySection = document.getElementById("poster-summary-section");
+                const summaryTextEl = document.getElementById("perf-summary-text");
+                const extractedTextEl = document.getElementById("perf-extracted-text");
+                if (summarySection && venue.summaryText) {
+                    summarySection.style.display = 'block';
+                    if (summaryTextEl) summaryTextEl.innerText = venue.summaryText;
+                    if (extractedTextEl) extractedTextEl.innerText = venue.extractedText || '원문 없음';
                 }
             })
             .catch(err => console.error("공연 정보 로드 에러:", err));
@@ -1485,48 +1505,48 @@
             })
             .catch(err => console.error("통신 장애 발생:", err));
     }
-        // 상영 회차 로드 (내부 함수 수정)
-        function loadSchedules(mt10id, selectedDate) {
-            const scheduleList = document.getElementById("schedule-list");
-            if (!scheduleList) return;
+    // 상영 회차 로드 (내부 함수 수정)
+    function loadSchedules(mt10id, selectedDate) {
+        const scheduleList = document.getElementById("schedule-list");
+        if (!scheduleList) return;
 
-            selectedScheduleId = null; // 날짜 변경 시 선택된 ID 초기화
-            scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#6b7280;'>회차 정보를 불러오는 중...</p>";
+        selectedScheduleId = null; // 날짜 변경 시 선택된 ID 초기화
+        scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#6b7280;'>회차 정보를 불러오는 중...</p>";
 
-            fetch(`/api/venue/${mt10id}/schedules?date=${selectedDate}`)
-                .then(response => response.json())
-                .then(data => {
-                    scheduleList.innerHTML = "";
-                    if (!data || data.length === 0) {
-                        scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>해당 날짜에는 상영 스케줄이 없습니다.</p>";
-                        return;
-                    }
-                    data.forEach(schedule => {
-                        const btn = document.createElement("button");
-                        btn.classList.add("schedule-btn");
+        fetch(`/api/venue/${mt10id}/schedules?date=${selectedDate}`)
+            .then(response => response.json())
+            .then(data => {
+                scheduleList.innerHTML = "";
+                if (!data || data.length === 0) {
+                    scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>해당 날짜에는 상영 스케줄이 없습니다.</p>";
+                    return;
+                }
+                data.forEach(schedule => {
+                    const btn = document.createElement("button");
+                    btn.classList.add("schedule-btn");
 
-                        // 🌟 [수정] 서버의 Response 필드명("scheduleId", "round", "startTime")과 정확히 일치시킴
-                        const sId = schedule.scheduleId;
-                        const round = schedule.round;
-                        const time = schedule.startTime;
+                    // 🌟 [수정] 서버의 Response 필드명("scheduleId", "round", "startTime")과 정확히 일치시킴
+                    const sId = schedule.scheduleId;
+                    const round = schedule.round;
+                    const time = schedule.startTime;
 
-                        btn.innerText = `${round}회차 (${time})`;
+                    btn.innerText = `${round}회차 (${time})`;
 
-                        btn.addEventListener("click", () => {
-                            document.querySelectorAll(".schedule-btn").forEach(b => b.classList.remove("active"));
-                            btn.classList.add("active");
-                            selectedScheduleId = sId;
-                            selectedRound = round;
-                            console.log("선택된 실제 DB 스케줄 ID:", selectedScheduleId, " / 회차:", selectedRound);
-                        });
-                        scheduleList.appendChild(btn);
+                    btn.addEventListener("click", () => {
+                        document.querySelectorAll(".schedule-btn").forEach(b => b.classList.remove("active"));
+                        btn.classList.add("active");
+                        selectedScheduleId = sId;
+                        selectedRound = round;
+                        console.log("선택된 실제 DB 스케줄 ID:", selectedScheduleId, " / 회차:", selectedRound);
                     });
-                })
-                .catch(err => {
-                    console.error("회차 로드 에러:", err);
-                    scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>회차 정보를 불러오는데 실패했습니다.</p>";
+                    scheduleList.appendChild(btn);
                 });
-        }
+            })
+            .catch(err => {
+                console.error("회차 로드 에러:", err);
+                scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>회차 정보를 불러오는데 실패했습니다.</p>";
+            });
+    }
     // ================== 보안 문자 로직 ====================
     // 1. 모달 열기 및 초기화
     function openCaptchaModal() {

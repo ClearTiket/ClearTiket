@@ -5,8 +5,6 @@ import com.clearticket.clearticket.model.dto.performance.ScheduleResponse;
 import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.repository.PerformanceRepository;
 import com.clearticket.clearticket.repository.ScheduleRepository;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +33,7 @@ public class PerformanceService {
     private final PerformanceRepository performanceRepository;
     private final ScheduleRepository scheduleRepository;
     private final OcrService ocrService;
-    private final OpenAiService openAiService;
+    private final AiSummaryService aiSummaryService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -161,7 +159,7 @@ public class PerformanceService {
 
         String targetUrl = getSecondImageUrl(p.getIntroImageUrl());
 
-        // 🌟 핵심 추가: 해상도 검증 로직 적용
+        // 해상도 검증 로직 적용
         if (targetUrl == null || !isImageValid(targetUrl)) {
             System.out.println(">>> [INFO] 이 포스터는 해상도 제한을 초과하거나 유효하지 않아 건너뜁니다: " + performanceId);
             return; // OCR API 횟수 아끼기 위해 중단
@@ -173,14 +171,21 @@ public class PerformanceService {
         // 2. 파싱 및 저장
         String extractedText = ocrService.extractTextFromOcr(rawJson);
 
-        // 🌟 유효한 텍스트가 있을 때만 저장 (불필요한 update 방지)
+        // 유효한 텍스트가 있을 때만 저장 (불필요한 update 방지)
         if (extractedText != null && !extractedText.equals("텍스트 추출 실패")) {
             p.setExtractedText(extractedText);
+
+            // 3. GPT 3줄 요약 호출 및 저장
+            String summaryText = aiSummaryService.getSummaryFromText(extractedText);
+            p.setSummaryText(summaryText);
+
             performanceRepository.saveAndFlush(p);
-            
+
             Performance updatedP = performanceRepository.findById(performanceId).orElse(null);
             System.out.println(">>> [DEBUG] DB 재조회 결과 텍스트 길이: " +
                     (updatedP != null && updatedP.getExtractedText() != null ? updatedP.getExtractedText().length() : "NULL"));
+            System.out.println(">>> [DEBUG] DB 재조회 결과 요약: " +
+                    (updatedP != null ? updatedP.getSummaryText() : "NULL"));
         }
     }
     // 포스터 OCR로 원본 저장
@@ -190,18 +195,27 @@ public class PerformanceService {
         Performance p = performanceRepository.findById(performanceId)
                 .orElseThrow(() -> new IllegalArgumentException("공연 없음"));
 
+        // 1. intro_image_url은 {'styurl': '...'} 형태의 JSON 문자열이므로 순수 URL만 추출
+        String targetUrl = getSecondImageUrl(p.getIntroImageUrl());
+        if (targetUrl == null || targetUrl.isBlank()) {
+            return "유효한 이미지 URL을 찾을 수 없습니다. intro_image_url 값을 확인하세요.";
+        }
+
         // 2. OCR 호출
-        String rawJson = ocrService.callOcr(p.getIntroImageUrl());
+        String rawJson = ocrService.callOcr(targetUrl);
 
         // 3. 텍스트 추출
         String extractedText = ocrService.extractTextFromOcr(rawJson);
-
-        // 4. DB 저장
         p.setExtractedText(extractedText);
+
+        // 4. GPT 3줄 요약
+        String summaryText = aiSummaryService.getSummaryFromText(extractedText);
+        p.setSummaryText(summaryText);
+
+        // 5. DB 저장
         performanceRepository.saveAndFlush(p);
 
-        return "추출된 텍스트: " + extractedText;
+        return "추출된 텍스트: " + extractedText + "\n\n3줄 요약: " + summaryText;
     }
-
 
 }
