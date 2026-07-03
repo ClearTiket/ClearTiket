@@ -1,6 +1,7 @@
 package com.clearticket.clearticket.controller.searchController;
 
 import com.clearticket.clearticket.model.document.PerformanceDocument;
+import com.clearticket.clearticket.model.dto.SearchPerformanceFilterDto;
 import com.clearticket.clearticket.service.searchService.SearchPerformanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -23,7 +24,7 @@ public class SearchPerformanceViewController {
             Model model) {
 
         if (keyword != null && !keyword.trim().isEmpty()) {
-            List<PerformanceDocument> searchResults = searchPerformanceService.searchPerformances(keyword);
+            List<PerformanceDocument> searchResults = searchPerformanceService.searchPerformances(keyword, new SearchPerformanceFilterDto());
 
             model.addAttribute("searchResults", searchResults);
             model.addAttribute("keyword", keyword);
