@@ -780,14 +780,22 @@
     selectedSeatList.forEach(seat => {
       totalPrice += seat.price;
       htmlContent += `
-    <div style="padding: 14px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-      <div>
-        <span style="font-weight:bold; color:#111827; font-size:0.95rem;">${seat.zone}구역 ${seat.label}</span>
-        <div style="font-size:0.75rem; color:#6b7280; margin-top:3px; font-weight:500;">${seat.gradeName}</div>
-      </div>
-      <span style="font-weight:bold; color:#2563eb; font-size:0.9rem;">${seat.price.toLocaleString()}원</span>
+<div style="padding:14px; background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+  <div>
+    <span style="font-weight:bold; color:#111827; font-size:0.95rem;">
+      ${seat.sectionName}구역 ${seat.rowNum}열 ${seat.seatNum}번
+    </span>
+
+    <div style="font-size:0.75rem; color:#6b7280; margin-top:3px; font-weight:500;">
+      ${seat.seatGrade}석
     </div>
-  `;
+  </div>
+
+  <span style="font-weight:bold; color:#2563eb; font-size:0.9rem;">
+    ${seat.price.toLocaleString()}원
+  </span>
+</div>
+`;
     });
 
     listContainer.innerHTML = htmlContent;
