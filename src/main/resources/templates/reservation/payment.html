@@ -57,15 +57,8 @@
                 </div>
             </div>
 
-            <div class="card" style="padding: 16px 20px;">
-                <div th:each="item : ${selectedGrades}" style="display: flex; justify-content: space-between; align-items: center; font-size: 14px;">
-                    <span style="color: var(--text-sub, #555);" th:text="|${item.grade} ${item.count}매|"></span>
-                    <span style="color: var(--text-main, #111); font-weight: 600;" th:text="|${#numbers.formatInteger(item.price ?: 0, 0, 'COMMA')} 원|"></span>
-                </div>
-            </div>
-
             <div class="card">
-                <table class="fee-table" style="min-height: auto; gap: 12px;">
+                <table class="fee-table" style="min-height: 250px;">
                     <tr><td>상품금액</td><td th:text="|${#numbers.formatInteger(seatPriceSum ?: 0, 0, 'COMMA')} 원|"></td></tr>
                     <tr>
                         <td>할인금액</td>
