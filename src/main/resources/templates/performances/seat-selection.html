@@ -589,7 +589,7 @@
 
   // [0-3] 다른 사용자의 좌석 선택/해제가 실시간으로 반영되는 부분
   function applyRemoteSeatUpdate(event) {
-    const seat = allSeats.find(s => String(s.seatId) === String(event.seatId));
+    find(s => s.sectionName === event.section && s.rowNum === event.row && s.seatNum === event.seat)
     if (!seat) return;
     seat.status = event.status;
 
@@ -696,7 +696,7 @@
     if (isSelected) {
       // 선택 해제 -> 서버에도 해제 알림 (다른 사람들이 다시 고를 수 있도록)
       try {
-        await fetch(`/api/seats/release?seatId=${seatData.seatId}&userId=${currentUserId}&scheduleId=${scheduleId}`, {
+        await fetch(`/api/seats/release?sectionName=${seatData.sectionName}&rowNum=${seatData.rowNum}&seatNum=${seatData.seatNum}&userId=${currentUserId}&scheduleId=${scheduleId}`, {
           method: 'POST'
         });
       } catch (err) {
@@ -715,7 +715,15 @@
 
     // ★ 서버에 임시 선점 요청 -> 성공해야만 UI 선택 처리 (동시에 두 명이 누르는 경쟁 상황 방지)
     try {
-      const res = await fetch(`/api/seats/book?seatId=${seatData.seatId}&userId=${currentUserId}&scheduleId=${scheduleId}`, {
+      const params = new URLSearchParams({
+        sectionName: seatData.sectionName,
+        rowNum: seatData.rowNum,
+        seatNum: seatData.seatNum,
+        userId: currentUserId,
+        scheduleId: scheduleId
+      });
+
+      const res = await fetch(`/api/seats/book?${params.toString()}`, {
         method: 'POST'
       });
 
@@ -828,7 +836,11 @@
       performanceId: performanceId,
       scheduleId: Number(scheduleId),
       userId: currentUserId,
-      seatIds: selectedSeatList.map(seat => seat.seatId),
+      seatCoordinates: selectedSeatList.map(seat => ({
+        section: seat.zone,
+        row: seat.label.split('열')[0],   // 또는 seat.rowNum
+        seat: seat.label.split('번')[0].split(' ').pop() // 구조 맞게 조정 필요
+      })),
       couponId: null,
       totalPrice: totalPrice,
       ticketType: '일반'
