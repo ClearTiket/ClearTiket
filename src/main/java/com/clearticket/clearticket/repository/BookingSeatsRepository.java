@@ -11,14 +11,25 @@ import java.util.List;
 @Repository
 public interface BookingSeatsRepository extends JpaRepository<BookingSeat, Long> {
 
-    @Query("SELECT b.seat.seatId FROM BookingSeat b WHERE b.createdAt > :time")
-    List<Long> findSeatIdsByCreatedAtAfter(@Param("time") LocalDateTime time);
-    boolean existsBySeatSeatIdAndCreatedAtAfter(Long seatId, LocalDateTime dateTime);
+    List<BookingSeat> findByScheduleScheduleId(Long scheduleId);
 
-    void deleteBySeatSeatIdAndUserUserId(Long seatId, Long userId);
+    boolean existsByScheduleScheduleIdAndSectionNameAndRowNumAndSeatNumAndCreatedAtAfter(
+            Long scheduleId,
+            String sectionName,
+            String rowNum,
+            Integer seatNum,
+            LocalDateTime dateTime
+    );
 
-    @Query("SELECT b.seat.seatId FROM BookingSeat b WHERE b.createdAt < :time")
-    List<Long> findExpiredSeatIds(@Param("time") LocalDateTime time);
+    void deleteByScheduleScheduleIdAndSectionNameAndRowNumAndSeatNumAndUserUserId(
+            Long scheduleId,
+            String sectionName,
+            String rowNum,
+            Integer seatNum,
+            Long userId
+    );
+
+    List<BookingSeat> findByCreatedAtBefore(LocalDateTime time);
 
     void deleteByCreatedAtBefore(LocalDateTime time);
 }

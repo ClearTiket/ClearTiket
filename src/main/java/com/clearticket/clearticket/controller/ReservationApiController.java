@@ -68,8 +68,7 @@ public class ReservationApiController {
         reservationService.cancelReservationById(reservationId);
         return ResponseEntity.ok().build();
     }
-
-
+    
     /**
      * 예매 1단계 완료 : 선택한 쿠폰 및 최종 금액 임시 저장
      * @param reservationId 현재 진행 중인 예약 ID

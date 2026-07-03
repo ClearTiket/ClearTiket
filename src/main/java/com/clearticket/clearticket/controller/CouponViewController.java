@@ -34,14 +34,11 @@ public class CouponViewController {
         Map<String, Object> summary = reservationService.getReservationSummary(reservationId);
         Performance performance = (Performance) summary.get("performance");
 
-        List<String> seatGradeList = reservationService.getSeatGrades(performance.getPerformanceId());
-
         String userId = loginUser.getId();
         List<CouponResponseDto> coupons = couponService.getAvailableCoupons(userId);
 
         model.addAttribute("reservation", summary.get("reservation"));
         model.addAttribute("performance", performance);
-        model.addAttribute("seatGradeList", seatGradeList); // 뷰에서 th:each로 사용
         model.addAttribute("coupons", coupons); // 뷰에서 라디오 버튼으로 사용
 
         // [★ 수정된 부분] 서비스에서 새로 포장한 등급별 리스트 바구니를 화면(타임리프)으로 던져줍니다!
@@ -50,4 +47,5 @@ public class CouponViewController {
 
         return "reservation/discount-coupon";
     }
+
 }

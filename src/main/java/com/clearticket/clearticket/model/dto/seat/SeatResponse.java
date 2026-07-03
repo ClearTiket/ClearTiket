@@ -1,28 +1,18 @@
 package com.clearticket.clearticket.model.dto.seat;
 
-import com.clearticket.clearticket.model.entity.Seat;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 
 @Getter
+@Setter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
 public class SeatResponse {
-    private Long seatId;
-    private String seatGrade;
-    private String sectionName;
-    private String rowNum;
-    private String seatNum;
-    private Integer price;
-    private String status;
-
-    public SeatResponse(Seat seat, String status) {
-        this.seatId = seat.getSeatId();
-        this.seatGrade = seat.getSeatGrade();
-        this.sectionName = seat.getSectionName();
-        this.rowNum = seat.getRowNum();
-        this.seatNum = seat.getSeatNum();
-        this.price = seat.getPrice();
-        this.status = status;
-    }
+    private String sectionName;   // A,B,C
+    private String rowNum;        // A~J
+    private Integer seatNum;      // 1~10
+    private String seatGrade;     // VIP,R,S
+    private Integer price;        // 가격
+    private String status;        // AVAILABLE / BOOKED
 }

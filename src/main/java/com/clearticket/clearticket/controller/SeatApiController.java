@@ -28,14 +28,22 @@ public class SeatApiController {
 
     @PostMapping("/book")
     public ResponseEntity<String> bookSeat(
-            @RequestParam Long seatId,
+            @RequestParam String sectionName,
+            @RequestParam String rowNum,
+            @RequestParam Integer seatNum,
             @RequestParam Long userId,
             @RequestParam Long scheduleId) {
+
         try {
-            seatService.bookSeat(seatId, userId, scheduleId);
-            return ResponseEntity.ok("좌석이 임시 선점되었습니다! 5분 내로 결제를 완료해 주세요.");
+            seatService.bookSeat(sectionName, rowNum, seatNum, userId, scheduleId);
+
+            return ResponseEntity.ok(
+                    "좌석이 임시 선점되었습니다! 5분 내로 결제를 완료해 주세요."
+            );
+
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(404).body(e.getMessage());
         }
@@ -43,10 +51,14 @@ public class SeatApiController {
 
     @PostMapping("/release")
     public ResponseEntity<String> releaseSeat(
-            @RequestParam Long seatId,
+            @RequestParam String sectionName,
+            @RequestParam String rowNum,
+            @RequestParam Integer seatNum,
             @RequestParam Long userId,
             @RequestParam Long scheduleId) {
-        seatService.releaseSeat(seatId, userId, scheduleId);
+
+        seatService.releaseSeat(scheduleId, sectionName, rowNum, seatNum, userId);
+
         return ResponseEntity.ok("좌석 선점이 해제되었습니다.");
     }
 }

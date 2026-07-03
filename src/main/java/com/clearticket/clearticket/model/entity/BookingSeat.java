@@ -22,9 +22,14 @@ public class BookingSeat {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seat_id")
-    private Seat seat; // DB의 seat_id와 매핑
+    @Column(nullable = false, length = 1)
+    private String sectionName; // A, B, C
+
+    @Column(nullable = false, length = 1)
+    private String rowNum;        // A ~ J
+
+    @Column(nullable = false)
+    private Integer seatNum;      // 1 ~ 10
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id")
