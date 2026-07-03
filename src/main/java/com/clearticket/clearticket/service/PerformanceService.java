@@ -1,16 +1,25 @@
 package com.clearticket.clearticket.service;
 
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
+import co.elastic.clients.elasticsearch.core.SearchRequest;
+import com.clearticket.clearticket.model.document.PerformanceDocument;
 import com.clearticket.clearticket.model.dto.performance.AvailableDateResponse;
 import com.clearticket.clearticket.model.dto.performance.ScheduleResponse;
 import com.clearticket.clearticket.model.entity.Performance;
+import com.clearticket.clearticket.model.entity.UserTag;
 import com.clearticket.clearticket.repository.PerformanceRepository;
 import com.clearticket.clearticket.repository.ScheduleRepository;
+import com.clearticket.clearticket.repository.UserTagRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,8 +41,10 @@ public class PerformanceService {
 
     private final PerformanceRepository performanceRepository;
     private final ScheduleRepository scheduleRepository;
+    private final UserTagRepository userTagRepository;
     private final OcrService ocrService;
     private final AiSummaryService aiSummaryService;
+    private final ElasticsearchOperations elasticsearchOperations;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -213,4 +224,58 @@ public class PerformanceService {
         return "추출된 텍스트: " + extractedText + "\n\n3줄 요약: " + summaryText;
     }
 
+    public List<PerformanceDocument> getRecommendedPerformances(Long userId) {
+        List<UserTag> tags = userTagRepository.findAllByUserUserId(userId);
+
+        List<String> userTagsGenre = new ArrayList<>();
+        List<Integer> userTagsVibe = new ArrayList<>();
+        List<Integer> userTagsWith = new ArrayList<>();
+
+        for (UserTag tag : tags) {
+            Integer tagId = tag.getTag().getTagId();
+            if (100 <= tagId && tagId < 200) {
+                userTagsGenre.add(tag.getTag().getDisplayName());
+            } else if (200 <= tagId && tagId < 300) {
+                userTagsVibe.add(tagId);
+            } else if (300 <= tagId && tagId < 400) {
+                userTagsWith.add(tagId);
+            }
+        }
+
+        List<Query> genreQueries = userTagsGenre.stream()
+                .map(id -> Query.of(q -> q.term(t -> t.field("genre").value(id))))
+                .collect(Collectors.toList());
+
+        List<Query> vibeQueries = userTagsVibe.stream()
+                .map(id -> Query.of(q -> q.term(t -> t.field("tags_vibe").value(id).boost(2.0f))))
+                .collect(Collectors.toList());
+
+        List<Query> withQueries = userTagsWith.stream()
+                .map(id -> Query.of(q -> q.term(t -> t.field("tags_with").value(id).boost(1.0f))))
+                .collect(Collectors.toList());
+
+        Query finalQuery = Query.of(q -> q
+                .bool(b -> b
+                        .must(m -> m
+                                .bool(sb -> sb
+                                        .should(genreQueries)
+                                        .minimumShouldMatch("1")
+                                )
+                        )
+                        .should(vibeQueries)
+                        .should(withQueries)
+                )
+        );
+
+        NativeQuery nativeQuery = NativeQuery.builder()
+                .withQuery(finalQuery)
+                .withPageable(PageRequest.of(0, 5))
+                .build();
+
+        SearchHits<PerformanceDocument> searchHits = elasticsearchOperations.search(nativeQuery, PerformanceDocument.class);
+
+        return searchHits.stream()
+                .map(SearchHit::getContent)
+                .collect(Collectors.toList());
+    }
 }

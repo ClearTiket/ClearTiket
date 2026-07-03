@@ -41,3 +41,7 @@ SELECT 200 + ((r-1)*10 + s) AS seat_id,
        r::varchar, s::varchar, 110000, 'S', 'C', 1
 FROM generate_series(1,10) r, generate_series(1,10) s
 ON CONFLICT (seat_id) DO NOTHING;
+
+-- performance_tags 테이블에 유니크 제약 추가
+ALTER TABLE performance_tags
+Add CONSTRAINT uq_perf_tag UNIQUE (performance_id, tag_id);

@@ -1,5 +1,6 @@
 package com.clearticket.clearticket.controller;
 
+import com.clearticket.clearticket.model.document.PerformanceDocument;
 import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.entity.Ranking;
 import com.clearticket.clearticket.service.PerformanceService;
@@ -42,5 +43,11 @@ public class PerformanceApiController {
         performances = rankingService.getRanking(period, genre);
 
         return ResponseEntity.ok(performances);
+    }
+
+    @GetMapping("/recommendation")
+    public ResponseEntity<List<PerformanceDocument>> getRecommendedPerformance(@RequestParam Long userId) {
+        List<PerformanceDocument> recommended = performanceService.getRecommendedPerformances(userId);
+        return ResponseEntity.ok(recommended);
     }
 }
