@@ -66,9 +66,9 @@
                 <div style="display: flex; flex-direction: column; gap: 22px; font-size: 14px; background-color: #ffffff; padding: 16px; border: 1px solid var(--border, #e5e7eb); border-radius: 12px; margin-top: 8px;">
                     <div th:each="rs : ${reservation?.reservationSeats}" style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="color: var(--text-sub, #555); font-weight: 500;"
-                              th:text="|${rs.seat.sectionName}구역 ${rs.seat.rowNum}열 ${rs.seat.seatNum}번 (${rs.seat.seatGrade}석)|"></span>
+                              th:text="|${rs.sectionName}구역 ${rs.rowNum}열 ${rs.seatNum}번 (${rs.seatGrade}석)|"></span>
                         <span style="color: var(--text-main, #111); font-weight: 600;"
-                              th:text="|${#numbers.formatInteger(rs.seat.price ?: 0, 0, 'COMMA')} 원|"></span>
+                              th:text="|${#numbers.formatInteger(rs.price ?: 0, 0, 'COMMA')} 원|"></span>
                     </div>
                 </div>
             </div>

@@ -19,7 +19,10 @@ public class ReservationSeat {
     @JoinColumn(name = "reservation_id")
     private Reservation reservation;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seat_id")
-    private Seat seat;
+    private String sectionName;
+    private String rowNum;
+    private Integer seatNum;
+
+    private String seatGrade;
+    private Integer price;
 }

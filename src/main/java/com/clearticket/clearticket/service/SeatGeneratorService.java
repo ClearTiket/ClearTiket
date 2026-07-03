@@ -8,7 +8,7 @@ import java.util.List;
 
 // 등급 계산 /가격 계산 등 이뤄지는 로직
 @Service
-public class SeatGenerator {
+public class SeatGeneratorService {
     public List<SeatResponse> generateSeats() {
         List<SeatResponse> seats = new ArrayList<>();
         String[] sections = {"A", "B", "C"};

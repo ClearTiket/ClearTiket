@@ -744,11 +744,15 @@
     seatElement.classList.add("selected");
     selectedSeatList.push({
       seatId: seatData.seatId,
-      zone: seatData.sectionName,
+      sectionName: seatData.sectionName,
+      rowNum: seatData.rowNum,
+      seatNum: seatData.seatNum,
+      seatGrade: seatData.seatGrade,
+      price: seatData.price,
+
+      // 화면 표시용
       code: `${seatData.sectionName}-${seatData.rowNum}${seatData.seatNum}`,
-      label: `${seatData.rowNum}열 ${seatData.seatNum}번`,
-      gradeName: seatData.seatGrade + '석',
-      price: seatData.price
+      label: `${seatData.rowNum}열 ${seatData.seatNum}번`
     });
 
     updateSidebarSummary();
@@ -831,21 +835,22 @@
     submitBtn.innerText = '예매 생성 중...';
 
     const totalPrice = selectedSeatList.reduce((sum, seat) => sum + seat.price, 0);
-
     const reservationPayload = {
-      performanceId: performanceId,
+      performanceId,
       scheduleId: Number(scheduleId),
       userId: currentUserId,
-      seatCoordinates: selectedSeatList.map(seat => ({
-        section: seat.zone,
-        row: seat.label.split('열')[0],   // 또는 seat.rowNum
-        seat: seat.label.split('번')[0].split(' ').pop() // 구조 맞게 조정 필요
+      seats: selectedSeatList.map(seat => ({
+        sectionName: seat.sectionName,
+        rowNum: seat.rowNum,
+        seatNum: seat.seatNum,
+        seatGrade: seat.seatGrade,
+        price: seat.price
       })),
       couponId: null,
-      totalPrice: totalPrice,
-      ticketType: '일반'
+      totalPrice,
+      ticketType: "일반"
     };
-
+    console.log("reservationPayload =", reservationPayload);
     try {
       const res = await fetch('/api/reservations', {
         method: 'POST',
@@ -871,7 +876,6 @@
     }
   }
 
-  // ★ [10] generateInitialSeats() 함수는 통째로 삭제 — 더 이상 mock 데이터 안 씀
 </script>
 </body>
 </html>

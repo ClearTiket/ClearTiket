@@ -21,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SeatService {
 
-    private final SeatGenerator seatGenerator;
+    private final SeatGeneratorService seatGenerator;
     private final BookingSeatsRepository bookingSeatsRepository;
     private final UserRepository userRepository;
     private final ScheduleRepository scheduleRepository;
