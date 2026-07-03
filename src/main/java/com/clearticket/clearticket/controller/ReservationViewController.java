@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Map;
+
 @Controller
 @RequestMapping("/reservations")
 @RequiredArgsConstructor
@@ -88,7 +90,7 @@ public class ReservationViewController {
         if (!checkLogin(session, model)) return "redirect:/login";
 
         try {
-            java.util.Map<String, Object> summary = reservationService.getReservationSummary(reservationId);
+            Map<String, Object> summary = reservationService.getReservationSummary(reservationId);
             model.addAllAttributes(summary);
 
             UserSession loginUser = getLoginUser(session);
@@ -119,7 +121,7 @@ public class ReservationViewController {
         if (!checkLogin(session, model)) return "redirect:/login";
 
         try {
-            java.util.Map<String, Object> summary = reservationService.getReservationSummary(reservationId);
+            Map<String, Object> summary = reservationService.getReservationSummary(reservationId);
             model.addAllAttributes(summary);
 
             model.addAttribute("user", getLoginUser(session));
@@ -144,7 +146,7 @@ public class ReservationViewController {
             Model model) {
 
         try {
-            java.util.Map<String, Object> summary = reservationService.getReservationSummary(reservationId);
+            Map<String, Object> summary = reservationService.getReservationSummary(reservationId);
             model.addAllAttributes(summary);
 
             return "reservation/complete";

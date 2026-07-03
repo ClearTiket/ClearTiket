@@ -22,7 +22,6 @@
         </div>
         <div class="header-actions">
             <th:block th:if="${loginUser != null}">
-                <!-- 이름 클릭 → 마이페이지 이동 -->
                 <a th:href="@{/templates/mypage}"
                    style="font-size:13px;color:#4B6EF5;font-weight:600;text-decoration:none;"
                    th:text="${loginUser.name} + '님'">홍길동님</a>
@@ -58,14 +57,166 @@
         const searchBtn = document.querySelector(".search-btn");
 
         function search() {
+            clearTimeout(debounceTimeout);
+
+            if (typeof suggestBox !== 'undefined') {
+                suggestBox.style.display = "none";
+            }
+
             const keyword = searchKeywordInput.value;
-            window.location.href = "/search/result?keyword=" + keyword;
+
+            // 일반 엔터나 검색 버튼 클릭 시에도 현재 결과 페이지 주소라면 동적 비동기 처리
+            if (window.location.pathname.includes("/search/result") && typeof window.getSearchData === 'function') {
+                history.pushState(null, null, "/search/result?keyword=" + encodeURIComponent(keyword));
+                window.getSearchData(keyword);
+
+                // 검색 완료 후 인풋창 포커스 해제
+                searchKeywordInput.blur();
+            } else {
+                window.location.href = "/search/result?keyword=" + encodeURIComponent(keyword);
+            }
         }
 
+
+
         searchBtn.addEventListener("click", search)
+
+        searchKeywordInput.addEventListener("focus", function() {
+            this.value = "";
+        });
+
+        // =================================================================
+        // 엘라스틱서치 실시간 타이핑 추천 검색어 연동
+        // =================================================================
+        const searchWrap = document.querySelector(".search-wrap");
+        searchWrap.style.position = "relative";
+
+        // 추천 검색어 드롭다운 박스 동적 생성
+        const suggestBox = document.createElement("div");
+        suggestBox.className = "search-suggest-box";
+        suggestBox.style.cssText = `
+            position: absolute; top: 100%; left: 0; width: 100%; background: #ffffff;
+            border: 1px solid #4B6EF5; border-top: none; border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 999; display: none;
+            box-sizing: border-box; max-height: 250px; overflow-y: auto;
+        `;
+        searchWrap.appendChild(suggestBox);
+
+        let debounceTimeout;
+        let currentFocus = -1; // 방향키 포커스 인덱스 변수
+
+        searchKeywordInput.addEventListener("input", () => {
+            clearTimeout(debounceTimeout);
+            const keyword = searchKeywordInput.value.trim();
+
+            if (!keyword) {
+                suggestBox.style.display = "none";
+                return;
+            }
+
+            // 디바운싱: 유저가 타이핑을 멈추고 0.2초 대기하면 API 호출 (서버 보호)
+            debounceTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/api/search/performance/suggest?keyword=${encodeURIComponent(keyword)}`);
+                    if (!response.ok) return;
+
+                    const suggestions = await response.json();
+
+                    if (suggestions.length === 0) {
+                        suggestBox.style.display = "none";
+                        return;
+                    }
+
+                    // 추천 목록 그리기
+                    currentFocus = -1; // 추천 리스트가 갱신될 때마다 인덱스 초기화
+                    suggestBox.innerHTML = suggestions.map(item => `
+                        <div class="suggest-item" style="padding: 10px 15px; cursor: pointer; font-size: 14px; color: #333; font-weight: 500; transition: background 0.15s;">
+                            ${item}
+                        </div>
+                    `).join("");
+
+                    suggestBox.style.display = "block";
+
+                    document.querySelectorAll(".suggest-item").forEach(item => {
+                        item.addEventListener("click", function() {
+                            const selectedKeyword = this.innerText.trim();
+                            searchKeywordInput.value = selectedKeyword;
+
+                            if (window.location.pathname.includes("/search/result") && typeof window.getSearchData === 'function') {
+                                history.pushState(null, null, "/search/result?keyword=" + encodeURIComponent(selectedKeyword));
+                                window.getSearchData(selectedKeyword);
+                                suggestBox.style.display = "none";
+
+                                searchKeywordInput.blur();
+                            } else {
+                                window.location.href = "/search/result?keyword=" + encodeURIComponent(selectedKeyword);
+                            }
+                        });
+                    });
+
+                } catch (error) {
+                    console.error("추천 검색어 조회 실패:", error);
+                }
+            }, 200);
+        });
+
+        // 키보드 방향키(위/아래) 및 엔터 제어 통합 이벤트 리스너
         searchKeywordInput.addEventListener("keydown", (event) => {
-            if (event.key === "Enter") {
-                search()
+            const items = document.querySelectorAll(".suggest-item");
+
+            if (suggestBox.style.display === "block" && items.length > 0) {
+                if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                    event.preventDefault();
+
+                    clearTimeout(debounceTimeout);
+
+                    if (event.key === "ArrowDown") {
+                        currentFocus++;
+                    } else {
+                        currentFocus--;
+                    }
+                    setActive(items);
+                } else if (event.key === "Enter") {
+                    if (currentFocus > -1 && items[currentFocus]) {
+                        event.preventDefault();
+                        items[currentFocus].click(); // 선택 항목 클릭 이벤트 실행
+                    } else {
+                        search();
+                    }
+                }
+            } else {
+                if (event.key === "Enter") {
+                    search();
+                }
+            }
+        });
+
+        // 방향키 포커스 스타일 적용 함수
+        function setActive(items) {
+            if (!items || items.length === 0) return false;
+            removeActive();
+
+            // 인덱스 롤링 범위 지정
+            if (currentFocus >= items.length) currentFocus = 0;
+            if (currentFocus < 0) currentFocus = items.length - 1;
+
+            if (items[currentFocus]) {
+                items[currentFocus].style.backgroundColor = "#f0f4ff";
+            }
+        }
+
+        // 모든 방향키 포커스 스타일 제거 함수
+        function removeActive() {
+            const items = document.querySelectorAll(".suggest-item");
+            items.forEach(item => {
+                item.style.backgroundColor = "transparent";
+            });
+        }
+
+        // 화면 다른 곳 클릭 시 추천 드롭다운 자동으로 닫히는 기능
+        document.addEventListener("click", (e) => {
+            if (!searchWrap.contains(e.target)) {
+                suggestBox.style.display = "none";
             }
         });
 

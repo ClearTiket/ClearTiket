@@ -7,6 +7,8 @@ import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Document(indexName = "performances")
@@ -44,4 +46,10 @@ public class PerformanceDocument {
 
     @Field(name = "venue_name", type = FieldType.Text, analyzer = "nori_korean_analyzer")
     String venueName;
+
+    @Field(name = "tags_vibe", type = FieldType.Keyword)
+    List<Integer> tagsVibe;
+
+    @Field(name = "tags_with", type = FieldType.Keyword)
+    List<Integer> tagsWith;
 }

@@ -36,9 +36,6 @@ public class ReservationService {
      */
     @Transactional
     public ReservationResponseDto createReservation(ReservationRequestDto reservationRequestDto) {
-        // ★ 기존 코드는 user/schedule/seat 연결 없이 Reservation만 저장해서
-        //   reservations.user_id / schedule_id NOT NULL 제약을 위반했습니다.
-        //   실제 좌석 선택 화면에서 넘어온 scheduleId, userId, seatIds를 모두 반영합니다.
         User user = userRepository.findById(reservationRequestDto.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
 

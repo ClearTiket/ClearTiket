@@ -282,16 +282,16 @@
 <!--                <a href="#"><button class="tab-item">콘서트</button></a>-->
 <!--                <a href="#"><button class="tab-item">뮤지컬</button></a>-->
 <!--                <a href="#"><button class="tab-item">클래식</button></a>-->
-                <button class="tab-item active">전체</button>
-                <button class="tab-item">콘서트</button>
-                <button class="tab-item">뮤지컬</button>
-                <button class="tab-item">클래식</button>
+                <button class="tab-item all active">전체</button>
+                <button class="tab-item concert">콘서트</button>
+                <button class="tab-item musical">뮤지컬</button>
+                <button class="tab-item classic">클래식</button>
             </div>
 
             <div class="sort-bar">
-                <button class="sort-btn active">일간</button>
-                <button class="sort-btn">주간</button>
-                <button class="sort-btn">월간</button>
+                <button class="sort-btn daily active">일간</button>
+                <button class="sort-btn weekly">주간</button>
+                <button class="sort-btn monthly">월간</button>
             </div>
         </div>
 
@@ -333,23 +333,45 @@
 <script>
 
     const urlParams = new URLSearchParams(window.location.search);
-    const genre = urlParams.get('genre');
+    let genre = urlParams.get('genre');
+    let period = urlParams.get('period');
+
+    function init() {
+        let className = ""
+        switch (genre) {
+            case "전체": className = "all"; break;
+            case "콘서트": className = "concert"; break;
+            case "뮤지컬": className = "musical"; break;
+            case "클래식": className = "classic"; break;
+            default: className = "all";
+        }
+
+        document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+        document.querySelector(".tab-item." + className).classList.add("active");
+    }
+    init();
 
     document.querySelectorAll('.sort-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', async function() {
             document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
+            period = this.classList.item(1);
+            await getRankingData(genre, period);
         });
     });
 
     document.querySelectorAll(".tab-item").forEach(btn => {
-        
+        btn.addEventListener('click', async function() {
+            document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            genre = this.textContent;
+            await getRankingData(genre, period);
+        })
     });
 
-    let page = 1;
-    async function getRankingData(genre, page) {
+    async function getRankingData(genre, period) {
         try {
-            const fetchUrl = "/api/performances/ranking?genre=" + (genre == null ? "" : genre) + "&page=" + (page == null ? "" : page);
+            const fetchUrl = "/api/performances/ranking?genre=" + (genre == null ? "" : genre) + "&period=" + (period == null ? "" : period);
             const response = await fetch(fetchUrl, {
                 method: 'GET',
                     headers: {
@@ -365,12 +387,11 @@
             top3itemSlot.replaceChildren();
             lowerItemSlot.replaceChildren();
 
-
             for (let i = 0; i < Math.min(3, resultJson.length); i++) {
                 top3itemSlot.appendChild(createCardsTop3(resultJson.at(i), i + 1));
             }
 
-            for (let i = 3; i < resultJson.length; i++) {
+            for (let i = 3; i < Math.min(30, resultJson.length); i++) {
                 lowerItemSlot.appendChild(createCardsLowers(resultJson.at(i), i + 1));
             }
 
@@ -380,8 +401,9 @@
     }
 
     function createCardsTop3(data, rank) {
-        const top3item = document.createElement("div");
+        const top3item = document.createElement("a");
         top3item.classList.add("top3-item");
+        top3item.href = "/venue/" + data.performance.performanceId + "/detail";
 
         const rankNum = document.createElement("h2");
         rankNum.classList.add("rank-num");
@@ -394,14 +416,14 @@
         top3itemSubCardImg.classList.add("top3-item-sub-card-img");
 
         const img = document.createElement("img");
-        img.src = data.posterUrl;
-        img.alt = data.title;
+        img.src = data.performance.posterUrl;
+        img.alt = data.performance.title;
 
         const top3itemSubCardText = document.createElement("div");
         top3itemSubCardText.classList.add("top3-item-sub-card-text");
 
         const h4 = document.createElement("h4");
-        h4.textContent = data.title;
+        h4.textContent = data.performance.title;
 
         top3itemSubCardText.appendChild(h4);
         top3itemSubCardImg.appendChild(img);
@@ -416,8 +438,9 @@
     }
 
     function createCardsLowers(data, rank) {
-        const lowerItem = document.createElement("div");
+        const lowerItem = document.createElement("a");
         lowerItem.classList.add("lower-item");
+        lowerItem.href = "/venue/" + data.performance.performanceId + "/detail";
 
         const lowerItemRankNum = document.createElement("h3");
         lowerItemRankNum.classList.add("lower-item-rank-num");
@@ -427,14 +450,14 @@
         lowerItemCardImg.classList.add("lower-item-card-img");
 
         const img = document.createElement("img");
-        img.src = data.posterUrl;
-        img.alt = data.title;
+        img.src = data.performance.posterUrl;
+        img.alt = data.performance.title;
 
         const lowerItemCardContent = document.createElement("div");
         lowerItemCardContent.classList.add("lower-item-card-content");
 
         const h4 = document.createElement("h4");
-        h4.textContent = data.title;
+        h4.textContent = data.performance.title;
 
         const p = document.createElement("p");
         p.classList.add("lower-item-card-desc");
@@ -452,7 +475,7 @@
         return lowerItem;
     }
 
-    getRankingData(genre, page);
+    getRankingData(genre, period);
 </script>
 
 </html>

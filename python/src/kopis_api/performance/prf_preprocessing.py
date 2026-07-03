@@ -338,7 +338,7 @@ def run_prf_preprocessing(df_prf_detail):
     df_schedules = df_schedules.drop(columns=["kopis_id"])
     __df_to_database(df_schedules, "schedules")
     df_seats = df_seats.drop(columns=["kopis_id"])
-    __df_to_database(df_seats, "seats")
+    #__df_to_database(df_seats, "seats")
 
     print("  저장 중...")
 

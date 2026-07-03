@@ -182,12 +182,12 @@
     }
 
     /* 조건 2: 탭 그룹 (테두리 없음, 중앙 배치) */
-    .tab-group {
+    .genre-tab-group {
         display: flex;
         gap: 24px;
     }
 
-    .tab-btn {
+    .genre-tab-btn {
         border: none;                   /* 조건 2: 테두리 없음 */
         background: none;
         font-size: 16px;
@@ -198,7 +198,7 @@
         transition: color 0.2s;
     }
 
-    .tab-btn.active {
+    .genre-tab-btn.active {
         color: #000;
         font-weight: 700;
         border-bottom: 2px solid #000; /* 활성화 표시용 밑줄 (선택사항) */
@@ -347,10 +347,10 @@
         <h2>장르별 랭킹</h2>
 
         <div class="genre-control-row">
-            <div class="tab-group">
-                <button class="tab-btn active">콘서트</button>
-                <button class="tab-btn">뮤지컬</button>
-                <button class="tab-btn">클래식</button>
+            <div class="genre-tab-group">
+                <button class="genre-tab-btn active">콘서트</button>
+                <button class="genre-tab-btn">뮤지컬</button>
+                <button class="genre-tab-btn">클래식</button>
             </div>
             <button class="more-btn">더보기&gt;</button>
         </div>
@@ -555,15 +555,16 @@
     });
 
     function createBannerSlide(data) {
-        const swiperSlide = document.createElement("div");
+        const swiperSlide = document.createElement("a");
         swiperSlide.className = "swiper-slide";
+        swiperSlide.href = "/venue/" + data.performance.performanceId + "/detail";
 
         const img = document.createElement("img");
-        img.src = data.posterUrl;
-        img.alt = data.title;
+        img.src = data.performance.posterUrl;
+        img.alt = data.performance.title;
 
         const h3 = document.createElement("h3");
-        h3.textContent = data.title;
+        h3.textContent = data.performance.title;
 
         swiperSlide.appendChild(img);
         swiperSlide.appendChild(h3);
@@ -572,15 +573,16 @@
     }
 
     function createRankSlotCard(data, rankNum) {
-        const rankSlotCard = document.createElement("div");
+        const rankSlotCard = document.createElement("a");
         rankSlotCard.classList.add("rank-slot-card");
+        rankSlotCard.href = "/venue/" + data.performance.performanceId + "/detail";
 
         const rankSlotCardImg = document.createElement("div");
         rankSlotCardImg.classList.add("rank-slot-card-img");
 
         const img = document.createElement("img");
-        img.src = data.posterUrl;
-        img.alt = data.title;
+        img.src = data.performance.posterUrl;
+        img.alt = data.performance.title;
 
         const imgRankNum = document.createElement("span");
         imgRankNum.classList.add("img-rank-num");
@@ -590,7 +592,7 @@
         rankSlotCardText.classList.add("rank-slot-card-text");
 
         const h4 = document.createElement("h4");
-        h4.textContent = data.title;
+        h4.textContent = data.performance.title;
 
         rankSlotCardText.appendChild(h4);
 
@@ -603,9 +605,9 @@
         return rankSlotCard;
     }
 
-    async function getRankingData (genre, page) {
+    async function getRankingData (genre, period) {
         try {
-            const fetchUrl = "/api/performances/ranking?genre=" + (genre == null ? "" : genre) + "&page=" + (page == null ? "" : page);
+            const fetchUrl = "/api/performances/ranking?genre=" + (genre == null ? "" : genre) + "&period=" + (period == null ? "" : period);
             const response = await fetch(fetchUrl, {
                 method: 'GET',
                 headers: {
@@ -643,7 +645,7 @@
     fillCardSlot("recommending");
     fillCardSlot("preparing");
 
-    const tabBtns = document.querySelectorAll(".tab-btn")
+    const tabBtns = document.querySelectorAll(".genre-tab-btn")
     tabBtns.forEach(btn => {
         btn.addEventListener("click", (event) => {
             tabBtns.forEach(b => {

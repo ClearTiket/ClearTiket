@@ -1,10 +1,13 @@
 package com.clearticket.clearticket.service.searchService;
 
+import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.Time;
 import co.elastic.clients.elasticsearch._types.TimeUnit;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.json.JsonData;
+import co.elastic.clients.elasticsearch._types.query_dsl.TermsQueryField;
 import com.clearticket.clearticket.model.document.PerformanceDocument;
+import com.clearticket.clearticket.model.dto.SearchPerformanceFilterDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
@@ -34,7 +37,7 @@ public class SearchPerformanceService {
      * @param searchText 사용자가 입력한 검색어
      * @return 검색 결과 List
      */
-    public List<PerformanceDocument> searchPerformances(String searchText) {
+    public List<PerformanceDocument> searchPerformances(String searchText, SearchPerformanceFilterDto filterDto) {
 
         // 공백 기준 검색어를 키워드로 분리
         List<String> keywords = Arrays.stream(searchText.split("\\s+"))
@@ -47,11 +50,63 @@ public class SearchPerformanceService {
         List<Query> mustQueries = new ArrayList<>();   // 모두 만족해야 하는 조건들
         List<Query> shouldQueries = new ArrayList<>();  // 하나라도 만족하면 통과인 조건들
 
+        // 분리된 검색어를 must query에 입력
         for (String keyword : keywords) {
             mustQueries.add(Query.of(
                     q -> q.match(m -> m.field("title").query(keyword))));
         }
 
+        // 장르 검색 필터링
+        mustQueries.add(Query.of(q -> q.terms(
+                t -> t
+                        .field("genre")
+                        .terms(TermsQueryField.of(v -> v.value(filterDto.getTagsGenre()
+                                .stream()
+                                .map(FieldValue::of)
+                                .collect(Collectors.toList()))))
+        )));
+
+        // 분위기 태그 검색 필터링
+        mustQueries.add(Query.of(q -> q.terms(
+                t -> t
+                        .field("tags_vibe")
+                        .terms(TermsQueryField.of(v -> v.value(filterDto.getTagsVibe()
+                                .stream()
+                                .map(FieldValue::of)
+                                .collect(Collectors.toList()))))
+        )));
+
+        // 동행 태그 검색 필터링
+        mustQueries.add(Query.of(q -> q.terms(
+                t -> t
+                        .field("tags_with")
+                        .terms(TermsQueryField.of(v -> v.value(filterDto.getTagsWith()
+                                .stream()
+                                .map(FieldValue::of)
+                                .collect(Collectors.toList()))))
+        )));
+
+        // 공연 상태 검색 필터링
+        mustQueries.add(Query.of(q -> q.terms(
+                t -> t
+                        .field("status")
+                        .terms(TermsQueryField.of(v -> v.value(filterDto.getStatuses()
+                                .stream()
+                                .map(FieldValue::of)
+                                .collect(Collectors.toList()))))
+        )));
+
+        // 공연 지역 검색 필터링
+        mustQueries.add(Query.of(q -> q.terms(
+                t -> t
+                        .field("region")
+                        .terms(TermsQueryField.of(v -> v.value(filterDto.getRegions()
+                                .stream()
+                                .map(FieldValue::of)
+                                .collect(Collectors.toList()))))
+        )));
+
+        // 오늘과 가까운 날짜일수록 가중치 부여
         String todayStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
         // pivot()은 람다가 아니라 완성된 Time 객체를 직접 받음
@@ -95,9 +150,15 @@ public class SearchPerformanceService {
 
         SearchHits<PerformanceDocument> searchHits = elasticsearchOperations.search(nativeQuery, PerformanceDocument.class);
 
-        return searchHits.stream()
+
+        var result = searchHits.stream()
                 .map(SearchHit::getContent)
                 .collect(Collectors.toList());
+
+        System.out.println(result.size());
+
+        return result;
     }
+
 
 }
