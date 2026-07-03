@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <title>클리어티켓 - 좌석 선택</title>
+  <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
   <style>
     /* 전체 창 레이아웃 분할 */
     .booking-container {
@@ -218,6 +220,7 @@
       background-color: #d1d5db;
       color: #9ca3af;
       cursor: not-allowed;
+      pointer-events: none;
     }
     .seat-grid-container .seat-circle.sold-out:hover {
       background-color: #d1d5db;
@@ -424,14 +427,15 @@
       background-color: #1d4ed8;
     }
   </style>
+  <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
-<body>
+<body th:data-schedule-id="${scheduleId}" th:data-user-id="${loginUserId}" th:data-performance-id="${performance.performanceId}">
 <div class="booking-container">
   <div class="seat-main-section">
     <div class="perf-header">
       <div class="perf-title-area">
-        <h2 id="perf-title-display">뮤지컬 〈지킬앤하이드〉</h2>
-        <p id="perf-schedule-display" class="perf-date-sub">2026.06.24(수) 07:30 PM (1회차)</p>
+        <h2 id="perf-title-display" th:text="${perfTitle}">뮤지컬 〈지킬앤하이드〉</h2>
+        <p id="perf-schedule-display" class="perf-date-sub" th:text="${perfDateDisplay}">2026.06.24(수) 07:30 PM (1회차)</p>
       </div>
 
       <div class="perf-control-area">
@@ -524,32 +528,95 @@
 <script>
   let currentActiveZone = null;
   let selectedSeatList = [];
+  let allSeats = []; // ★ 더 이상 mock 아님 — 서버에서 채움
 
-  const PRICE_POLICY = {
-    'VIP': { name: 'VIP석', price: 160000 },
-    'R':   { name: 'R석',   price: 140000 },
-    'S':   { name: 'S석',   price: 110000 }
-  };
+  const urlParams = new URLSearchParams(window.location.search);
+  const scheduleId = urlParams.get('scheduleId') || '501';
+  const currentUserId = Number(document.body.dataset.userId); // 서버 세션의 실제 로그인 회원 ID (th:data-user-id)
+  if (!currentUserId) {
+    alert('로그인이 필요한 서비스입니다.');
+    window.location.href = '/login';
+  }
+  const performanceId = Number(document.body.dataset.performanceId);
 
-  // [1] 행(Row)별 등급 판정
-  function getSeatGrade(rowLabel) {
-    if (['A', 'B'].includes(rowLabel)) return 'VIP';
-    if (['C', 'D', 'E', 'F'].includes(rowLabel)) return 'R';
-    return 'S';
+  // [0] 페이지 진입 시: 실 좌석 데이터 로드 + 실시간 채널 구독
+  document.addEventListener('DOMContentLoaded', () => {
+    loadSeats();
+    connectRealtimeSeatChannel();
+    document.getElementById('btn-submit').addEventListener('click', submitSeatSelection);
+  });
+
+  // [0-1] 서버에서 실제 좌석 상태 불러오기
+  async function loadSeats() {
+    try {
+      const res = await fetch(`/api/seats?scheduleId=${scheduleId}`);
+      if (!res.ok) {
+        const msg = await res.text().catch(() => '');
+        throw new Error(msg || '좌석 정보를 불러오지 못했습니다.');
+      }
+      allSeats = await res.json();
+
+      if (allSeats.length === 0) {
+        console.warn(`scheduleId=${scheduleId} 에 대한 좌석 데이터가 없습니다.`);
+      }
+
+      // 이미 구역 보고 있던 상태였다면 화면 갱신
+      if (currentActiveZone) {
+        createSeatGrid(currentActiveZone, allSeats);
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`좌석 정보를 불러오는 중 오류가 발생했습니다.\n${err.message}`);
+    }
+  }
+
+  // [0-2] WebSocket(STOMP)으로 실시간 좌석 상태 구독
+  let stompClient = null;
+  function connectRealtimeSeatChannel() {
+    const socket = new SockJS('/ws-seats');
+    stompClient = new StompJs.Client({
+      webSocketFactory: () => socket,
+      reconnectDelay: 3000, // 끊기면 자동 재연결
+      onConnect: () => {
+        stompClient.subscribe(`/topic/seats/${scheduleId}`, (message) => {
+          const event = JSON.parse(message.body); // { seatId, status }
+          applyRemoteSeatUpdate(event);
+        });
+      },
+    });
+    stompClient.activate();
+  }
+
+  // [0-3] 다른 사용자의 좌석 선택/해제가 실시간으로 반영되는 부분
+  function applyRemoteSeatUpdate(event) {
+    const seat = allSeats.find(s => String(s.seatId) === String(event.seatId));
+    if (!seat) return;
+    seat.status = event.status;
+
+    const seatElement = document.querySelector(`.seat-circle[data-seat-id="${event.seatId}"]`);
+    if (!seatElement) return; // 현재 보고 있는 구역이 아니면 DOM에 없을 수 있음
+
+    if (event.status === 'BOOKED') {
+      seatElement.classList.add('sold-out');
+      seatElement.classList.remove('selected');
+      seatElement.innerText = 'X';
+      // 내가 선택해놓은 좌석이 다른 사람보다 늦어서 막혔다면 내 선택목록에서도 제거
+      selectedSeatList = selectedSeatList.filter(item => item.seatId !== seat.seatId);
+      updateSidebarSummary();
+    } else {
+      seatElement.classList.remove('sold-out');
+      seatElement.innerText = seat.seatNum;
+    }
   }
 
   // [2] 예매대기 기능 매핑
   function openWaitingPopup() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const scheduleId = urlParams.get('scheduleId') || '501';
     alert(`해당 회차 [스케줄 번호: ${scheduleId}]의 예매대기 신청 페이지로 연결합니다.`);
   }
 
   // [3] 등급별 가격 미니 팝업 토글 로직
   function togglePricePopup(event) {
-    // 이벤트 전파를 막아서 버튼 누르자마자 바깥 클릭 판정으로 닫히는 현상 방지
     event.stopPropagation();
-
     const popup = document.getElementById("price-popup");
     if (popup) popup.classList.toggle("active");
   }
@@ -560,13 +627,10 @@
     if (popup) popup.classList.remove("active");
   }
 
-  // 사용자가 화면의 다른 곳(바깥쪽 아무 데나)을 클릭하면 자연스럽게 팝업이 닫히도록 개선
   document.addEventListener("click", function (event) {
     const popup = document.getElementById("price-popup");
     const btn = document.querySelector(".btn-util");
-
     if (popup && popup.classList.contains("active")) {
-      // 클릭된 곳이 팝업 내부도 아니고, 버튼 내부도 아니라면 닫기
       if (!popup.contains(event.target) && event.target !== btn) {
         closePricePopup();
       }
@@ -574,7 +638,7 @@
   });
 
   // [4] 구역 선택 진입
-  function selectZone(zoneName) {
+  async function selectZone(zoneName) {
     currentActiveZone = zoneName;
 
     document.getElementById("section-view").style.display = "none";
@@ -585,57 +649,43 @@
     if (zoneName === 'A') directionGuide = "A 구역 [ 왼쪽 사이드 ]";
     else if (zoneName === 'B') directionGuide = "B 구역 [ 중앙 무대 정면 ]";
     else if (zoneName === 'C') directionGuide = "C 구역 [ 오른쪽 사이드 ]";
-
     document.getElementById("selected-zone-title").innerText = directionGuide;
 
-    createSeatGrid(zoneName);
+    // ★ 구역 들어갈 때마다 최신 상태로 한번 더 동기화 (혹시 폴링 누락 대비)
+    await loadSeats();
+    createSeatGrid(zoneName, allSeats);
   }
 
-  // [5] 동적 좌석 격자 생성
-  function createSeatGrid(zoneName) {
+  // [5] 동적 좌석 격자 생성 (서버 데이터 기반, 변경 없음)
+  function createSeatGrid(zoneName, seatList) {
     const gridContainer = document.getElementById("seat-grid");
     if (!gridContainer) return;
     gridContainer.innerHTML = "";
 
-    const rows = 10;
-    const cols = 10;
+    const zoneSeats = seatList.filter(s => s.sectionName === zoneName);
 
-    for (let r = 1; r <= rows; r++) {
-      const rowLabel = String.fromCharCode(64 + r);
-      const grade = getSeatGrade(rowLabel);
+    zoneSeats.forEach(seat => {
+      const seatElement = document.createElement("div");
+      seatElement.classList.add("seat-circle");
+      seatElement.classList.add(`grade-${seat.seatGrade.toLowerCase()}`);
+      seatElement.innerText = seat.seatNum;
+      seatElement.setAttribute("data-seat-id", seat.seatId);
 
-      for (let c = 1; c <= cols; c++) {
-        const seat = document.createElement("div");
-        seat.classList.add("seat-circle");
-
-        const seatCode = `${zoneName}-${rowLabel}${c}`;
-        seat.innerText = `${rowLabel}${c}`;
-        seat.setAttribute("data-seat-id", seatCode);
-        seat.classList.add(`grade-${grade.toLowerCase()}`);
-
-        // 가상 매진 데이터셋 매핑 (3번, 7번 열 매진)
-        if (c === 3 || c === 7) {
-          seat.classList.add("sold-out");
-          seat.innerText = "X";
-        }
-
-        // 타 구역 교차 예매 선택 상태 동기화 유지
-        const isAlreadySelected = selectedSeatList.some(item => item.code === seatCode);
-        if (isAlreadySelected) {
-          seat.classList.add("selected");
-        }
-
-        seat.onclick = function() {
-          toggleSeatSelection(seat, seatCode, zoneName, rowLabel, c, grade);
-        };
-
-        gridContainer.appendChild(seat);
+      if (seat.status === "BOOKED") {
+        seatElement.classList.add("sold-out");
+        seatElement.innerText = "X";
       }
-    }
+
+      seatElement.onclick = function() {
+        toggleSeatSelection(seatElement, seat);
+      };
+
+      gridContainer.appendChild(seatElement);
+    });
   }
 
-  // [6] 좌석 클릭 토글
-  function toggleSeatSelection(seatElement, seatCode, zone, row, col, grade) {
+  // [6] 좌석 클릭 토글 — ★ 클릭 즉시 서버에 선점 요청 -> 성공해야 선택 확정 (동시클릭 충돌 방지)
+  async function toggleSeatSelection(seatElement, seatData) {
     if (seatElement.classList.contains("sold-out")) {
       alert("이미 예매가 완료된 좌석입니다.");
       return;
@@ -644,27 +694,59 @@
     const isSelected = seatElement.classList.contains("selected");
 
     if (isSelected) {
+      // 선택 해제 -> 서버에도 해제 알림 (다른 사람들이 다시 고를 수 있도록)
+      try {
+        await fetch(`/api/seats/release?seatId=${seatData.seatId}&userId=${currentUserId}&scheduleId=${scheduleId}`, {
+          method: 'POST'
+        });
+      } catch (err) {
+        console.error('좌석 해제 요청 실패', err);
+      }
       seatElement.classList.remove("selected");
-      selectedSeatList = selectedSeatList.filter(item => item.code !== seatCode);
-    } else {
-      if (selectedSeatList.length >= 2) {
-        alert("티켓은 1인당 최대 2매까지만 선택할 수 있습니다.");
+      selectedSeatList = selectedSeatList.filter(item => item.seatId !== seatData.seatId);
+      updateSidebarSummary();
+      return;
+    }
+
+    if (selectedSeatList.length >= 2) {
+      alert("티켓은 1인당 최대 2매까지만 선택할 수 있습니다.");
+      return;
+    }
+
+    // ★ 서버에 임시 선점 요청 -> 성공해야만 UI 선택 처리 (동시에 두 명이 누르는 경쟁 상황 방지)
+    try {
+      const res = await fetch(`/api/seats/book?seatId=${seatData.seatId}&userId=${currentUserId}&scheduleId=${scheduleId}`, {
+        method: 'POST'
+      });
+
+      if (!res.ok) {
+        const message = await res.text();
+        alert(message || '이미 다른 분이 선점한 좌석입니다.');
+        // 서버 기준 최신 상태로 다시 동기화
+        await loadSeats();
+        createSeatGrid(currentActiveZone, allSeats);
         return;
       }
-      seatElement.classList.add("selected");
-      selectedSeatList.push({
-        code: seatCode,
-        zone: zone,
-        label: `${row}열 ${col}번`,
-        gradeName: PRICE_POLICY[grade].name,
-        price: PRICE_POLICY[grade].price
-      });
+    } catch (err) {
+      console.error('좌석 선점 요청 실패', err);
+      alert('네트워크 오류로 좌석을 선점하지 못했습니다.');
+      return;
     }
+
+    seatElement.classList.add("selected");
+    selectedSeatList.push({
+      seatId: seatData.seatId,
+      zone: seatData.sectionName,
+      code: `${seatData.sectionName}-${seatData.rowNum}${seatData.seatNum}`,
+      label: `${seatData.rowNum}열 ${seatData.seatNum}번`,
+      gradeName: seatData.seatGrade + '석',
+      price: seatData.price
+    });
 
     updateSidebarSummary();
   }
 
-  // [7] 우측 사이드바 데이터 동기화 및 요약 금액 계산
+  // [7] 우측 사이드바 데이터 동기화 및 요약 금액 계산 (변경 없음)
   function updateSidebarSummary() {
     const listContainer = document.getElementById("selected-seats-list");
     const countDisplay = document.getElementById("total-count-display");
@@ -704,13 +786,19 @@
     submitBtn.classList.add("active");
   }
 
-  // [8] 전체 삭제 기능
-  function clearAllSeats() {
+  // [8] 전체 삭제 기능 — ★ 서버에도 일괄 해제 요청
+  async function clearAllSeats() {
     if (selectedSeatList.length === 0) return;
 
     if (confirm("선택하신 모든 좌석을 취소하시겠습니까?")) {
-      selectedSeatList = [];
+      const releaseRequests = selectedSeatList.map(seat =>
+              fetch(`/api/seats/release?seatId=${seat.seatId}&userId=${currentUserId}&scheduleId=${scheduleId}`, {
+                method: 'POST'
+              }).catch(err => console.error('좌석 해제 요청 실패', err))
+      );
+      await Promise.all(releaseRequests);
 
+      selectedSeatList = [];
       const activeSelectedSeats = document.querySelectorAll(".seat-grid-container .seat-circle.selected");
       activeSelectedSeats.forEach(seat => seat.classList.remove("selected"));
 
@@ -718,13 +806,60 @@
     }
   }
 
-  // [9] 구역 선택 화면으로 컴백
+  // [9] 구역 선택 화면으로 컴백 (변경 없음)
   function backToZoneView() {
     currentActiveZone = null;
     document.getElementById("seat-detail-view").style.display = "none";
     document.getElementById("section-view").style.display = "flex";
     document.getElementById("btn-back-to-zone").style.display = "none";
   }
+
+  // [11] '선택 완료' 클릭 → 예매(Reservation) 생성 후 주문자 정보 입력 단계로 이동
+  async function submitSeatSelection() {
+    if (selectedSeatList.length === 0) return;
+
+    const submitBtn = document.getElementById('btn-submit');
+    submitBtn.disabled = true;
+    submitBtn.innerText = '예매 생성 중...';
+
+    const totalPrice = selectedSeatList.reduce((sum, seat) => sum + seat.price, 0);
+
+    const reservationPayload = {
+      performanceId: performanceId,
+      scheduleId: Number(scheduleId),
+      userId: currentUserId,
+      seatIds: selectedSeatList.map(seat => seat.seatId),
+      couponId: null,
+      totalPrice: totalPrice,
+      ticketType: '일반'
+    };
+
+    try {
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reservationPayload)
+      });
+
+      if (!res.ok) {
+        const msg = await res.text().catch(() => '');
+        throw new Error(msg || '예매 생성에 실패했습니다.');
+      }
+
+      const reservation = await res.json();
+
+      // 다음 단계(수령/주문자 정보 입력)로 이동
+      // window.location.href = `/reservations/${reservation.reservationId}/buyer-info`;
+      window.location.href = `/coupons?reservationId=${reservation.reservationId}`;
+    } catch (err) {
+      console.error(err);
+      alert(`예매를 진행하는 중 오류가 발생했습니다.\n${err.message}`);
+      submitBtn.disabled = false;
+      submitBtn.innerText = '선택 완료';
+    }
+  }
+
+  // ★ [10] generateInitialSeats() 함수는 통째로 삭제 — 더 이상 mock 데이터 안 씀
 </script>
 </body>
 </html>

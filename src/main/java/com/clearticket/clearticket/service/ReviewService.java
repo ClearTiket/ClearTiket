@@ -17,7 +17,7 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
 
     // 금칙어 목록을 상수로 명확하게 분리
-    private static final String[] FORBIDDEN_WORDS = {"양도", "팝니다", "구매", "판매", "돈받고"};
+    private static final String[] FORBIDDEN_WORDS = {"양도", "팝니다", "구매", "판매", "돈받고",};
 
     //  A. 관람후기 / 기대평 목록 조회
     public List<Review> getReviewList(Long performanceId, String type, String sort) {

@@ -334,7 +334,7 @@
 <!--                <button class="sort-btn">예매율</button>-->
 <!--                <button class="sort-btn">가까운 날짜</button>-->
 <!--            </div>-->
-
+            <div id="search-hint" style="display: none; padding: 12px 20px; background-color: #f0f7ff; color: #0066cc; margin: 15px 0; border-radius: 8px; font-size: 15px; border-left: 5px solid #0066cc;"></div>
             <div class="card-grid">
 
 <!--                <div class="prod-card">-->
@@ -359,9 +359,9 @@
 
 <script>
     // document.querySelectorAll('.toggle-btn').forEach(btn => {
-    //     // btn.addEventListener('click', function() {
-    //     //     this.classList.toggle('active');
-    //     // });
+    //     btn.addEventListener('click', function() {
+    //         this.classList.toggle('active');
+    //     });
     // });
 
     // document.querySelectorAll('.sort-btn').forEach(btn => {
@@ -375,7 +375,7 @@
         // card-grid 요소 선택
         const cardGrid = document.querySelector('.card-grid');
         cardGrid.replaceChildren();
-        console.log(resultJson);
+        // console.log(resultJson);
         // 데이터 반복 처리
         resultJson.forEach(item => {
             // prod-card 생성
@@ -423,16 +423,28 @@
 
     async function getSearchData(keyword) {
         try {
-            const fetchUrl = "/api/search/performance?keyword=" + keyword
+            const fetchUrl = "/api/search/performance?keyword=" + encodeURIComponent(keyword);
             const response = await fetch(fetchUrl, {
                 method: 'GET',
-                headers: {
-                    "Content-Type": "application/json"
-                }
+                headers: { "Content-Type": "application/json" }
             });
 
-            const resultJson = await response.json();
-            await createCards(resultJson);
+            const responseData = await response.json();
+            const resultJson = responseData.results; // 진짜 검색 결과 리스트
+            const correctedKeyword = responseData.correctedKeyword; // 교정된 단어
+
+            // "혹시 ~라고 입력하신건가요?" 안내 문구 처리
+            const hintArea = document.getElementById('search-hint');
+            if (hintArea) {
+                if (correctedKeyword && correctedKeyword !== keyword) {
+                    hintArea.innerHTML = `💡 혹시 <strong>"${correctedKeyword}"</strong>라고 입력하신건가요?`;
+                    hintArea.style.display = 'block';
+                } else {
+                    hintArea.style.display = 'none';
+                }
+            }
+
+            createCards(resultJson);
 
         } catch (err) {
             console.log(err);
@@ -457,11 +469,34 @@
         }
     }
 
+    window.getSearchData = getSearchData;
+
+    // 페이지 처음 로드되었을 때 URL 파라미터 읽어서 검색 실행
     const urlParams = new URLSearchParams(window.location.search);
-    const keyword = urlParams.get('keyword');
+    let keyword = urlParams.get('keyword');
     if (keyword) {
+        if (keyword.includes('%')) {
+            keyword = decodeURIComponent(keyword);
+        }
+
+        document.querySelector(".search-wrap input").value = keyword;
+
         getSearchData(keyword);
     }
+
+    // 브라우저 주소창(history.pushState)이 바뀌는 순간 실시간 감지
+    window.addEventListener('popstate', () => {
+        const freshParams = new URLSearchParams(window.location.search);
+        let freshKeyword = freshParams.get('keyword');
+        if (freshKeyword) {
+            if (freshKeyword.includes('%')) {
+                freshKeyword = decodeURIComponent(freshKeyword);
+            }
+            getSearchData(freshKeyword);
+        }
+    });
+
+    window.getSearchData = getSearchData;
 
     document.querySelector('.search-wrap input').value = keyword;
 

@@ -37,11 +37,25 @@ spring:
       connection-timeout: 30000
   elasticsearch:
     uris: http://localhost:9200
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  ai:
+    openai:
+      api-key: ${GROQ_API_KEY}
+      base-url: https://api.groq.com/openai/v1
+      chat:
+        options:
+          model: llama3-8b-8192
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
   jpa:
     database: postgresql
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
       naming:
         physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
     show-sql: true
@@ -53,10 +67,10 @@ spring:
     init:
       mode: always
       data-locations:
-        - "classpath:sql/data.sql"
         - "classpath:sql/venues_20260622.sql"
         - "classpath:sql/performances_20260622.sql"
         - "classpath:sql/schedules_20260622.sql"
+        - "classpath:sql/data.sql"
         - "classpath:sql/rankings_20260622.sql"
 lemonsqueezy:
   api-key: ${LEMON_SQUEEZY_API_KEY}

@@ -1,15 +1,22 @@
 package com.clearticket.clearticket.controller;
 
+import com.clearticket.clearticket.model.UserSession;
 import com.clearticket.clearticket.model.dto.performance.*;
 import com.clearticket.clearticket.model.entity.Performance;
+import com.clearticket.clearticket.model.entity.Schedule;
 import com.clearticket.clearticket.model.entity.Venue;
 import com.clearticket.clearticket.repository.PerformanceRepository;
+import com.clearticket.clearticket.repository.ScheduleRepository;
 import com.clearticket.clearticket.service.VenueService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 
 @Controller
@@ -18,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class VenueViewController {
 
     private final PerformanceRepository performanceRepository;
+    private final ScheduleRepository scheduleRepository;
     private final VenueService venueService;
 
     @GetMapping("/{id}/detail") // mt10id 대신 정수형 PK(id) 기반으로 변경
@@ -38,7 +46,35 @@ public class VenueViewController {
     }
 
     @GetMapping("/seat/selection")
-    public String showSeatSelection() {
+    public String showSeatSelection(@RequestParam Long scheduleId, HttpSession session, Model model) {
+
+        // 좌석 선점/예매는 로그인한 회원만 가능하므로, 세션의 실제 로그인 사용자를 사용합니다.
+        // (기존 코드는 JS에서 항상 userId=1로 하드코딩되어 있어 로그인 사용자와 무관하게
+        //  DB에 없는 회원으로 예매가 시도되는 버그가 있었습니다.)
+        UserSession loginUser = (UserSession) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return "redirect:/login";
+        }
+
+        // scheduleId로 실제 회차(Schedule) + 공연(Performance) 정보를 조회해서
+        // 화면에 항상 "지킬앤하이드"로 고정 표시되던 하드코딩 버그를 제거합니다.
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회차(scheduleId)입니다: " + scheduleId));
+
+        Performance performance = schedule.getPerformance();
+
+        String formattedDate = schedule.getShowDate()
+                .format(DateTimeFormatter.ofPattern("yyyy.MM.dd(E)", Locale.KOREAN));
+        String formattedTime = schedule.getShowTime()
+                .format(DateTimeFormatter.ofPattern("hh:mm a", Locale.KOREAN));
+
+        model.addAttribute("scheduleId", scheduleId);
+        model.addAttribute("performance", performance);
+        model.addAttribute("schedule", schedule);
+        model.addAttribute("perfTitle", performance.getTitle());
+        model.addAttribute("perfDateDisplay",
+                formattedDate + " " + formattedTime + " (" + schedule.getRoundNumber() + "회차)");
+        model.addAttribute("loginUserId", loginUser.getId());
 
         return "performances/seat-selection";
     }

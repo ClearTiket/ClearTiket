@@ -1,13 +1,18 @@
 package com.clearticket.clearticket.service;
 
 import com.clearticket.clearticket.model.dto.seat.SeatResponse;
+import com.clearticket.clearticket.model.dto.seat.SeatStatusEvent;
 import com.clearticket.clearticket.model.entity.BookingSeat;
+import com.clearticket.clearticket.model.entity.Schedule;
 import com.clearticket.clearticket.model.entity.Seat;
 import com.clearticket.clearticket.model.entity.User;
+import com.clearticket.clearticket.repository.ScheduleRepository;
 import com.clearticket.clearticket.repository.UserRepository;
 import com.clearticket.clearticket.repository.BookingSeatsRepository;
 import com.clearticket.clearticket.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,52 +21,92 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor // 💡 이제 UserRepository까지 포함해서 싱싱한 생성자를 다시 만듭니다!
+@RequiredArgsConstructor
 public class SeatService {
 
     private final SeatRepository seatRepository;
     private final BookingSeatsRepository bookingSeatsRepository;
     private final UserRepository userRepository;
+    private final ScheduleRepository scheduleRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    // 1. 특정 공연의 모든 좌석 상태를 조회하는 로직
     @Transactional(readOnly = true)
     public List<SeatResponse> getSeatsByPerformance(Long performanceId) {
         List<Seat> allSeats = seatRepository.findByPerformancePerformanceId(performanceId);
-
-        // 기준 시간 계산: 지금으로부터 정확히 5분 전 시간!
         LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        List<Long> bookedSeatIds = bookingSeatsRepository.findSeatIdsByCreatedAtAfter(fiveMinutesAgo);
 
         return allSeats.stream().map(seat -> {
-            // 5분이 지난 데이터는 선점 안 된 걸로 쳐서 다른 사람에게 "AVAILABLE(예매 가능)"으로 보여줍니다!
-            boolean isBooked = bookingSeatsRepository.existsBySeatSeatIdAndCreatedAtAfter(seat.getSeatId(), fiveMinutesAgo);
-            String status = isBooked ? "BOOKED" : "AVAILABLE";
+            String status = bookedSeatIds.contains(seat.getSeatId()) ? "BOOKED" : "AVAILABLE";
             return new SeatResponse(seat, status);
         }).collect(Collectors.toList());
     }
 
-    // 2. 좌석을 임시 선점(찜)하는 로직
     @Transactional
-    public void bookSeat(Long seatId, Long userId) {
+    public void bookSeat(Long seatId, Long userId, Long scheduleId) {
         LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
-        // 이미 다른 사람이 찜했는지 검사
         if (bookingSeatsRepository.existsBySeatSeatIdAndCreatedAtAfter(seatId, fiveMinutesAgo)) {
             throw new IllegalStateException("이미 선점된 좌석입니다! 다른 좌석을 선택해 주세요.");
         }
 
-        // 좌석 정보 가져오기
         Seat seat = seatRepository.findById(seatId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 좌석입니다."));
 
-        // 엔티티 구조에 맞춰 진짜 User 객체를 DB에서 안전하게 찾아옵니다!
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
 
-        // 엔티티 설계 양식(user, seat)에 맞춰 싹 바인딩해 줍니다.
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 스케줄입니다."));
+
         BookingSeat bookingSeat = BookingSeat.builder()
                 .seat(seat)
                 .user(user)
+                .schedule(schedule)
                 .build();
 
         bookingSeatsRepository.save(bookingSeat);
+
+        broadcastSeatStatus(scheduleId, seatId, "BOOKED");
+    }
+
+    @Transactional
+    public void releaseSeat(Long seatId, Long userId, Long scheduleId) {
+        bookingSeatsRepository.deleteBySeatSeatIdAndUserUserId(seatId, userId);
+        broadcastSeatStatus(scheduleId, seatId, "AVAILABLE");
+    }
+
+    @Scheduled(fixedRate = 30_000)
+    @Transactional
+    public void releaseExpiredBookings() {
+        LocalDateTime fiveMinutesAgo = LocalDateTime.now().minusMinutes(5);
+        List<Long> expiredSeatIds = bookingSeatsRepository.findExpiredSeatIds(fiveMinutesAgo);
+        if (expiredSeatIds.isEmpty()) return;
+
+        bookingSeatsRepository.deleteByCreatedAtBefore(fiveMinutesAgo);
+
+        expiredSeatIds.forEach(seatId ->
+                seatRepository.findById(seatId).ifPresent(seat -> {
+                    if (seat.getPerformance() == null) return;
+                    Long performanceId = seat.getPerformance().getPerformanceId();
+                    messagingTemplate.convertAndSend(
+                            "/topic/seats/performance/" + performanceId,
+                            new SeatStatusEvent(seatId, "AVAILABLE"));
+                })
+        );
+    }
+
+    private void broadcastSeatStatus(Long scheduleId, Long seatId, String status) {
+        messagingTemplate.convertAndSend(
+                "/topic/seats/" + scheduleId,
+                new SeatStatusEvent(seatId, status)
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<SeatResponse> getSeatsBySchedule(Long scheduleId) {
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new IllegalArgumentException("스케줄 정보를 찾을 수 없습니다."));
+        Long performanceId = schedule.getPerformance().getPerformanceId();
+        return getSeatsByPerformance(performanceId);
     }
 }

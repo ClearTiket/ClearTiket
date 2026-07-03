@@ -85,14 +85,6 @@
 </div>
 
 <script th:inline="javascript">
-    function goToMyPage() {
-        // 부모 창(opener)의 주소를 마이페이지 예매내역 경로로 변경합니다.
-        if (window.opener && !window.opener.closed) {
-            window.opener.location.href = '/mypage/reservations';
-        }
-        window.close();
-    }
-
     // 홈으로 가기 버튼 함수
     function goToHome() {
         // 부모 창(opener)이 살아있고 닫히지 않았다면 홈으로 이동
