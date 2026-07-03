@@ -618,7 +618,7 @@
         if (Object.keys(loginUser).length === 0) {
             document.querySelector(".recommending").style.display = "none";
         } else {
-            const recommendations = await getRecommendationsData(1);
+            const recommendations = await getRecommendationsData(loginUser.id);
             const adaptedData = [];
             for (let i = 0; i < recommendations.length; i++) {
                 adaptedData.push({
