@@ -4,6 +4,33 @@
     <meta charset="UTF-8">
     <title>클리어티켓 - 공연장 상세 선택</title>
     <style>
+        /* 보안 문자 닫기 버튼 */
+        .modal-content {
+            position: relative;
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+
+            width: 32px;
+            height: 32px;
+
+            border: none;
+            background: transparent;
+
+            font-size: 20px;
+            font-weight: bold;
+            color: #666;
+
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .modal-close-btn:hover {
+            color: #111;
+        }
         /* 1. 기본 브라우저 여백 제거 및 컨텍스트 초기화 */
         body {
             background-color: #f8fafc;
@@ -842,7 +869,7 @@
                     </div>
                 </div>
 
-                <button type="button" class="ct-btn-reservation-submit" onclick="openCaptchaModal()">
+                <button id="reservationBtn" type="button" class="ct-btn-reservation-submit" th:data-login="${session.loginUser != null}" onclick="openCaptchaModal()">
                     예매하기
                 </button>
             </div>
@@ -905,6 +932,11 @@
 </div>
 <div id="captcha-modal" class="modal-overlay" style="display:none;">
     <div class="modal-content">
+
+        <button type="button" class="modal-close-btn" onclick="closeCaptchaModal()">
+            ✕
+        </button>
+
         <h3>화면의 문자를 입력해주세요</h3>
         <p>문자 입력 인증 후 좌석을 선택할 수 있습니다</p>
 
@@ -922,7 +954,7 @@
 
 <div th:replace="~{fragments/footer :: footer}"></div>
 
-<script>
+<script th:inline="javascript">
     const today = new Date();
 
     let currentSort = "latest";
@@ -1592,8 +1624,19 @@
             });
     }
     // ================== 보안 문자 로직 ====================
+
     // 1. 모달 열기 및 초기화
     function openCaptchaModal() {
+
+        // 로그인 안 되어 있으면 바로 로그인 페이지로 이동
+        const isLogin =
+            document.getElementById("reservationBtn").dataset.login === "true";
+
+        if (!isLogin) {
+            location.href = "/login";
+            return;
+        }
+
         // 만약 값이 없다면 알림 후 종료
         if (!selectedDate || !selectedRound) {
             alert("관람 날짜와 회차를 먼저 선택해주세요.");
@@ -1724,6 +1767,10 @@
     window.addEventListener("load", function() {
         connectWebSocket();
     });
+    // [보안 문자 모달창 닫기 버튼 ]
+    function closeCaptchaModal() {
+        document.getElementById("captcha-modal").style.display = "none";
+    }
 </script>
 </body>
 </html>
