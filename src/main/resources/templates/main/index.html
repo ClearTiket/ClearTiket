@@ -415,56 +415,6 @@
 
         <div class="card-slot-container">
 
-            <div class="rank-slot-card">
-                <div class="rank-slot-card-img">
-                    <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=300" alt="Rank 1">
-                    <span class="img-rank-num">1</span>
-                </div>
-                <div class="rank-slot-card-text">
-                    <h4>뮤지컬 〈블루 노팅힐〉 - 오리지널 캐스팅</h4>
-                </div>
-            </div>
-
-            <div class="rank-slot-card">
-                <div class="rank-slot-card-img">
-                    <img src="https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=300" alt="Rank 2">
-                    <span class="img-rank-num">2</span>
-                </div>
-                <div class="rank-slot-card-text">
-                    <h4>로맨틱 연극 〈한여름 밤의 꿈 신드롬〉</h4>
-                </div>
-            </div>
-
-            <div class="rank-slot-card">
-                <div class="rank-slot-card-img">
-                    <img src="https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=300" alt="Rank 3">
-                    <span class="img-rank-num">3</span>
-                </div>
-                <div class="rank-slot-card-text">
-                    <h4>2026 클래식 소사이어티 그랜드 콘서트</h4>
-                </div>
-            </div>
-
-            <div class="rank-slot-card">
-                <div class="rank-slot-card-img">
-                    <img src="https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=300" alt="Rank 4">
-                    <span class="img-rank-num">4</span>
-                </div>
-                <div class="rank-slot-card-text">
-                    <h4>K-POP 라이브 월드 투어 인 서울</h4>
-                </div>
-            </div>
-
-            <div class="rank-slot-card">
-                <div class="rank-slot-card-img">
-                    <img src="https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=300" alt="Rank 5">
-                    <span class="img-rank-num">5</span>
-                </div>
-                <div class="rank-slot-card-text">
-                    <h4>프랑스 현대 미술 컬렉션 특별전</h4>
-                </div>
-            </div>
-
         </div>
     </section>
 
@@ -531,6 +481,8 @@
 </body>
 
 <script>
+    const loginUser = /*[[${loginUser}]]*/ {};
+
     fillSwiper();
 
     const mainSwiper = new Swiper(".mainSwiper", {
@@ -616,11 +568,30 @@
             });
 
             const resultJson = await response.json();
+            // console.log(resultJson);
             return resultJson;
         } catch (err) {
             console.log(err);
         }
 
+    }
+
+    async function getRecommendationsData (userId) {
+        try {
+            const fetchUrl = "/api/performances/recommendation?userId=" + userId;
+            const response = await fetch(fetchUrl, {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            const resultJson = await response.json();
+            // console.log(resultJson);
+            return resultJson;
+        } catch (err) {
+            console.log(err);
+        }
     }
 
     async function fillSwiper() {
@@ -632,18 +603,35 @@
         }
     }
 
-    async function fillCardSlot(cardSectionClassName, genreName) {
+    async function fillCardSlot(cardSectionClassName, cardData) {
         const cardSlotContainer = document.querySelector(".card-section." + cardSectionClassName + " .card-slot-container");
-        const cardRankingData = await getRankingData(genreName);
         cardSlotContainer.replaceChildren();
         for (let i = 0; i < 5; i++) {
-            cardSlotContainer.appendChild(createRankSlotCard(cardRankingData.at(i), i + 1))
+            cardSlotContainer.appendChild(createRankSlotCard(cardData.at(i), i + 1))
         }
     }
 
-    fillCardSlot("ranking", "콘서트");
-    fillCardSlot("recommending");
-    fillCardSlot("preparing");
+    (async () => {
+        await fillCardSlot("ranking", await getRankingData("콘서트"))
+    })();
+    (async () => {
+        if (Object.keys(loginUser).length === 0) {
+            document.querySelector(".recommending").style.display = "none";
+        } else {
+            const recommendations = await getRecommendationsData(1);
+            const adaptedData = [];
+            for (let i = 0; i < recommendations.length; i++) {
+                adaptedData.push({
+                    "performance": recommendations[i]
+                });
+            }
+
+            await fillCardSlot("recommending", adaptedData);
+        }
+    })();
+    (async () => {
+        await fillCardSlot("preparing", await getRankingData());
+    })();
 
     const tabBtns = document.querySelectorAll(".genre-tab-btn")
     tabBtns.forEach(btn => {
@@ -656,10 +644,10 @@
         })
     });
 
-    const moreBtn = document.querySelector(".more-btn");
-    moreBtn.addEventListener("click", (event) => {
-        window.location.href = "/performances/ranking";
-    });
+    // const moreBtn = document.querySelector(".more-btn");
+    // moreBtn.addEventListener("click", (event) => {
+    //     window.location.href = "/performances/ranking";
+    // });
 </script>
 
 </html>
