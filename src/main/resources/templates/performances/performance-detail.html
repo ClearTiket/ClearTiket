@@ -995,11 +995,11 @@
                     currentCalYear = parseInt(startParts[0]);
                     currentCalMonth = parseInt(startParts[1]);
 
-                    console.log("데이터 반영 완료. 현재 연월:", currentCalYear, currentCalMonth);
+                    //console.log("데이터 반영 완료. 현재 연월:", currentCalYear, currentCalMonth);
                 } else {
                     currentCalYear = today.getFullYear();
                     currentCalMonth = today.getMonth() + 1;
-                    console.log("데이터 없음, 기본값 사용");
+                    //console.log("데이터 없음, 기본값 사용");
                 }
 
 
@@ -1053,7 +1053,7 @@
                                 detailPoster.style.display = 'none';
                             }
                         } catch (e) {
-                            console.error("이미지 파싱 에러:", e);
+                            //console.error("이미지 파싱 에러:", e);
                             detailPoster.style.display = 'none';
                         }
                     } else {
@@ -1076,13 +1076,13 @@
 
     // [신규 함수] 월 변경 버튼 처리를 위한 전역 핸들러 함수
     function updateCalendar() {
-        console.log("현재 달력 기준:", currentCalYear, "년", currentCalMonth, "월");
+        //console.log("현재 달력 기준:", currentCalYear, "년", currentCalMonth, "월");
         // 함수 내부에서 직접 요소를 찾습니다.
         const calendarDays = document.getElementById("calendar-days");
 
         // 만약 요소를 찾지 못했다면 중단합니다.
         if (!calendarDays) {
-            console.error("calendar-days 요소를 찾을 수 없습니다.");
+            //console.error("calendar-days 요소를 찾을 수 없습니다.");
             return;
         }
 
@@ -1186,7 +1186,7 @@
                 }
             })
             .catch(err => {
-                console.error("캐스팅 정보 로드 에러:", err);
+                //console.error("캐스팅 정보 로드 에러:", err);
                 // 에러 발생 시 UI 숨김
                 if (document.getElementById("casting-section-table"))
                     document.getElementById("casting-section-table").style.display = 'none';
@@ -1253,7 +1253,7 @@
         fetch(`/api/reviews?performanceId=${performanceId}&type=${type}&page=${page}&sort=${currentSort}`)
             .then(response => response.json())
             .then(data => {
-                console.log("평점 값:", data.averageRating, "타입:", typeof data.averageRating);
+                //console.log("평점 값:", data.averageRating, "타입:", typeof data.averageRating);
 
                 if (type === 'REVIEW') {
                     const avgRatingEl = document.getElementById("avg-rating-text");
@@ -1611,7 +1611,7 @@
                 // 3. 모든 준비 완료 후 달력 렌더링
                 // loadVenuePageData가 먼저 실행되어 변수가 8월로 바뀌어 있으므로,
                 // 이제 updateCalendar를 부르면 정확히 8월 달력이 그려집니다.
-                console.log("달력 데이터 로드 완료, 렌더링 시작");
+                //console.log("달력 데이터 로드 완료, 렌더링 시작");
                 updateCalendar();
             })
             .catch(err => console.error("날짜 로드 실패:", err));
@@ -1664,13 +1664,13 @@
                         btn.classList.add("active");
                         selectedScheduleId = sId;
                         selectedRound = round;
-                        console.log("선택된 실제 DB 스케줄 ID:", selectedScheduleId, " / 회차:", selectedRound);
+                        //console.log("선택된 실제 DB 스케줄 ID:", selectedScheduleId, " / 회차:", selectedRound);
                     });
                     scheduleList.appendChild(btn);
                 });
             })
             .catch(err => {
-                console.error("회차 로드 에러:", err);
+                //console.error("회차 로드 에러:", err);
                 scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>회차 정보를 불러오는데 실패했습니다.</p>";
             });
     }
@@ -1774,7 +1774,7 @@
                 fetchNewCaptcha();
             }
         } catch (err) {
-            console.error("검증 통신 실패:", err);
+            //console.error("검증 통신 실패:", err);
             alert("서버 연결에 실패했습니다.");
         }
     }
@@ -1790,7 +1790,7 @@
         stompClient.debug = null;
 
         stompClient.connect({}, function (frame) {
-            console.log('✅ [ClearTicket AI] 실시간 예매 채널 연결 완료');
+            console.log(' [ClearTicket AI] 실시간 예매 채널 연결 완료');
 
             // 현재 유저가 머물고 있는 공연 ID 기반으로 토픽 구독 채널 뚫기
             const destination = '/topic/soldout/' + performanceId;
@@ -1809,7 +1809,7 @@
                 }
             });
         }, function (error) {
-            console.warn('❌ 웹소켓 통신 연결 장애 발생. 5초 뒤 복구를 시도합니다.', error);
+            console.warn(' 웹소켓 통신 연결 장애 발생. 5초 뒤 복구를 시도합니다.', error);
             setTimeout(connectWebSocket, 5000); // 자동 단선 방지 및 재접속 트리거
         });
     }
