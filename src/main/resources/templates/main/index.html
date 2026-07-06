@@ -635,19 +635,19 @@
 
     const tabBtns = document.querySelectorAll(".genre-tab-btn")
     tabBtns.forEach(btn => {
-        btn.addEventListener("click", (event) => {
+        btn.addEventListener("click", async (event) => {
             tabBtns.forEach(b => {
                 b.classList.remove("active");
             });
             btn.classList.add("active");
-            fillCardSlot("ranking", btn.textContent);
+            await fillCardSlot("ranking", await getRankingData(btn.textContent));
         })
     });
 
-    // const moreBtn = document.querySelector(".more-btn");
-    // moreBtn.addEventListener("click", (event) => {
-    //     window.location.href = "/performances/ranking";
-    // });
+    const moreBtn = document.querySelector(".more-btn");
+    moreBtn.addEventListener("click", (event) => {
+        window.location.href = "/performances/ranking";
+    });
 </script>
 
 </html>
