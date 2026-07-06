@@ -62,7 +62,13 @@ public class LemonSqueezyClient {
         // 상품명 주입
         productOptions.put("name", checkoutName);
 
-        productOptions.put("redirect_url", "http://localhost:8080/api/payments/success");
+        String automaticBaseUrl = org.springframework.web.servlet.support.ServletUriComponentsBuilder
+                .fromCurrentContextPath()
+                .toUriString();
+
+        // 자동 추출된 주소 뒤에 컨트롤러 경로를 붙여 레몬스퀴지에 던져줌
+        productOptions.put("redirect_url", automaticBaseUrl + "/api/payments/success");
+
         attributes.put("product_options", productOptions);
 
         // 예약 ID 주입 (문자열로 변환)

@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "booking_seats") // 대문자가 섞여있어도 DB에는 스네이크 케이스로 매핑됩니다.
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -45,7 +46,3 @@ public class BookingSeat {
 
 }
 
-enum BookingStatus {
-    SELECTED,
-    PENDING
-}
