@@ -155,7 +155,7 @@ public class SearchPerformanceService {
                 .map(SearchHit::getContent)
                 .collect(Collectors.toList());
 
-        System.out.println(result.size());
+        // System.out.println(result.size());
 
         return result;
     }
