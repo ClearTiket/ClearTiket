@@ -5,6 +5,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.TermsQueryField;
 import com.clearticket.clearticket.model.document.PerformanceDocument;
 import com.clearticket.clearticket.model.document.VenueDocument;
+import com.clearticket.clearticket.model.vo.VenueSearchResultVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -24,7 +25,7 @@ public class SearchVenueService {
 
     final ElasticsearchOperations elasticsearchOperations;
 
-    public Page<VenueDocument> searchVenues(String searchText, String region, Integer page) {
+    public VenueSearchResultVO searchVenues(String searchText, String region, Integer page) {
 
         if (page == null || page < 1) page = 1;
         page--;
@@ -35,7 +36,7 @@ public class SearchVenueService {
                 .toList();
 
         // 검색어가 없거나 공백만 존재하는 경우 빈 List 반환
-        if (keywords.isEmpty()) return new PageImpl<>(new ArrayList<>());
+        if (keywords.isEmpty()) return new VenueSearchResultVO(new ArrayList<>(), 0);
 
         List<Query> mustQueries = new ArrayList<>();   // 모두 만족해야 하는 조건들
 
@@ -81,8 +82,8 @@ public class SearchVenueService {
                 .map(SearchHit::getContent)
                 .collect(Collectors.toList());
 
-        System.out.println(searchPage.getTotalPages());
+        // System.out.println(searchPage.getTotalPages());
 
-        return new PageImpl<>(result, nativeQuery.getPageable(), searchPage.getTotalPages());
+        return new VenueSearchResultVO(result, searchPage.getTotalPages());
     }
 }

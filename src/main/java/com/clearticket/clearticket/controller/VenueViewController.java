@@ -1,11 +1,10 @@
 package com.clearticket.clearticket.controller;
 
 import com.clearticket.clearticket.model.UserSession;
-import com.clearticket.clearticket.model.document.VenueDocument;
-import com.clearticket.clearticket.model.dto.performance.*;
 import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.entity.Schedule;
 import com.clearticket.clearticket.model.entity.Venue;
+import com.clearticket.clearticket.model.vo.VenueSearchResultVO;
 import com.clearticket.clearticket.repository.PerformanceRepository;
 import com.clearticket.clearticket.repository.ScheduleRepository;
 import com.clearticket.clearticket.service.VenueService;
@@ -13,13 +12,11 @@ import com.clearticket.clearticket.service.searchService.SearchVenueService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Locale;
 
 
@@ -102,20 +99,13 @@ public class VenueViewController {
             model.addAttribute("venueList", venueList.getContent());
             model.addAttribute("totalPage", venueList.getTotalPages());
         } else {
-            Page<VenueDocument> venues = searchVenueService.searchVenues(keyword, region, page);
+            VenueSearchResultVO venues = searchVenueService.searchVenues(keyword, region, page);
 
-            model.addAttribute("venueList", venues.getContent());
+            model.addAttribute("venueList", venues.getVenueDocumentList());
             model.addAttribute("totalPage", venues.getTotalPages());
         }
         return "venues/venue-list";
     }
-
-//    @GetMapping("/list")
-//    public ResponseEntity<List<VenueDocument>> searchVenue(@RequestParam String searchText, String region, Integer page, Model model) {
-//        List<VenueDocument> venues = searchVenueService.searchVenues(searchText, region, page);
-//        return ResponseEntity.ok(venues);
-//    }
-
 
     @GetMapping("/{venueId}")
     public String venueDetailView(@PathVariable Long venueId, Model model) {
