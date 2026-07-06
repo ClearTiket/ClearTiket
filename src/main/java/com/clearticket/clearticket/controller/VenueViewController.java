@@ -62,7 +62,6 @@ public class VenueViewController {
         }
 
         // scheduleId로 실제 회차(Schedule) + 공연(Performance) 정보를 조회해서
-        // 화면에 항상 "지킬앤하이드"로 고정 표시되던 하드코딩 버그를 제거합니다.
         Schedule schedule = scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회차(scheduleId)입니다: " + scheduleId));
 
