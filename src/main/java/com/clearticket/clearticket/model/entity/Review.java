@@ -56,7 +56,7 @@ public class Review {
 
     @Column(name = "status", nullable = false, length = 10)
     @Builder.Default
-    private String status = "Y";
+    private String status = "ACTIVE";
 
 
 }

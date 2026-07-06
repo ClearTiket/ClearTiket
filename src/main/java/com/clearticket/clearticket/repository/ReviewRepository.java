@@ -28,9 +28,12 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     int incrementViews(@Param("reviewId") Long reviewId);
 
     // 5. 특정 공연의 관람후기 평점 평균 계산 (소수점 연산)
-    @Query("SELECT AVG(r.rating) FROM Review r " +
-            "WHERE r.performance.performanceId = :performanceId " +
-            "AND r.type = 'REVIEW' " +
-            "AND r.status = 'Y'")
+    @Query("""
+    SELECT AVG(r.rating)
+    FROM Review r
+    WHERE r.performance.performanceId = :performanceId
+    AND r.type = 'REVIEW'
+    AND r.status = 'ACTIVE'
+    """)
     Optional<Double> getAverageRatingByPerformanceId(@Param("performanceId") Long performanceId);
 }

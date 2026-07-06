@@ -5,6 +5,7 @@ import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.entity.Review;
 import com.clearticket.clearticket.model.entity.User;
 //import com.clearticket.clearticket.service.PerformanceService; // 팀원 서비스 임포트 복구
+import com.clearticket.clearticket.service.PerformanceService;
 import com.clearticket.clearticket.service.ReviewService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -22,11 +23,10 @@ import java.util.Set;
 public class ReviewApiController {
 
     private final ReviewService reviewService;
-    //private final PerformanceService performanceService; // 팀원 서비스 주입 복구
 
     // 1. 관람후기 / 기대평 목록 조회 (Record 적용으로 가독성 극대화)
     public record ReviewWriteRequest(
-            String performanceId,
+            Long performanceId,
             Long userId,
             String title,
             String content,
@@ -40,16 +40,13 @@ public class ReviewApiController {
     // [조회] 관람후기 / 기대평 목록 조회 (Record 적용)
     @GetMapping
     public ResponseEntity<ReviewResponse> getReviewList(
-            @RequestParam("performanceId") String performanceKopisId,
+            @RequestParam("performanceId") Long performanceId,
             @RequestParam(value = "type", defaultValue = "REVIEW") String type,
             @RequestParam(value = "sort", defaultValue = "latest") String sort) {
 
         // 변환기: 문자열 KOPIS ID로 팀원 테이블에서 진짜 Long PK를 알아옵니다.
-        //Long realPerformanceId = performanceService.getPerformanceIdByKopisId(performanceKopisId);
-        Long realPerformanceId = 1L;
-        /*if ("PF290842".equals(performanceKopisId)){
-            realPerformanceId = 1L;
-        }*/
+        Long realPerformanceId = performanceId;
+
 
         List<Review> reviews = reviewService.getReviewList(realPerformanceId, type, sort);
         long totalCount = reviewService.getReviewCount(realPerformanceId, type);
@@ -63,9 +60,7 @@ public class ReviewApiController {
     public ResponseEntity<ReviewResultResponse> writeReview(@RequestBody ReviewWriteRequest request) {
 
         // 변환기: 등록할 때도 문자열 ID를 진짜 숫자 PK로 매핑해 줍니다.
-        // [임시] 체크용 =================================================================================================
-        //Long realPerformanceId = performanceService.getPerformanceIdByKopisId(request.performanceId());
-        Long realPerformanceId = 1L;
+        Long realPerformanceId = request.performanceId();
 
         Review review = Review.builder()
                 .title(request.title())
@@ -135,11 +130,7 @@ public class ReviewApiController {
             session.setAttribute("viewedReviews", viewedReviews);
         } else {
             // 5. 이미 가방에 ID가 들어있다면? 조회수 증가 없이 ACTIVE 상태인 데이터만 안전하게 필터링해 반환합니다.
-            review = reviewService.getReviewList(1L, "REVIEW", "latest")
-                    .stream()
-                    .filter(r -> r.getReviewId().equals(reviewId))
-                    .findFirst()
-                    .orElse(null);
+            review = reviewService.getReview(reviewId);
         }
 
         if (review == null) {

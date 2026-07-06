@@ -41,7 +41,10 @@ public class VenueViewController {
         // 3. 자바스크립트 달력/회차 fetch 통신용 KOPIS ID도 안전하게 별도 유지
         model.addAttribute("venueKopisId", performance.getKopisId());
 
-        // 4. 경로 규격에 맞게 리턴
+        // 4. 자바스크립트 달력/회차
+        model.addAttribute("performanceId", performance.getPerformanceId());
+
+        // 5. 경로 규격에 맞게 리턴
         return "performances/performance-detail";
     }
 

@@ -1,5 +1,6 @@
 package com.clearticket.clearticket.model.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -22,6 +23,7 @@ public class User {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false, length = 255)
     private String password;
 
