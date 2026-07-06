@@ -131,6 +131,25 @@ public class SeatService {
         scheduleRepository.findById(scheduleId)
                 .orElseThrow(() -> new IllegalArgumentException("스케줄 정보를 찾을 수 없습니다."));
 
-        return seatGenerator.generateSeats();
+        List<SeatResponse> allSeats = seatGenerator.generateSeats();
+
+        List<BookingSeat> bookedSeats = bookingSeatsRepository.findByScheduleScheduleId(scheduleId);
+
+        for (SeatResponse seat : allSeats) {
+            for (BookingSeat booked : bookedSeats) {
+                if (seat.getSectionName().equals(booked.getSectionName()) &&
+                        seat.getRowNum().equals(booked.getRowNum()) &&
+                        seat.getSeatNum().equals(booked.getSeatNum())) {
+
+                    if (booked.getStatus() != null) {
+                        seat.setStatus(booked.getStatus().name());
+                    } else {
+                        seat.setStatus("PENDING");
+                    }
+                }
+            }
+        }
+
+        return allSeats;
     }
 }

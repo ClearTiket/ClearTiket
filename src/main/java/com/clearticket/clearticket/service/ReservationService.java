@@ -6,11 +6,7 @@ import com.clearticket.clearticket.model.dto.ReservationResponseDto;
 //import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.dto.seat.SeatRequest;
 import com.clearticket.clearticket.model.entity.*;
-import com.clearticket.clearticket.repository.AddressRepository;
-import com.clearticket.clearticket.repository.ReservationRepository;
-import com.clearticket.clearticket.repository.ReservationSeatsRepository;
-import com.clearticket.clearticket.repository.ScheduleRepository;
-import com.clearticket.clearticket.repository.UserRepository;
+import com.clearticket.clearticket.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +22,7 @@ public class ReservationService {
     private final UserRepository userRepository;
     private final ScheduleRepository scheduleRepository;
     private final ReservationSeatsRepository reservationSeatsRepository;
+    private final BookingSeatsRepository bookingSeatsRepository;
 
     /**
      * 신규 티켓 예매 내역 생성 및 DB저장
@@ -68,7 +65,25 @@ public class ReservationService {
                         .build();
 
                 reservationSeatsRepository.save(reservationSeat);
+
+
+                // 💡 [로그 1] 조회하려는 좌석 조건이 뭔지 먼저 출력
+                System.out.println("▶ [조회 조건] 스케줄: " + schedule.getScheduleId() + ", 구역: " + seatDto.getSectionName() + ", 열: " + seatDto.getRowNum() + ", 번호: " + seatDto.getSeatNum());
+                // 🟢 레포지토리가 제공하는 Optional 타입에 맞춰서 깔끔하게 원상복구합니다!
+                bookingSeatsRepository.searchByScheduleAndSeat(
+                        schedule.getScheduleId(),
+                        seatDto.getSectionName(),
+                        seatDto.getRowNum(),
+                        seatDto.getSeatNum()
+                ).ifPresent(bookingSeat -> {
+                    System.out.println("▶ [성공] 매칭되는 좌석을 찾았습니다! ID: " + bookingSeat.getBookingSeatId() + ", 원래상태: " + bookingSeat.getStatus());
+                    bookingSeat.setStatus(BookingStatus.SELECTED); // 최종 상태는 SELECTED로 변경
+                    bookingSeatsRepository.save(bookingSeat);
+                });
+
             }
+
+
         }
 
         return toResponseDto(savedReservation);
