@@ -645,7 +645,7 @@
 
             <div class="ct-tab-menu-bar">
                 <button type="button" class="ct-tab-btn active" onclick="switchTab(event, 'tab-info')">공연정보</button>
-                <button id="tab-btn-casting" type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-casting')">캐스팅정보</button>
+<!--                <button id="tab-btn-casting" type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-casting')">캐스팅정보</button>-->
                 <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-sales')">판매정보</button>
                 <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'ct-tab-reviews')">관람후기</button>
                 <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'ct-tab-expectations')">기대평</button>
@@ -981,6 +981,9 @@
     }
 
     const performanceId = getPerformanceId();
+    /*<![CDATA[*/
+    const currentUserId = /*[[${sessionUserId}]]*/ null;
+    /*]]>*/
 
     // [전역 함수로 정의]
     function loadVenuePageData(id) {
@@ -1289,7 +1292,7 @@
                         const hasRating = review.rating !== null && review.rating !== undefined;
                         const stars = hasRating ? "★".repeat(review.rating) + "☆".repeat(5 - review.rating) : "";
 
-                        const currentUserId = parseInt(document.getElementById("sessionUserId")?.value || "1");
+                        const currentUserId = window.currentUserId || 1;
                         const writerId = review.userId || (review.user ? review.user.userId : null);
                         const isMyReview = (writerId !== null && currentUserId === writerId);
 
@@ -1493,6 +1496,8 @@
             })
             .catch(err => console.error("수정 통신 에러:", err));
     }
+
+
 
     // 새 후기 작성 처리 (전역)
     function submitReview() {
@@ -1822,6 +1827,7 @@
     function closeCaptchaModal() {
         document.getElementById("captcha-modal").style.display = "none";
     }
+
 </script>
 </body>
 </html>
