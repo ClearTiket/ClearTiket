@@ -65,7 +65,7 @@ spring:
     defer-datasource-initialization: true
   sql:
     init:
-      mode: always
+      mode: never
       data-locations:
         - "classpath:sql/venues_20260622.sql"
         - "classpath:sql/performances_20260622.sql"
