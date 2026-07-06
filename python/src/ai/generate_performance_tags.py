@@ -136,8 +136,9 @@ def fetch_performances(conn):
     sql = """
           SELECT performance_id, title, genre, castings, extracted_text
           FROM performances
-          WHERE performance_id IN (401, 666, 1044, 1059);
           """
+          # WHERE performance_id IN (401, 666, 1044, 1059); 테스트용으로 일부만 선택할 때
+
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(sql)
         return cur.fetchall()
