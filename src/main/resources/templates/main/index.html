@@ -594,6 +594,24 @@
         }
     }
 
+    async function getPreparingData () {
+        try {
+            const fetchUrl = "/api/performances/preparing";
+            const response = await fetch(fetchUrl, {
+                method: 'GET',
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+
+            const resultJson = await response.json();
+            // console.log(resultJson);
+            return resultJson;
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
     async function fillSwiper() {
         const swiperWrapper = document.querySelector(".swiper-wrapper");
         const bannerRankingData = await getRankingData();
@@ -630,7 +648,14 @@
         }
     })();
     (async () => {
-        await fillCardSlot("preparing", await getRankingData());
+        const preparingData = await getPreparingData("preparing");
+        const adaptedData = [];
+        for (let i = 0; i < preparingData.length; i++) {
+            adaptedData.push({
+                "performance": preparingData[i]
+            })
+        }
+        await fillCardSlot("preparing", adaptedData);
     })();
 
     const tabBtns = document.querySelectorAll(".genre-tab-btn")

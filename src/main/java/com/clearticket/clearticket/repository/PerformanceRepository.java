@@ -2,6 +2,7 @@ package com.clearticket.clearticket.repository;
 
 import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.entity.PerformanceStatus;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +16,7 @@ public interface PerformanceRepository extends JpaRepository<Performance, Long> 
     List<Performance> findAllByVenueVenueIdAndStatusIn(Long venueVenueId, Collection<PerformanceStatus> statuses);
     Page<Performance> findAllByRegionIn(Collection<String> regions, Pageable pageable);
     Page<Performance> findAllByGenre(String genre, Pageable pageable);
+    List<Performance> findAllByStatusIs(PerformanceStatus status, Limit limit);
 
     Optional<Performance> findByKopisId(String kopisId);
 }
