@@ -31,7 +31,7 @@ public class VenueViewController {
     final SearchVenueService searchVenueService;
 
     @GetMapping("/{id}/detail") // mt10id 대신 정수형 PK(id) 기반으로 변경
-    public String showVenueDetail(@PathVariable("id") Long id, Model model) {
+    public String showVenueDetail(@PathVariable("id") Long id, HttpSession session, Model model) {
 
         // 1. DB에서 실제 2번 공연 정보(공연장 객체 포함) 리얼 타격 조회
         Performance performance = performanceRepository.findById(id)
@@ -46,7 +46,15 @@ public class VenueViewController {
         // 4. 자바스크립트 달력/회차
         model.addAttribute("performanceId", performance.getPerformanceId());
 
-        // 5. 경로 규격에 맞게 리턴
+        // 5. 세션에서 로그인 사용자 정보
+        UserSession loginUser = (UserSession) session.getAttribute("loginUser");
+        if (loginUser != null) {
+            model.addAttribute("sessionUserId", loginUser.getId());
+        } else {
+            model.addAttribute("sessionUserId", null); // 로그인 안 한 경우 null 처리
+        }
+
+        // 6. 경로 규격에 맞게 리턴
         return "performances/performance-detail";
     }
 
