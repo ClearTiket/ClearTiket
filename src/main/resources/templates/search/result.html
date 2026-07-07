@@ -7,7 +7,93 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
+
+    <!-- date picker cdn -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 </head>
+
+<script>
+    let startDate;
+    let endDate;
+
+    function dateFormatter(date) {
+        const y = date.getFullYear();
+        const m = date.getMonth() + 1;
+        const d = date.getDate();
+
+        const mStr = m < 10 ? '0' + m : m;
+        const dStr = d < 10 ? '0' + d : d;
+
+        return "" + y + '-' + mStr + '-' + dStr;
+    }
+
+    $(function () {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        const day = today.getDate();
+        const todayStr = year + '/' + month + '/' + day;
+
+        const nextWeek = new Date(year, month - 1, day + 13);
+        const nwYear = nextWeek.getFullYear();
+        const nwMonth = nextWeek.getMonth() + 1;
+        const nwDay = nextWeek.getDate();
+        const nextWeekStr = nwYear + '/' + nwMonth + '/' + nwDay;
+
+        startDate = dateFormatter(today);
+        endDate = dateFormatter(nextWeek);
+
+        $('.date-picker').daterangepicker({
+            "autoApply": true,
+            "locale": {
+                "format": "YYYY-MM-DD",
+                "separator": " ~ ",
+                "applyLabel": "선택",
+                "cancelLabel": "취소",
+                "fromLabel": "부터",
+                "toLabel": "까지",
+                "customRangeLabel": "Custom",
+                "weekLabel": "W",
+                "daysOfWeek": [
+                    "일",
+                    "월",
+                    "화",
+                    "수",
+                    "목",
+                    "금",
+                    "토"
+                ],
+                "monthNames": [
+                    "1월",
+                    "2월",
+                    "3월",
+                    "4월",
+                    "5월",
+                    "6월",
+                    "7월",
+                    "8월",
+                    "9월",
+                    "10월",
+                    "11월",
+                    "12월"
+                ],
+                "firstDay": 1
+            },
+            "linkedCalendars": true,
+            "alwaysShowCalendars": true,
+            "startDate": todayStr,
+            "endDate": nextWeekStr,
+            "opens": "center"
+        }, function(start, end, label) {
+            console.log('New date range selected: ' + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD') + ' (predefined range: ' + label + ')');
+            startDate = dateFormatter(start._d);
+            endDate = dateFormatter(end._d);
+        });
+    });
+</script>
 
 <style>
     /* 기본 스타일 초기화 */
@@ -93,6 +179,18 @@
         background-color: #6E96EA;  /* 조건: 배경색 #6E96EA */
         border-color: #6E96EA;
         color: #ffffff;
+    }
+
+    .date-picker {
+        width: 200px;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        padding: 6px;
     }
 
     .filter-section.re-search-section {
@@ -317,8 +415,8 @@
             <hr>
 
             <section class="filter-section">
-                <label for="date-input">날짜 선택:</label>
-                <input type="date" id="date-input" name="user-date">
+                <h5>날짜 선택</h5>
+                <input type="text" class="date-picker" value="" readonly>
             </section>
             <hr>
 
@@ -444,7 +542,7 @@
                 }
             }
 
-            createCards(resultJson);
+            await createCards(resultJson);
 
         } catch (err) {
             console.log(err);
@@ -524,6 +622,10 @@
     });
 
     document.querySelector(".re-search").addEventListener('click', () => {
+        filterData["startDate"] = startDate;
+        filterData["endDate"] = endDate;
+        console.log(startDate);
+        console.log(endDate);
         postSearchData(keyword, filterData);
     });
 
