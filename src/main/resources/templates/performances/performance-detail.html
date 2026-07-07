@@ -1005,6 +1005,7 @@
     let currentCalYear = today.getFullYear();
     let currentCalMonth = today.getMonth() + 1;
     let globalScheduleData = [];
+    let calendarEndDate = null; // 공연 종료일
 
     function getPerformanceId() {
         const pathSegments = window.location.pathname.split('/');
@@ -1024,24 +1025,27 @@
             .then(venue => {
                 // 달력 시작일 설정
                 if (venue.period) {
-                    const startDate = venue.period.split('~')[0];
-                    const startParts = startDate.split('-');
 
-                    currentCalYear = parseInt(startParts[0]);
-                    currentCalMonth = parseInt(startParts[1]);
+                    // 예: "2026.06.27~2026.08.31"
+                    const [startStr, endStr] = venue.period.split('~');
+                    const startDate = new Date(startStr.replace(/\./g, '-'));
+                    calendarEndDate = new Date(endStr.replace(/\./g, '-'));
 
-                    console.log("데이터 반영 완료. 현재 연월:", currentCalYear, currentCalMonth);
+                    currentCalYear = startDate.getFullYear();
+                    currentCalMonth = startDate.getMonth() + 1;
+
+                    console.log("공연 기간 설정 완료:", calendarEndDate);
                 } else {
-                    currentCalYear = today.getFullYear();
-                    currentCalMonth = today.getMonth() + 1;
-                    console.log("데이터 없음, 기본값 사용");
+                    // 기간 정보가 없을 경우 대비
+                    calendarEndDate = null;
+                    currentCalYear = new Date().getFullYear();
+                    currentCalMonth = new Date().getMonth() + 1;
                 }
-
 
                 currentGenre = venue.genre;
                 // [UI 바인딩]
                 if (document.getElementById("perf-period")) document.getElementById("perf-period").innerText = venue.period;
-                if (document.getElementById("perf-runtime")) document.getElementById("perf-runtime").innerText = venue.runTime ? `${venue.runTime}분` : "정보없음";
+                if (document.getElementById("perf-runtime")) document.getElementById("perf-runtime").innerText = venue.runTime ? `${venue.runTime}분` : "정보 없음";
                 if (document.getElementById("perf-venue-name")) document.getElementById("perf-venue-name").innerText = venue.venueName;
                 if (document.getElementById("performance-title")) document.getElementById("performance-title").innerText = venue.title;
                 if (document.getElementById("venue-name-top")) document.getElementById("venue-name-top").innerText = venue.venueName;
@@ -1051,7 +1055,7 @@
                 const infoBox = document.getElementById("venue-info-box");
                 if (infoBox) {
                     infoBox.innerHTML = `
-                <p><strong>주소:</strong> ${venue.address}</p>
+                <p><strong>주소:</strong> ${venue.address || '정보 없음'}</p>
                 <p><strong>장르:</strong> ${venue.genre}</p>
                 <p><strong>좌석수:</strong> ${venue.seatCount || 300}석</p>
                 <p><strong>전화번호:</strong> ${venue.telnum || '정보 없음'}</p>
@@ -1125,70 +1129,75 @@
 
     // [신규 함수] 월 변경 버튼 처리를 위한 전역 핸들러 함수
     function updateCalendar() {
-        console.log("현재 달력 기준:", currentCalYear, "년", currentCalMonth, "월");
-        // 함수 내부에서 직접 요소를 찾습니다.
         const calendarDays = document.getElementById("calendar-days");
-
-        // 만약 요소를 찾지 못했다면 중단합니다.
-        if (!calendarDays) {
-            console.error("calendar-days 요소를 찾을 수 없습니다.");
-            return;
-        }
+        if (!calendarDays) return;
 
         calendarDays.innerHTML = "";
 
-        // 1. 네비게이션 중앙 타이틀 연/월 업데이트
         const calTitle = document.getElementById("calendar-title");
         if (calTitle) {
             calTitle.innerText = `${currentCalYear}. ${String(currentCalMonth).padStart(2, '0')}`;
         }
 
-        // 2. 현재 선택된 달의 1일 시작 요일 및 전체 일수 도출
         const firstDayIndex = new Date(currentCalYear, currentCalMonth - 1, 1).getDay();
         const totalDays = new Date(currentCalYear, currentCalMonth, 0).getDate();
 
-        // 3. 1일 시작 전 공백 칸 메우기
+        // 1. 오늘 날짜 기준 설정 (시간 00:00:00으로 초기화)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // 2. 공백 칸 메우기
         for (let i = 0; i < firstDayIndex; i++) {
             const emptyDiv = document.createElement("div");
             emptyDiv.classList.add("day", "empty");
             calendarDays.appendChild(emptyDiv);
         }
 
-        // 4. 1일부터 말일까지 루프 돌리며 전역 데이터셋 내 연/월 일치 검사 후 바인딩
+        // 3. 날짜 루프
         for (let day = 1; day <= totalDays; day++) {
             const dayDiv = document.createElement("div");
             dayDiv.innerText = day;
 
-            const formattedMonth = String(currentCalMonth).padStart(2, '0');
-            const formattedDay = String(day).padStart(2, '0');
-            const targetDateStr = `${currentCalYear}-${formattedMonth}-${formattedDay}`;
+            // 현재 루프에서 그리고 있는 날짜 객체
+            const currentDate = new Date(currentCalYear, currentCalMonth - 1, day);
 
-            // 전체 리스트 중 현재 돌고 있는 날짜 객체 탐색
-            const matchedDateItem = globalScheduleData.find(item => item.date === targetDateStr);
+            // [핵심 로직] 유효성 검사
+            // - isPast: 오늘보다 이전 날짜인가?
+            // - isAfterEnd: calendarEndDate(전역변수)가 존재하고, 그 날짜보다 이후인가?
+            const isPast = currentDate < today;
+            const isAfterEnd = calendarEndDate && currentDate > calendarEndDate;
 
-            if (matchedDateItem) {
-                const isSelectable = matchedDateItem.isAvailable === true ||
+            if (isPast || isAfterEnd) {
+                // 지나간 날짜이거나 기간 밖이면 무조건 예매 불가 처리
+                dayDiv.classList.add("day", "unavailable");
+            } else {
+                // 유효한 날짜라면 기존처럼 globalScheduleData 확인
+                const formattedMonth = String(currentCalMonth).padStart(2, '0');
+                const formattedDay = String(day).padStart(2, '0');
+                const targetDateStr = `${currentCalYear}-${formattedMonth}-${formattedDay}`;
+
+                const matchedDateItem = globalScheduleData.find(item => item.date === targetDateStr);
+
+                // 데이터가 있고 예매 가능한 상태인지 확인
+                const isAvailable = matchedDateItem && (
+                    matchedDateItem.isAvailable === true ||
                     matchedDateItem.isAvailable === "Y" ||
                     matchedDateItem.available === true ||
-                    matchedDateItem.available === "Y";
+                    matchedDateItem.available === "Y"
+                );
 
-                if (isSelectable) {
+                if (isAvailable) {
                     dayDiv.classList.add("day", "available");
                     dayDiv.addEventListener("click", () => {
                         document.querySelectorAll("#calendar-days .day").forEach(d => d.classList.remove("selected"));
                         dayDiv.classList.add("selected");
-
                         selectedDate = matchedDateItem.date;
                         selectedRound = null;
-
                         loadSchedules(performanceId, matchedDateItem.date);
                     });
                 } else {
                     dayDiv.classList.add("day", "unavailable");
                 }
-            } else {
-                // 서버 데이터에 잡혀있지 않은 날짜는 모두 예매 불가능 처리
-                dayDiv.classList.add("day", "unavailable");
             }
             calendarDays.appendChild(dayDiv);
         }
@@ -1242,19 +1251,6 @@
                 if (document.getElementById("tab-btn-casting"))
                     document.getElementById("tab-btn-casting").style.display = 'none';
             });
-    }
-
-    function renderCastingTable(list) {
-        const tbody = document.getElementById("casting-table-body");
-        tbody.innerHTML = list.map(item => `
-    <tr style="border-bottom: 1px solid #e2e8f0;">
-        <td style="padding: 14px; font-weight: 600;">${item.date}</td>
-        <td style="padding: 14px;">${item.time}</td>
-        <td style="padding: 14px; color: ${item.actor1 ? '#1e40af' : '#9ca3af'}; font-weight: bold;">${item.actor1 || '-'}</td>
-        <td style="padding: 14px; color: ${item.actor2 ? '#1e40af' : '#9ca3af'}; font-weight: bold;">${item.actor2 || '-'}</td>
-        <td style="padding: 14px; color: ${item.actor3 ? '#1e40af' : '#9ca3af'}; font-weight: bold;">${item.actor3 || '-'}</td>
-    </tr>
-`).join('');
     }
 
     // [2] 탭 전환 기능 (전역)
@@ -1543,8 +1539,6 @@
             .catch(err => console.error("수정 통신 에러:", err));
     }
 
-
-
     // 새 후기 작성 처리 (전역)
     function submitReview() {
         const performanceId = getPerformanceId();
@@ -1689,8 +1683,7 @@
         }
     });
 
-    // 상영 회차 로드 (내부 함수 수정)
-    // 상영 회차 로드 (중괄호 탈출 에러 완벽 해결 버전)
+    // 상영 회차 로드
     function loadSchedules(performanceId, selectedDate) {
         const scheduleList = document.getElementById("schedule-list");
         if (!scheduleList) return;
