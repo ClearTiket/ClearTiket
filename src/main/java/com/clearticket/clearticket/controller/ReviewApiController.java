@@ -1,5 +1,6 @@
 package com.clearticket.clearticket.controller;
 
+import com.clearticket.clearticket.model.UserSession;
 import com.clearticket.clearticket.model.dto.review.ReviewResponse;
 import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.entity.Review;
@@ -55,7 +56,13 @@ public class ReviewApiController {
 
     //  [등록] 관람후기 / 기대평 작성 저장
     @PostMapping("/write")
-    public ResponseEntity<ReviewResultResponse> writeReview(@RequestBody ReviewWriteRequest request) {
+    public ResponseEntity<ReviewResultResponse> writeReview(@RequestBody ReviewWriteRequest request, HttpSession session ) {
+
+        // 세션에서 현재 로그인한 유저를 가져옵니다.
+        UserSession loginUser = (UserSession) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(new ReviewResultResponse("FAIL", "로그인이 필요합니다."));
+        }
 
         // 변환기: 등록할 때도 문자열 ID를 진짜 숫자 PK로 매핑해 줍니다.
         Long realPerformanceId = request.performanceId();
@@ -66,7 +73,7 @@ public class ReviewApiController {
                 .type(request.type())
                 .rating(request.rating())
                 .performance(Performance.builder().performanceId(realPerformanceId).build()) // 숫자 PK 주입
-                .user(User.builder().userId(request.userId()).build())
+                .user(User.builder().userId(Long.valueOf(loginUser.getId())).build())
                 .build();
 
         Review savedReview = reviewService.writeReview(review);
