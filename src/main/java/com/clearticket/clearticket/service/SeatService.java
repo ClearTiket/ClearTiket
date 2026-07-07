@@ -62,6 +62,7 @@ public class SeatService {
                 .sectionName(sectionName)
                 .rowNum(rowNum)
                 .seatNum(seatNum)
+                .status(com.clearticket.clearticket.model.entity.BookingStatus.PENDING)
                 .createdAt(LocalDateTime.now())
                 .build();
 
