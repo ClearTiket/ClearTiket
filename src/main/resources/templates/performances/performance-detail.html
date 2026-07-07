@@ -998,11 +998,11 @@
                     currentCalYear = parseInt(startParts[0]);
                     currentCalMonth = parseInt(startParts[1]);
 
-                    //console.log("데이터 반영 완료. 현재 연월:", currentCalYear, currentCalMonth);
+                    console.log("데이터 반영 완료. 현재 연월:", currentCalYear, currentCalMonth);
                 } else {
                     currentCalYear = today.getFullYear();
                     currentCalMonth = today.getMonth() + 1;
-                    //console.log("데이터 없음, 기본값 사용");
+                    console.log("데이터 없음, 기본값 사용");
                 }
 
 
@@ -1056,7 +1056,7 @@
                                 detailPoster.style.display = 'none';
                             }
                         } catch (e) {
-                            //console.error("이미지 파싱 에러:", e);
+                            console.error("이미지 파싱 에러:", e);
                             detailPoster.style.display = 'none';
                         }
                     } else {
@@ -1079,13 +1079,13 @@
 
     // [신규 함수] 월 변경 버튼 처리를 위한 전역 핸들러 함수
     function updateCalendar() {
-        //console.log("현재 달력 기준:", currentCalYear, "년", currentCalMonth, "월");
+        console.log("현재 달력 기준:", currentCalYear, "년", currentCalMonth, "월");
         // 함수 내부에서 직접 요소를 찾습니다.
         const calendarDays = document.getElementById("calendar-days");
 
         // 만약 요소를 찾지 못했다면 중단합니다.
         if (!calendarDays) {
-            //console.error("calendar-days 요소를 찾을 수 없습니다.");
+            console.error("calendar-days 요소를 찾을 수 없습니다.");
             return;
         }
 
@@ -1189,7 +1189,7 @@
                 }
             })
             .catch(err => {
-                //console.error("캐스팅 정보 로드 에러:", err);
+                console.error("캐스팅 정보 로드 에러:", err);
                 // 에러 발생 시 UI 숨김
                 if (document.getElementById("casting-section-table"))
                     document.getElementById("casting-section-table").style.display = 'none';
@@ -1256,7 +1256,7 @@
         fetch(`/api/reviews?performanceId=${performanceId}&type=${type}&page=${page}&sort=${currentSort}`)
             .then(response => response.json())
             .then(data => {
-                //console.log("평점 값:", data.averageRating, "타입:", typeof data.averageRating);
+                console.log("평점 값:", data.averageRating, "타입:", typeof data.averageRating);
 
                 if (type === 'REVIEW') {
                     const avgRatingEl = document.getElementById("avg-rating-text");
@@ -1616,7 +1616,7 @@
                 // 3. 모든 준비 완료 후 달력 렌더링
                 // loadVenuePageData가 먼저 실행되어 변수가 8월로 바뀌어 있으므로,
                 // 이제 updateCalendar를 부르면 정확히 8월 달력이 그려집니다.
-                //console.log("달력 데이터 로드 완료, 렌더링 시작");
+                console.log("달력 데이터 로드 완료, 렌더링 시작");
                 updateCalendar();
             })
             .catch(err => console.error("날짜 로드 실패:", err));
@@ -1638,6 +1638,7 @@
     });
 
     // 상영 회차 로드 (내부 함수 수정)
+    // 상영 회차 로드 (중괄호 탈출 에러 완벽 해결 버전)
     function loadSchedules(performanceId, selectedDate) {
         const scheduleList = document.getElementById("schedule-list");
         if (!scheduleList) return;
@@ -1657,7 +1658,6 @@
                     const btn = document.createElement("button");
                     btn.classList.add("schedule-btn");
 
-                    // 🌟 [수정] 서버의 Response 필드명("scheduleId", "round", "startTime")과 정확히 일치시킴
                     const sId = schedule.scheduleId;
                     const round = schedule.round;
                     const time = schedule.startTime;
@@ -1669,13 +1669,39 @@
                         btn.classList.add("active");
                         selectedScheduleId = sId;
                         selectedRound = round;
-                        //console.log("선택된 실제 DB 스케줄 ID:", selectedScheduleId, " / 회차:", selectedRound);
+                        console.log("선택된 실제 DB 스케줄 ID:", selectedScheduleId, " / 회차:", selectedRound);
+
+                        // 1. 실시간 이벤트 수신을 위한 웹소켓 채널 구독
+                        subscribeToSchedule(selectedScheduleId);
+
+                        // 2. [데이터 기반 연동] 클릭한 스케줄의 실제 매진 데이터를 백엔드에 요청
+                        fetch(`/api/schedules/${selectedScheduleId}/soldout-check`)
+                            .then(res => res.json())
+                            .then(data => {
+                                const banner = document.getElementById('soldoutBanner');
+                                if (!banner) return;
+
+                                // 백엔드 데이터가 'SOLD_OUT'이고 진짜 매진 정보가 들어있을 때만 전광판 노출
+                                if (data.status === 'SOLD_OUT') {
+                                    // data.section에 "A, B"가 들어오면 "A, B 매진"으로 출력되게 만듭니다.
+                                    document.getElementById('soldoutSectionName').innerText = data.section + " 매진";
+                                    document.getElementById('soldoutMessage').innerText = data.notice;
+                                    banner.style.display = 'block';
+                                    console.log(`✅ [데이터 확인 완료] ${data.section} 매진 상태이므로 전광판을 띄웁니다.`);
+                                } else {
+                                    banner.style.display = 'none'; // 매진 데이터가 없으면 전광판을 가림
+                                }
+                            })
+                            .catch(err => {
+                                console.error("매진 상태 데이터 조회 실패:", err);
+                                document.getElementById('soldoutBanner').style.display = 'none';
+                            });
                     });
                     scheduleList.appendChild(btn);
-                });
+                }); // 👈 기존 코드에서 누락되어 문법 에러를 유발했던 forEach 닫는 파트입니다!
             })
             .catch(err => {
-                //console.error("회차 로드 에러:", err);
+                console.error("회차 로드 에러:", err);
                 scheduleList.innerHTML = "<p style='font-size:0.85rem; color:#ef4444;'>회차 정보를 불러오는데 실패했습니다.</p>";
             });
     }
@@ -1779,51 +1805,73 @@
                 fetchNewCaptcha();
             }
         } catch (err) {
-            //console.error("검증 통신 실패:", err);
+            console.error("검증 통신 실패:", err);
             alert("서버 연결에 실패했습니다.");
         }
     }
     // ================== 실시간 매진 알림 웹소켓 STOMP 로직 ====================
     let stompClient = null;
+    let currentSubscription = null;
 
     function connectWebSocket() {
-        // 백엔드에서 생성해둔 웹소켓 주소 바인딩
         const socket = new SockJS('/ws-seats');
         stompClient = Stomp.over(socket);
 
-        // 콘솔에 디버그 로그가 과하게 찍히는 것을 방지
-        stompClient.debug = null;
+        stompClient.debug = function(str) {
+            console.log("📡 [웹소켓 기본통신 로그]: " + str);
+        };
+
+        stompClient.heartbeat.outgoing = 10000;
+        stompClient.heartbeat.incoming = 10000;
 
         stompClient.connect({}, function (frame) {
-            console.log(' [ClearTicket AI] 실시간 예매 채널 연결 완료');
+            console.log('✅ [ClearTicket AI] 웹소켓 서버 연결 완료 (회차 선택 대기 중)');
 
-            // 현재 유저가 머물고 있는 공연 ID 기반으로 토픽 구독 채널 뚫기
-            const destination = '/topic/soldout/' + performanceId;
-
-            stompClient.subscribe(destination, function (response) {
-                const data = JSON.parse(response.body);
-
-                if (data.status === 'SOLD_OUT') {
-                    // 서버 장부에서 넘겨받은 텍스트 요소를 전광판 레이아웃에 직접 매칭
-                    document.getElementById('soldoutSectionName').innerText = data.section + " 매진";
-                    document.getElementById('soldoutMessage').innerText = data.notice;
-
-                    // 기본 display:none 상태였던 전광판 배너 활성화
-                    const banner = document.getElementById('soldoutBanner');
-                    if (banner) banner.style.display = 'block';
-                }
-            });
+            // 🟢 페이지 처음 켰을 때 회차가 이미 선택되어 있다면 즉시 구독 프로세스 실행
+            if (selectedScheduleId) {
+                subscribeToSchedule(selectedScheduleId);
+            }
         }, function (error) {
-            console.warn(' 웹소켓 통신 연결 장애 발생. 5초 뒤 복구를 시도합니다.', error);
-            setTimeout(connectWebSocket, 5000); // 자동 단선 방지 및 재접속 트리거
+            console.warn('❌ 웹소켓 통신 연결 장애 발생. 5초 뒤 복구를 시도합니다.', error);
+            setTimeout(connectWebSocket, 5000);
         });
     }
 
-    // 기존 타임리프 DOM 로드가 완전히 완료되는 시점에 웹소켓 통신 가동
+    function subscribeToSchedule(scheduleId) {
+        if (!stompClient || !stompClient.connected) return;
+
+        if (currentSubscription) {
+            currentSubscription.unsubscribe();
+            console.log('🔄 이전 회차 구독 해제 완료');
+        }
+
+        const destination = '/topic/soldout/' + scheduleId;
+        console.log('📌 동적 구독 채널 주소 확정:', destination);
+
+        currentSubscription = stompClient.subscribe(destination, function (response) {
+            console.log("🚨 [신호 수신] 서버로부터 웹소켓 데이터를 받았습니다!!", response.body);
+            const data = JSON.parse(response.body);
+
+            if (data.status === 'SOLD_OUT') {
+                const banner = document.getElementById('soldoutBanner');
+                if (banner) {
+                    // 복잡한 includes 조건문 싹 제거하고 깔끔하게 통일
+                    const rawSection = data.section.replace(" 매진", ""); // 혹시 백엔드에서 붙여 보냈을 경우를 대비한 방어 코드
+
+                    document.getElementById('soldoutSectionName').innerText = rawSection + " 매진";
+                    document.getElementById('soldoutMessage').innerText = data.notice;
+                    banner.style.display = 'block';
+                    console.log("💛 [실시간 반영 완료] 전광판 디스플레이를 block으로 변경했습니다.");
+                }
+            }
+        });
+    }
+
+    // 기존 타임리프 DOM 로드 완료 시 웹소켓 가동
     window.addEventListener("load", function() {
         connectWebSocket();
     });
-    // [보안 문자 모달창 닫기 버튼 ]
+
     function closeCaptchaModal() {
         document.getElementById("captcha-modal").style.display = "none";
     }

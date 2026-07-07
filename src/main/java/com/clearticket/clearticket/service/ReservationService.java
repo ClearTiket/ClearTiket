@@ -8,6 +8,7 @@ import com.clearticket.clearticket.model.dto.seat.SeatRequest;
 import com.clearticket.clearticket.model.entity.*;
 import com.clearticket.clearticket.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,8 @@ public class ReservationService {
     private final ScheduleRepository scheduleRepository;
     private final ReservationSeatsRepository reservationSeatsRepository;
     private final BookingSeatsRepository bookingSeatsRepository;
+    private final SeatRedisService seatRedisService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 신규 티켓 예매 내역 생성 및 DB저장
@@ -67,9 +70,10 @@ public class ReservationService {
                 reservationSeatsRepository.save(reservationSeat);
 
 
-                // 💡 [로그 1] 조회하려는 좌석 조건이 뭔지 먼저 출력
+                // 조회하려는 좌석 조건이 뭔지 먼저 출력
                 System.out.println("▶ [조회 조건] 스케줄: " + schedule.getScheduleId() + ", 구역: " + seatDto.getSectionName() + ", 열: " + seatDto.getRowNum() + ", 번호: " + seatDto.getSeatNum());
-                // 🟢 레포지토리가 제공하는 Optional 타입에 맞춰서 깔끔하게 원상복구합니다!
+
+                // 레포지토리가 제공하는 Optional 타입에 맞춰서 깔끔하게 원상복구
                 bookingSeatsRepository.searchByScheduleAndSeat(
                         schedule.getScheduleId(),
                         seatDto.getSectionName(),
@@ -81,14 +85,81 @@ public class ReservationService {
                     bookingSeatsRepository.save(bookingSeat);
                 });
 
+                // 실시간 매진 알림 및 AI 연동 반영]
+                Long performanceId = schedule.getPerformance().getPerformanceId();
+                boolean isSoldOut = true; // 로컬 테스트용 고정값
+
+                if (isSoldOut) {
+                    // 1. 레디스에 매진 기록 (스케줄 ID 기반으로 기록하여 AI 챗봇이 정확히 인지하도록 매핑)
+                    seatRedisService.markSectionAsSoldOut(schedule.getScheduleId(), seatDto.getSectionName());
+
+                    // 2. 웹소켓 전송용 데이터 조립
+                    Map<String, Object> soldOutNotice = new HashMap<>();
+                    soldOutNotice.put("status", "SOLD_OUT");
+                    soldOutNotice.put("section", seatDto.getSectionName());
+                    soldOutNotice.put("notice", seatDto.getSectionName() + "의 모든 좌석이 매진되었습니다. 다른 구역을 선택해 주세요!");
+
+                    // 3. 브라우저 실시간 전광판으로 신호 쏘기 (★ 핵심: 스케줄 ID 기반 채널로 동적 발송)
+                    messagingTemplate.convertAndSend("/topic/soldout/" + schedule.getScheduleId(), (Object) soldOutNotice);
+                }
             }
-
-
         }
 
         return toResponseDto(savedReservation);
     }
 
+    /**
+     * 특정 회차(스케줄)의 구역별 매진 여부를 조회하는 데이터 기반 API 로직
+     */
+    public Map<String, Object> checkSectionSoldOutStatus(Long scheduleId) {
+        Map<String, Object> result = new HashMap<>();
+
+        List<BookingSeat> allSeats = bookingSeatsRepository.findByScheduleScheduleId(scheduleId);
+
+        // 1. 구역별로 좌석들을 그룹화
+        Map<String, List<BookingSeat>> sectionsMap = new HashMap<>();
+        for (BookingSeat seat : allSeats) {
+            String section = seat.getSectionName();
+            sectionsMap.computeIfAbsent(section, k -> new ArrayList<>()).add(seat);
+        }
+
+        // 매진된 구역명들을 담을 리스트 생성
+        List<String> soldOutSections = new ArrayList<>();
+
+        // 2. 모든 구역을 멈추지 않고 끝까지 돌면서 매진 여부 체크
+        for (Map.Entry<String, List<BookingSeat>> entry : sectionsMap.entrySet()) {
+            String sectionName = entry.getKey();
+            List<BookingSeat> seatsInSection = entry.getValue();
+
+            boolean isSectionSoldOut = true;
+            for (BookingSeat seat : seatsInSection) {
+                if (seat.getStatus() != BookingStatus.SELECTED) {
+                    isSectionSoldOut = false;
+                    break;
+                }
+            }
+
+            // 매진된 구역이라면 리스트에 차곡차곡 추가 (바로 return하지 않음!)
+            if (isSectionSoldOut && !seatsInSection.isEmpty()) {
+                soldOutSections.add(sectionName);
+            }
+        }
+
+        // 3. 매진된 구역이 하나 이상 존재할 경우 동적 문자열 조립
+        if (!soldOutSections.isEmpty()) {
+            Collections.sort(soldOutSections);
+
+            String combinedSections = String.join(", ", soldOutSections);
+
+            result.put("status", "SOLD_OUT");
+            result.put("section", combinedSections);
+            result.put("notice", combinedSections + "의 모든 좌석이 매진되었습니다. 다른 구역을 선택해 주세요!");
+            return result;
+        }
+
+        result.put("status", "AVAILABLE");
+        return result;
+    }
 
     /**
      * 예약 고유 ID로 단건 예약 내역 상세 조회
