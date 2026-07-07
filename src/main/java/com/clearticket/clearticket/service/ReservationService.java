@@ -87,7 +87,41 @@ public class ReservationService {
 
                 // 실시간 매진 알림 및 AI 연동 반영]
                 Long performanceId = schedule.getPerformance().getPerformanceId();
-                boolean isSoldOut = true; // 로컬 테스트용 고정값
+//                boolean isSoldOut = true; // 로컬 테스트용 고정값
+
+
+
+
+
+                List<BookingSeat> seatsInSec = bookingSeatsRepository.findByScheduleScheduleId(schedule.getScheduleId());
+
+                // 예시: 해당 구역의 총 좌석 수 기준 (실제 설정된 구역별 총 좌석수 숫자를 넣으시면 됩니다)
+                long maxSeatCount = 100;
+
+                long selectedInSection = 0;
+
+                for (BookingSeat seat : seatsInSec) {
+                    if (seat.getSectionName().equals(seatDto.getSectionName())) {
+                        // PENDING(결제진행중)이든 SELECTED(선택완료)든, 이미 자리가 임점된 개수를 셉니다.
+                        if (seat.getStatus() == BookingStatus.SELECTED || seat.getStatus() == BookingStatus.PENDING) {
+                            selectedInSection++;
+                        }
+                    }
+                }
+
+// [핵심] 현재 선점된 좌석 수가 이 구역의 '총 좌석 수'와 정확히 일치할 때만 진짜 매진!
+                boolean isSoldOut = (selectedInSection == maxSeatCount);
+
+
+
+
+
+
+
+
+
+
+
 
                 if (isSoldOut) {
                     // 1. 레디스에 매진 기록 (스케줄 ID 기반으로 기록하여 AI 챗봇이 정확히 인지하도록 매핑)
