@@ -201,6 +201,14 @@
         color: #555;
         line-height: 1.6;
     }
+
+    .no-preference {
+        margin: auto;
+        text-align: center;
+        color: #888;
+        font-size: 15px;
+        line-height: 2;
+    }
 </style>
 
 <body>
@@ -225,6 +233,9 @@
             <h3 class="card-title-fixed">예매 가능 공연</h3>
             <div class="card-slot-space">
                 <div class="card-slot">
+                    <div class="no-performances">
+                        <p>예매 가능한 공연이 없습니다.</p>
+                    </div>
 <!--                    <div class="info-sub-card">-->
 <!--                        <div class="card-image-place">-->
 <!--                            <img src="" alt="...">-->
@@ -277,6 +288,8 @@
             console.log(resultJson);
 
             const cardSlot = document.querySelector(".card-slot");
+
+            cardSlot.replaceChildren();
             resultJson.forEach(item => {
                 const infoSubCard = document.createElement("a");
                 infoSubCard.classList.add("info-sub-card");
@@ -299,7 +312,7 @@
 
                 const desc = document.createElement("p");
                 desc.classList.add("card-desc");
-                desc.textContent = "description";
+                desc.textContent = item.startDate + " ~ " + item.endDate;//"description";
 
                 textArea.appendChild(title);
                 textArea.appendChild(desc);
