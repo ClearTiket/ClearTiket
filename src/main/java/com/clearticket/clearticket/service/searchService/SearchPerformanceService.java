@@ -106,6 +106,7 @@ public class SearchPerformanceService {
                                 .collect(Collectors.toList()))))
         )));
 
+
         // 오늘과 가까운 날짜일수록 가중치 부여
         String todayStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
 
@@ -126,17 +127,23 @@ public class SearchPerformanceService {
 
         shouldQueries.add(dateBoostQuery);
 
-        Query endedFilterQuery = Query.of(q -> q.bool(
-                b -> b.filter(
-                        f -> f.range(
-                                r -> r.date(
-                                        d -> d.field("end_date").gte(todayStr)
-                                )
-                        )
-                )
-        ));
+        // 시작/종료 날짜 필터링
+        // 필터 날짜의 범위에 공연 시작-종료 범위가 겹쳐져 있는(걸치는) 경우 검색
+        List<Query> dateFilters = new ArrayList<>();
 
-        mustQueries.add(endedFilterQuery);
+        String startDateStr = filterDto.getStartDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String endDateStr = filterDto.getEndDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        // 공연 시작 날짜 <= 필터 종료 날짜
+        dateFilters.add(Query.of(q -> q.range(r -> r.date(d ->
+                        d.field("start_date").lte(endDateStr)))));
+        // 공연 종료 날짜 >= 필터 시작 날짜
+        dateFilters.add(Query.of(q -> q.range(r -> r.date(d ->
+                        d.field("end_date").gte(startDateStr)))));
+
+        Query dateFilterQuery = Query.of(q -> q.bool(b -> b.filter(dateFilters)));
+
+        mustQueries.add(dateFilterQuery);
 
         // 최종 bool 쿼리 생성
         Query finalBoolQuery = Query.of(
