@@ -294,6 +294,26 @@
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
+
+    /* 취향 미설정 안내 영역 */
+    .no-preference {
+        margin: auto;
+        text-align: center;
+        color: #888;
+        font-size: 15px;
+        line-height: 2;
+    }
+
+    .no-preference a {
+        color: #4a7dff;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .no-preference a:hover {
+        text-decoration: underline;
+    }
+
 </style>
 
 <body>
@@ -414,7 +434,12 @@
         <h2>추천 공연</h2>
 
         <div class="card-slot-container">
-
+            <div class="no-preference">
+<!--                <p>취향 설정이 되어있지 않아 추천 항목을 표시할 수 없습니다.</p>-->
+                <p>로그인하여 내 취향에 맞는 공연을 찾아보세요.</p>
+<!--                <a href="/preference">내 취향 설정하러 가기&gt;</a>-->
+                <a href="/login">로그인&gt;</a>
+            </div>
         </div>
     </section>
 
@@ -480,7 +505,7 @@
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
 </body>
 
-<script>
+<script th:inline="javascript">
     const loginUser = /*[[${loginUser}]]*/ {};
 
     fillSwiper();
@@ -633,18 +658,25 @@
         await fillCardSlot("ranking", await getRankingData("콘서트"))
     })();
     (async () => {
-        if (Object.keys(loginUser).length === 0) {
-            document.querySelector(".recommending").style.display = "none";
-        } else {
+        if (loginUser) {
             const recommendations = await getRecommendationsData(loginUser.id);
-            const adaptedData = [];
-            for (let i = 0; i < recommendations.length; i++) {
-                adaptedData.push({
-                    "performance": recommendations[i]
-                });
-            }
+            if (recommendations.length === 0) {
+                const preferenceP = document.querySelector(".no-preference p");
+                preferenceP.textContent = "취향 설정이 되어있지 않아 추천 항목을 표시할 수 없습니다.";
 
-            await fillCardSlot("recommending", adaptedData);
+                const preferenceA = document.querySelector(".no-preference a");
+                preferenceA.href = "/mypage/survey";
+                preferenceA.textContent = "내 취향 설정하러 가기&gt;"
+            } else {
+                const adaptedData = [];
+                for (let i = 0; i < recommendations.length; i++) {
+                    adaptedData.push({
+                        "performance": recommendations[i]
+                    });
+                }
+
+                await fillCardSlot("recommending", adaptedData);
+            }
         }
     })();
     (async () => {
