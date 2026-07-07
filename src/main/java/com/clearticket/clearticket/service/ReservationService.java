@@ -69,11 +69,8 @@ public class ReservationService {
 
                 reservationSeatsRepository.save(reservationSeat);
 
-
-                // 조회하려는 좌석 조건이 뭔지 먼저 출력
                 System.out.println("▶ [조회 조건] 스케줄: " + schedule.getScheduleId() + ", 구역: " + seatDto.getSectionName() + ", 열: " + seatDto.getRowNum() + ", 번호: " + seatDto.getSeatNum());
 
-                // 레포지토리가 제공하는 Optional 타입에 맞춰서 깔끔하게 원상복구
                 bookingSeatsRepository.searchByScheduleAndSeat(
                         schedule.getScheduleId(),
                         seatDto.getSectionName(),
@@ -85,57 +82,21 @@ public class ReservationService {
                     bookingSeatsRepository.save(bookingSeat);
                 });
 
-                // 실시간 매진 알림 및 AI 연동 반영]
+                // 실시간 매진 알림 및 AI 연동 반영
                 Long performanceId = schedule.getPerformance().getPerformanceId();
 //                boolean isSoldOut = true; // 로컬 테스트용 고정값
+            }
 
+            Map<String, Object> soldOutStatus = checkSectionSoldOutStatus(schedule.getScheduleId());
 
+            if (soldOutStatus != null && "SOLD_OUT".equals(soldOutStatus.get("status"))) {
+                String targetSection = (String) soldOutStatus.get("section");
 
+                // 1. 레디스에 매진 기록 (스케줄 ID 기반으로 기록하여 AI 챗봇이 정확히 인지하도록 매핑)
+                seatRedisService.markSectionAsSoldOut(schedule.getScheduleId(), targetSection);
 
-
-                List<BookingSeat> seatsInSec = bookingSeatsRepository.findByScheduleScheduleId(schedule.getScheduleId());
-
-                // 예시: 해당 구역의 총 좌석 수 기준 (실제 설정된 구역별 총 좌석수 숫자를 넣으시면 됩니다)
-                long maxSeatCount = 100;
-
-                long selectedInSection = 0;
-
-                for (BookingSeat seat : seatsInSec) {
-                    if (seat.getSectionName().equals(seatDto.getSectionName())) {
-                        // PENDING(결제진행중)이든 SELECTED(선택완료)든, 이미 자리가 임점된 개수를 셉니다.
-                        if (seat.getStatus() == BookingStatus.SELECTED || seat.getStatus() == BookingStatus.PENDING) {
-                            selectedInSection++;
-                        }
-                    }
-                }
-
-// [핵심] 현재 선점된 좌석 수가 이 구역의 '총 좌석 수'와 정확히 일치할 때만 진짜 매진!
-                boolean isSoldOut = (selectedInSection == maxSeatCount);
-
-
-
-
-
-
-
-
-
-
-
-
-                if (isSoldOut) {
-                    // 1. 레디스에 매진 기록 (스케줄 ID 기반으로 기록하여 AI 챗봇이 정확히 인지하도록 매핑)
-                    seatRedisService.markSectionAsSoldOut(schedule.getScheduleId(), seatDto.getSectionName());
-
-                    // 2. 웹소켓 전송용 데이터 조립
-                    Map<String, Object> soldOutNotice = new HashMap<>();
-                    soldOutNotice.put("status", "SOLD_OUT");
-                    soldOutNotice.put("section", seatDto.getSectionName());
-                    soldOutNotice.put("notice", seatDto.getSectionName() + "의 모든 좌석이 매진되었습니다. 다른 구역을 선택해 주세요!");
-
-                    // 3. 브라우저 실시간 전광판으로 신호 쏘기 (★ 핵심: 스케줄 ID 기반 채널로 동적 발송)
-                    messagingTemplate.convertAndSend("/topic/soldout/" + schedule.getScheduleId(), (Object) soldOutNotice);
-                }
+                // 3. 브라우저 실시간 전광판으로 신호 쏘기 (★ 핵심: 스케줄 ID 기반 채널로 동적 발송)
+                messagingTemplate.convertAndSend("/topic/soldout/" + schedule.getScheduleId(), (Object) soldOutStatus);
             }
         }
 
