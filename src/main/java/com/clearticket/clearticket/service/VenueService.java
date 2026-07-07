@@ -3,13 +3,11 @@ package com.clearticket.clearticket.service;
 import com.clearticket.clearticket.model.dto.performance.*;
 import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.entity.Review;
-import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.entity.PerformanceStatus;
 import com.clearticket.clearticket.model.entity.Venue;
 import com.clearticket.clearticket.repository.PerformanceRepository;
 import com.clearticket.clearticket.repository.ReviewRepository;
 import com.clearticket.clearticket.repository.ScheduleRepository;
-import com.clearticket.clearticket.repository.PerformanceRepository;
 import com.clearticket.clearticket.repository.VenueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -24,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor

@@ -19,5 +19,4 @@ public class VenueInfoResponse {
     private String genre;
     private String extractedText;
     private String summaryText;
-
 }
