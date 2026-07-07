@@ -1,9 +1,11 @@
 package com.clearticket.clearticket.controller;
 
+import com.clearticket.clearticket.model.document.VenueDocument;
 import com.clearticket.clearticket.model.dto.performance.*;
 import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.repository.PerformanceRepository;
 import com.clearticket.clearticket.service.VenueService;
+import com.clearticket.clearticket.service.searchService.SearchVenueService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;

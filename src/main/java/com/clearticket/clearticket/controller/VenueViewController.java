@@ -1,13 +1,14 @@
 package com.clearticket.clearticket.controller;
 
 import com.clearticket.clearticket.model.UserSession;
-import com.clearticket.clearticket.model.dto.performance.*;
 import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.entity.Schedule;
 import com.clearticket.clearticket.model.entity.Venue;
+import com.clearticket.clearticket.model.vo.VenueSearchResultVO;
 import com.clearticket.clearticket.repository.PerformanceRepository;
 import com.clearticket.clearticket.repository.ScheduleRepository;
 import com.clearticket.clearticket.service.VenueService;
+import com.clearticket.clearticket.service.searchService.SearchVenueService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -27,6 +28,7 @@ public class VenueViewController {
     private final PerformanceRepository performanceRepository;
     private final ScheduleRepository scheduleRepository;
     private final VenueService venueService;
+    final SearchVenueService searchVenueService;
 
     @GetMapping("/{id}/detail") // mt10id 대신 정수형 PK(id) 기반으로 변경
     public String showVenueDetail(@PathVariable("id") Long id, HttpSession session, Model model) {
@@ -90,18 +92,25 @@ public class VenueViewController {
     }
 
     @GetMapping("/list")
-    public String venueListView(String region, Integer page, Model model) {
+    public String venueListView(String keyword, String region, Integer page, Model model) {
 
-        Page<Venue> venueList;
+        if (keyword == null || keyword.isEmpty()){
+            Page<Venue> venueList;
 
-        if (region == null || region.isEmpty()) {
-            venueList = venueService.findAll(page);
+            if (region == null || region.isEmpty()) {
+                venueList = venueService.findAll(page);
+            } else {
+                venueList = venueService.findByRegion(region, page);
+            }
+
+            model.addAttribute("venueList", venueList.getContent());
+            model.addAttribute("totalPage", venueList.getTotalPages());
         } else {
-            venueList = venueService.findByRegion(region, page);
-        }
+            VenueSearchResultVO venues = searchVenueService.searchVenues(keyword, region, page);
 
-        model.addAttribute("venueList", venueList.getContent());
-        model.addAttribute("totalPage", venueList.getTotalPages());
+            model.addAttribute("venueList", venues.getVenueDocumentList());
+            model.addAttribute("totalPage", venues.getTotalPages());
+        }
         return "venues/venue-list";
     }
 

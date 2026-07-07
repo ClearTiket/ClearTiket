@@ -6,6 +6,7 @@ import com.clearticket.clearticket.model.document.PerformanceDocument;
 import com.clearticket.clearticket.model.dto.performance.AvailableDateResponse;
 import com.clearticket.clearticket.model.dto.performance.ScheduleResponse;
 import com.clearticket.clearticket.model.entity.Performance;
+import com.clearticket.clearticket.model.entity.PerformanceStatus;
 import com.clearticket.clearticket.model.entity.UserTag;
 import com.clearticket.clearticket.repository.PerformanceRepository;
 import com.clearticket.clearticket.repository.ScheduleRepository;
@@ -13,6 +14,7 @@ import com.clearticket.clearticket.repository.UserTagRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -71,6 +73,10 @@ public class PerformanceService {
     }
     public Page<Performance> findAll(int page) {
         return findAll(page, defaultPageSize);
+    }
+
+    public List<Performance> findAllByStatus(PerformanceStatus status, int limit) {
+        return performanceRepository.findAllByStatusIs(status, Limit.of(limit));
     }
 
     public List<AvailableDateResponse> calculateAvailableDates(String kopisId) {
