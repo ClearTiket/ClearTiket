@@ -44,9 +44,7 @@ public class ReviewApiController {
             @RequestParam(value = "type", defaultValue = "REVIEW") String type,
             @RequestParam(value = "sort", defaultValue = "latest") String sort) {
 
-        // 변환기: 문자열 KOPIS ID로 팀원 테이블에서 진짜 Long PK를 알아옵니다.
         Long realPerformanceId = performanceId;
-
 
         List<Review> reviews = reviewService.getReviewList(realPerformanceId, type, sort);
         long totalCount = reviewService.getReviewCount(realPerformanceId, type);

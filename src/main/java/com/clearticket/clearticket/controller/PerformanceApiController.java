@@ -2,6 +2,7 @@ package com.clearticket.clearticket.controller;
 
 import com.clearticket.clearticket.model.document.PerformanceDocument;
 import com.clearticket.clearticket.model.entity.Performance;
+import com.clearticket.clearticket.model.entity.PerformanceStatus;
 import com.clearticket.clearticket.model.entity.Ranking;
 import com.clearticket.clearticket.service.PerformanceService;
 import com.clearticket.clearticket.service.RankingService;
@@ -49,5 +50,11 @@ public class PerformanceApiController {
     public ResponseEntity<List<PerformanceDocument>> getRecommendedPerformance(@RequestParam Long userId) {
         List<PerformanceDocument> recommended = performanceService.getRecommendedPerformances(userId);
         return ResponseEntity.ok(recommended);
+    }
+
+    @GetMapping("/preparing")
+    public ResponseEntity<List<Performance>> getPreparingPerformance() {
+        List<Performance> performances = performanceService.findAllByStatus(PerformanceStatus.PREPARING, 5);
+        return ResponseEntity.ok(performances);
     }
 }
