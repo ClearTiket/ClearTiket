@@ -92,7 +92,7 @@ public class SearchPerformanceService {
                         .field("status")
                         .terms(TermsQueryField.of(v -> v.value(filterDto.getStatuses()
                                 .stream()
-                                .map(FieldValue::of)
+                                .map(status -> FieldValue.of(status.name()))
                                 .collect(Collectors.toList()))))
         )));
 
@@ -112,11 +112,12 @@ public class SearchPerformanceService {
         // "yyyy-MM-dd" 형식(strict_date_optional_time)이므로, 쿼리도 반드시 같은 포맷을 써야 한다.
         // 기존 "yyyyMMdd" 포맷(예: 20260708)은 ES 기본 date 포맷과 맞지 않아
         // 모든 샤드에서 날짜 파싱에 실패해 500(all shards failed) 에러가 발생했었음.
-        String todayStr = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+//        String todayStr = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String todayStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
         // pivot()은 람다가 아니라 완성된 Time 객체를 직접 받음
-        Time pivotTime = Time.of(t -> t.time(7, TimeUnit.Days));
-
+//        Time pivotTime = Time.of(t -> t.time(7, TimeUnit.Days));
+        Time pivotTime = Time.of(t -> t.time("7d"));
         // boost()는 .date(...) 바깥이 아니라 d 람다 안에서 설정해야 함
         Query dateBoostQuery = Query.of(q -> q
                 .distanceFeature(df -> df
@@ -135,8 +136,10 @@ public class SearchPerformanceService {
         // 필터 날짜의 범위에 공연 시작-종료 범위가 겹쳐져 있는(걸치는) 경우 검색
         List<Query> dateFilters = new ArrayList<>();
 
-        String startDateStr = filterDto.getStartDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
-        String endDateStr = filterDto.getEndDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String startDateStr = filterDto.getStartDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String endDateStr = filterDto.getEndDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+//        String startDateStr = filterDto.getStartDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+//        String endDateStr = filterDto.getEndDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
 
         // 공연 시작 날짜 <= 필터 종료 날짜
         dateFilters.add(Query.of(q -> q.range(r -> r.date(d ->

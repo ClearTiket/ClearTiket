@@ -78,8 +78,8 @@ public class AutocorrectSearchService {
         log.info("🚀 [통합 동기화] PostgreSQL (performances + venues) -> 엘라스틱서치 복사를 시작합니다...");
 
         String sql = "SELECT p.performance_id, p.title, p.genre, p.region, p.status, " +
-                "to_char(p.start_date, 'YYYYMMDD') as start_date, " +
-                "to_char(p.end_date, 'YYYYMMDD') as end_date, " +
+                "to_char(p.start_date, 'YYYY-MM-DD') as start_date, " +
+                "to_char(p.end_date, 'YYYY-MM-DD') as end_date, " +
                 "p.castings, p.poster_url, p.extracted_text, " +
                 "v.name as venue_name, " +
                 "COALESCE(" + // 분위기 태그 배열 join
