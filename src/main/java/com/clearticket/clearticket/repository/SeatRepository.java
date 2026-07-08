@@ -20,4 +20,11 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     List<String> findDistinctByPerformancePerformanceId(@Param("performanceId") Long performanceId);
 
     List<Seat> findByPerformancePerformanceId(Long performanceId);
+
+    /**
+     * 특정 공연의 특정 구역에 존재하는 전체 좌석 수를 조회합니다.
+     * 매진 여부 판단 시, 예약 이력이 있는 좌석 수(BookingSeat)만으로는 부족하고
+     * 이 값(구역 내 실제 총 좌석 수)과 비교해야 정확한 매진 판정이 가능합니다.
+     */
+    long countByPerformancePerformanceIdAndSectionName(Long performanceId, String sectionName);
 }

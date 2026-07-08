@@ -32,6 +32,7 @@ import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -233,6 +234,12 @@ public class PerformanceService {
     public List<PerformanceDocument> getRecommendedPerformances(Long userId) {
         List<UserTag> tags = userTagRepository.findAllByUserUserId(userId);
 
+        // 취향 태그를 아예 설정하지 않은 회원 → 프론트에서 "취향 설정 안내" 문구를 보여주므로
+        // 굳이 검색까지 하지 않고 바로 빈 리스트를 돌려줍니다.
+        if (tags.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         List<String> userTagsGenre = new ArrayList<>();
         List<Integer> userTagsVibe = new ArrayList<>();
         List<Integer> userTagsWith = new ArrayList<>();
@@ -260,17 +267,24 @@ public class PerformanceService {
                 .map(id -> Query.of(q -> q.term(t -> t.field("tags_with").value(id).boost(1.0f))))
                 .collect(Collectors.toList());
 
+        // ⚠️ 기존 버그: 장르 태그가 하나도 없으면(genreQueries가 비어있으면) must + minimumShouldMatch("1")
+        // 조건이 "0개 중 1개는 반드시 일치해야 함"이 되어 절대 만족될 수 없었고,
+        // 그 결과 로그인해서 취향(분위기/동행)만 설정한 회원은 추천 목록이 항상 빈 배열로만 나왔습니다.
+        // → 장르 태그가 있을 때만 genre must 절을 추가하도록 수정.
         Query finalQuery = Query.of(q -> q
-                .bool(b -> b
-                        .must(m -> m
+                .bool(b -> {
+                    if (!genreQueries.isEmpty()) {
+                        b.must(m -> m
                                 .bool(sb -> sb
                                         .should(genreQueries)
                                         .minimumShouldMatch("1")
                                 )
-                        )
-                        .should(vibeQueries)
-                        .should(withQueries)
-                )
+                        );
+                    }
+                    b.should(vibeQueries);
+                    b.should(withQueries);
+                    return b;
+                })
         );
 
         NativeQuery nativeQuery = NativeQuery.builder()

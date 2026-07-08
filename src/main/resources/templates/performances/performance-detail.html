@@ -35,7 +35,10 @@
             background-color: #f8fafc;
             margin: 0;
             padding: 0;
-            font-family: 'Pretendard', -apple-system, sans-serif;
+            /* ⚠️ 이전에는 'Pretendard'로 이 페이지만 다른 폰트를 쓰고 있어서
+               기대평/후기 내용(#reviewContent는 font-family: inherit)을 포함해
+               페이지 전체가 클리어티켓 공통 폰트(Noto Sans KR)와 어긋나 보였습니다. */
+            font-family: 'Noto Sans KR', -apple-system, sans-serif;
             color: #111827;
         }
 
@@ -198,6 +201,18 @@
             border-radius: 50%;
             background-color: #e5e7eb;
             margin: 0 auto 8px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .ct-actor-circle-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
         .ct-actor-name {
             font-size: 0.85rem;
@@ -563,7 +578,16 @@
         .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:flex; justify-content:center; align-items:center; z-index:9999; }
         .modal-content { background:#fff; padding:30px; border-radius:12px; width:400px; text-align:center; }
         .captcha-box { background:#e5e5e5; padding:20px; margin:20px 0; display:flex; justify-content:center; align-items:center; gap:10px; }
-        .captcha-text { font-size:30px; font-weight:bold; letter-spacing:8px; color:#333; }
+        .captcha-text {
+            font-size:30px; font-weight:bold; letter-spacing:8px; color:#333;
+            /* 보안문자를 드래그로 블록 선택해서 복사하거나 우클릭으로 긁어가지 못하도록 방지 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            cursor: default;
+        }
         .refresh-btn { cursor:pointer; border:none; background:none; font-size:20px; }
         #captcha-input { width:100%; padding:15px; box-sizing:border-box; margin-bottom:20px; text-align:center; }
         .submit-btn { width:100%; padding:15px; background:#ccc; border:none; border-radius:8px; color:#fff; cursor:pointer; }
@@ -649,7 +673,7 @@
 
             <div class="ct-tab-menu-bar">
                 <button type="button" class="ct-tab-btn active" onclick="switchTab(event, 'tab-info')">공연정보</button>
-<!--                <button id="tab-btn-casting" type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-casting')">캐스팅정보</button>-->
+                <button id="tab-btn-casting" type="button" class="ct-tab-btn" style="display:none;" onclick="switchTab(event, 'tab-casting')">캐스팅정보</button>
                 <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'tab-sales')">판매정보</button>
                 <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'ct-tab-reviews')">관람후기</button>
                 <button type="button" class="ct-tab-btn" onclick="switchTab(event, 'ct-tab-expectations')">기대평</button>
@@ -659,7 +683,7 @@
                 <div id="casting-section-main" class="ct-section-block" style="display: none;">
                     <div class="ct-section-header">
                         <h2>캐스팅</h2>
-                        <button type="button" class="ct-mini-btn" onclick="document.querySelectorAll('.ct-tab-btn')[1].click();">캐스팅 일정조회</button>
+                        <button type="button" class="ct-mini-btn" onclick="document.getElementById('tab-btn-casting').click();">캐스팅 일정조회</button>
                     </div>
                     <div id="casting-list" class="ct-actor-flex-wrap">
                         <p style="color: #9ca3af;">출연진 정보를 불러오는 중...</p>
@@ -1017,6 +1041,11 @@
     /*<![CDATA[*/
     const currentUserId = /*[[${sessionUserId}]]*/ null;
     /*]]>*/
+    // ⚠️ 기존에는 "sessionUserId"라는 존재하지 않는 hidden input을 document.getElementById로 찾으려 했고,
+    // 항상 실패해서 로그인 여부와 무관하게 userId가 무조건 1로 하드코딩되어 버렸습니다.
+    // (그 결과 기대평/관람후기 수정·삭제가 실제 로그인한 회원이 아닌 "1번 회원" 기준으로 동작했습니다.)
+    // 아래처럼 실제 세션의 로그인 사용자 ID를 window 전역에 올바르게 노출시켜 사용합니다.
+    window.currentUserId = currentUserId;
 
     // [전역 함수로 정의]
     function loadVenuePageData(id) {
@@ -1231,11 +1260,29 @@
 
                 if (castingBox) {
                     castingBox.innerHTML = "";
+                    // 이름에서 안정적인(항상 같은) 색상을 뽑아내는 간단한 해시 — 매번 랜덤이면 새로고침마다 색이 바뀌어 어색해짐
+                    const avatarColors = ["#4B6EF5", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#06B6D4", "#EC4899"];
+                    function colorForName(name) {
+                        let hash = 0;
+                        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+                        return avatarColors[Math.abs(hash) % avatarColors.length];
+                    }
+
                     castingList.forEach(casting => {
                         const actorCard = document.createElement("div");
                         actorCard.classList.add("ct-actor-card");
+
+                        // ⚠️ 현재 DB(Performance.castings)에는 배우 이름만 콤마로 저장되어 있고
+                        // 실제 프로필 사진 데이터가 전혀 없습니다. photoUrl이 나중에 추가되면
+                        // 자동으로 사진을 쓰고, 없으면 이름 첫 글자로 된 아바타를 보여줍니다.
+                        const initial = (casting.actorName || "?").trim().charAt(0);
+                        const avatarInner = casting.photoUrl
+                            ? `<img src="${casting.photoUrl}" alt="${casting.actorName}">`
+                            : initial;
+                        const avatarStyle = casting.photoUrl ? "" : `background-color:${colorForName(casting.actorName || "")};`;
+
                         actorCard.innerHTML = `
-                        <div class="ct-actor-circle-img"></div>
+                        <div class="ct-actor-circle-img" style="${avatarStyle}">${avatarInner}</div>
                         <div class="ct-actor-name">${casting.actorName}</div>
                         <div style="font-size:0.75rem; color:#9ca3af;">출연자</div>
                     `;
@@ -1334,9 +1381,12 @@
                         const hasRating = review.rating !== null && review.rating !== undefined;
                         const stars = hasRating ? "★".repeat(review.rating) + "☆".repeat(5 - review.rating) : "";
 
-                        const currentUserId = window.currentUserId || 1;
+                        const loggedInUserId = window.currentUserId;
                         const writerId = review.userId || (review.user ? review.user.userId : null);
-                        const isMyReview = (writerId !== null && currentUserId === writerId);
+                        // 문자열/숫자 타입이 섞여 들어와도 안전하게 비교되도록 String으로 통일
+                        const isMyReview = (loggedInUserId !== null && loggedInUserId !== undefined &&
+                            writerId !== null && writerId !== undefined &&
+                            String(loggedInUserId) === String(writerId));
 
                         card.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -1502,7 +1552,7 @@
         const title = document.getElementById("reviewTitle").value.trim();
         const content = document.getElementById("reviewContent").value.trim();
         const type = document.getElementById("modalType").value;
-        const userId = document.getElementById("sessionUserId")?.value || 1;
+        const userId = window.currentUserId != null ? Number(window.currentUserId) : null; // 실제 로그인 사용자 ID(숫자) 사용 — 기존 phantom DOM 참조로 항상 1로 고정되던 버그 수정
 
         if (!title || !content) {
             alert("제목과 내용을 모두 입력해 주세요.");
@@ -1545,7 +1595,7 @@
         const type = document.getElementById("modalType").value;
         const title = document.getElementById("reviewTitle").value.trim();
         const content = document.getElementById("reviewContent").value.trim();
-        const userId = document.getElementById("sessionUserId")?.value || 1;
+        const userId = window.currentUserId != null ? Number(window.currentUserId) : null; // 실제 로그인 사용자 ID(숫자) 사용 — 기존 phantom DOM 참조로 항상 1로 고정되던 버그 수정
 
         if (!title || !content) {
             alert("제목과 내용을 모두 입력해 주세요.");
@@ -1588,7 +1638,7 @@
 
     function executeDelete(reviewId) {
         if (!confirm("정말 이 글을 삭제하시겠습니까?")) return;
-        const userId = document.getElementById("sessionUserId")?.value || 1;
+        const userId = window.currentUserId != null ? Number(window.currentUserId) : null; // 실제 로그인 사용자 ID(숫자) 사용 — 기존 phantom DOM 참조로 항상 1로 고정되던 버그 수정
 
         fetch(`/api/reviews/${reviewId}?userId=${userId}`, { method: 'DELETE' })
             .then(response => {
@@ -1798,6 +1848,18 @@
     }
 
     // 2. 캡챠 새로고침
+    // 보안문자 드래그/선택/복사 방지 (CSS user-select만으로는 일부 브라우저에서 드래그 선택이 막히지 않아 JS로 한 번 더 방어)
+    (function preventCaptchaDrag() {
+        const captchaDisplay = document.getElementById('captcha-display');
+        if (!captchaDisplay) return;
+        ["dragstart", "selectstart", "copy", "contextmenu"].forEach(evt => {
+            captchaDisplay.addEventListener(evt, function(e) {
+                e.preventDefault();
+                return false;
+            });
+        });
+    })();
+
     function fetchNewCaptcha() {
         fetch('/api/captcha/generate')
             .then(res => res.json())

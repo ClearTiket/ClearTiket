@@ -26,8 +26,3 @@ public class Tag {
     String displayName;
 }
 
-enum TagCategory {
-    GENRE,
-    VIBE,
-    WITH
-}

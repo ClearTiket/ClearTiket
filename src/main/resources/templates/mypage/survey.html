@@ -92,39 +92,45 @@
                     <button type="button" class="chip" data-value="뮤지컬"
                             th:classappend="${savedGenres != null and savedGenres.contains('뮤지컬')} ? ' selected'"
                             onclick="selectChip(this,'q1',2)">뮤지컬</button>
-                    <button type="button" class="chip" data-value="연극"
-                            th:classappend="${savedGenres != null and savedGenres.contains('연극')} ? ' selected'"
-                            onclick="selectChip(this,'q1',2)">연극</button>
                     <button type="button" class="chip" data-value="클래식"
                             th:classappend="${savedGenres != null and savedGenres.contains('클래식')} ? ' selected'"
                             onclick="selectChip(this,'q1',2)">클래식</button>
-                    <button type="button" class="chip" data-value="무용/전통"
-                            th:classappend="${savedGenres != null and savedGenres.contains('무용/전통')} ? ' selected'"
-                            onclick="selectChip(this,'q1',2)">무용/전통</button>
                 </div>
             </div>
 
             <div class="q-divider"></div>
 
-            <!-- Q2. 중요 요소 (1개) -->
+            <!-- Q2. 분위기 (최대 2개) -->
             <div class="q-block">
-                <div class="q-title">Q2. 공연을 볼 때 가장 중요하게 생각하는 요소는? <span>(최대 1개)</span></div>
+                <div class="q-title">Q2. 어떤 분위기의 공연을 좋아하시나요? <span>(최대 2개)</span></div>
                 <div class="chip-group" id="q2-group">
-                    <button type="button" class="chip" data-value="라인업/배우"
-                            th:classappend="${savedMoods != null and savedMoods.contains('라인업/배우')} ? ' selected'"
-                            onclick="selectChip(this,'q2',1)">라인업/배우</button>
-                    <button type="button" class="chip" data-value="스토리/작품성"
-                            th:classappend="${savedMoods != null and savedMoods.contains('스토리/작품성')} ? ' selected'"
-                            onclick="selectChip(this,'q2',1)">스토리/작품성</button>
-                    <button type="button" class="chip" data-value="티켓 가격"
-                            th:classappend="${savedMoods != null and savedMoods.contains('티켓 가격')} ? ' selected'"
-                            onclick="selectChip(this,'q2',1)">티켓 가격</button>
-                    <button type="button" class="chip" data-value="무대 연출/음악"
-                            th:classappend="${savedMoods != null and savedMoods.contains('무대 연출/음악')} ? ' selected'"
-                            onclick="selectChip(this,'q2',1)">무대 연출/음악</button>
-                    <button type="button" class="chip" data-value="관람 후기"
-                            th:classappend="${savedMoods != null and savedMoods.contains('관람 후기')} ? ' selected'"
-                            onclick="selectChip(this,'q2',1)">관람 후기</button>
+                    <button type="button" class="chip" data-value="눈물폭발"
+                            th:classappend="${savedMoods != null and savedMoods.contains('눈물폭발')} ? ' selected'"
+                            onclick="selectChip(this,'q2',2)">눈물폭발</button>
+                    <button type="button" class="chip" data-value="귀호강"
+                            th:classappend="${savedMoods != null and savedMoods.contains('귀호강')} ? ' selected'"
+                            onclick="selectChip(this,'q2',2)">귀호강</button>
+                    <button type="button" class="chip" data-value="웅장한"
+                            th:classappend="${savedMoods != null and savedMoods.contains('웅장한')} ? ' selected'"
+                            onclick="selectChip(this,'q2',2)">웅장한</button>
+                    <button type="button" class="chip" data-value="스트레스해소"
+                            th:classappend="${savedMoods != null and savedMoods.contains('스트레스해소')} ? ' selected'"
+                            onclick="selectChip(this,'q2',2)">스트레스해소</button>
+                    <button type="button" class="chip" data-value="심장쫄깃"
+                            th:classappend="${savedMoods != null and savedMoods.contains('심장쫄깃')} ? ' selected'"
+                            onclick="selectChip(this,'q2',2)">심장쫄깃</button>
+                    <button type="button" class="chip" data-value="배꼽빠지는"
+                            th:classappend="${savedMoods != null and savedMoods.contains('배꼽빠지는')} ? ' selected'"
+                            onclick="selectChip(this,'q2',2)">배꼽빠지는</button>
+                    <button type="button" class="chip" data-value="화려한볼거리"
+                            th:classappend="${savedMoods != null and savedMoods.contains('화려한볼거리')} ? ' selected'"
+                            onclick="selectChip(this,'q2',2)">화려한볼거리</button>
+                    <button type="button" class="chip" data-value="잔잔한위로"
+                            th:classappend="${savedMoods != null and savedMoods.contains('잔잔한위로')} ? ' selected'"
+                            onclick="selectChip(this,'q2',2)">잔잔한위로</button>
+                    <button type="button" class="chip" data-value="입문자추천"
+                            th:classappend="${savedMoods != null and savedMoods.contains('입문자추천')} ? ' selected'"
+                            onclick="selectChip(this,'q2',2)">입문자추천</button>
                 </div>
             </div>
 
@@ -143,9 +149,12 @@
                     <button type="button" class="chip" data-value="친구와 함께"
                             th:classappend="${savedCompanion == '친구와 함께'} ? ' selected'"
                             onclick="selectChip(this,'q3',1)">친구와 함께</button>
-                    <button type="button" class="chip" data-value="가족과 함께"
-                            th:classappend="${savedCompanion == '가족과 함께'} ? ' selected'"
-                            onclick="selectChip(this,'q3',1)">가족과 함께</button>
+                    <button type="button" class="chip" data-value="부모님과 함께"
+                            th:classappend="${savedCompanion == '부모님과 함께'} ? ' selected'"
+                            onclick="selectChip(this,'q3',1)">부모님과 함께</button>
+                    <button type="button" class="chip" data-value="아이와 함께"
+                            th:classappend="${savedCompanion == '아이와 함께'} ? ' selected'"
+                            onclick="selectChip(this,'q3',1)">아이와 함께</button>
                 </div>
             </div>
 

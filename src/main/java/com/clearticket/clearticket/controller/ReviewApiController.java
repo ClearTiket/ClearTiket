@@ -89,25 +89,52 @@ public class ReviewApiController {
     @PutMapping("/{reviewId}")
     public ResponseEntity<ReviewResultResponse> updateReview(
             @PathVariable("reviewId") Long reviewId,
-            @RequestBody ReviewWriteRequest request) {
+            @RequestBody ReviewWriteRequest request,
+            HttpSession session) {
 
-        Review updatedReview = reviewService.updateReview(reviewId, request.userId(), request.title(), request.content(), request.rating());
-
-        if ("BLIND".equals(updatedReview.getStatus())) {
-            return ResponseEntity.ok(new ReviewResultResponse("BLINDED", "수정하신 내용에 제한 키워드가 포함되어 블라인드 처리되었습니다."));
+        // ⚠️ 기존에는 로그인 여부를 전혀 확인하지 않고, 요청 본문(request.userId())에 담긴 값을
+        // 그대로 "작성자 본인 확인"에 사용했습니다. 즉 로그인하지 않은 사용자도 본문에
+        // 작성자 userId만 알아내서 넣으면 수정이 가능한 심각한 인증 우회(IDOR) 문제였습니다.
+        // → 반드시 세션에 로그인된 사용자인지 확인하고, 그 세션의 userId만 신뢰합니다.
+        UserSession loginUser = (UserSession) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body(new ReviewResultResponse("FAIL", "로그인이 필요합니다."));
         }
+        Long sessionUserId = Long.valueOf(loginUser.getId());
 
-        return ResponseEntity.ok(new ReviewResultResponse("SUCCESS", "수정 성공"));
+        try {
+            Review updatedReview = reviewService.updateReview(reviewId, sessionUserId, request.title(), request.content(), request.rating());
+
+            if ("BLIND".equals(updatedReview.getStatus())) {
+                return ResponseEntity.ok(new ReviewResultResponse("BLINDED", "수정하신 내용에 제한 키워드가 포함되어 블라인드 처리되었습니다."));
+            }
+
+            return ResponseEntity.ok(new ReviewResultResponse("SUCCESS", "수정 성공"));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(new ReviewResultResponse("FAIL", e.getMessage()));
+        }
     }
 
     // [삭제] 관람후기 / 기대평 삭제 (DELETE)
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<String> deleteReview(
             @PathVariable("reviewId") Long reviewId,
-            @RequestParam("userId") Long userId) {
+            HttpSession session) {
 
-        reviewService.deleteReview(reviewId, userId);
-        return ResponseEntity.ok("SUCCESS");
+        // ⚠️ 위와 동일한 이유로, 쿼리파라미터로 넘어오는 userId를 더 이상 신뢰하지 않고
+        // 세션에 실제로 로그인된 사용자인지 먼저 확인합니다.
+        UserSession loginUser = (UserSession) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+        Long sessionUserId = Long.valueOf(loginUser.getId());
+
+        try {
+            reviewService.deleteReview(reviewId, sessionUserId);
+            return ResponseEntity.ok("SUCCESS");
+        } catch (SecurityException e) {
+            return ResponseEntity.status(403).body(e.getMessage());
+        }
     }
 
     // [수정] 조회수(더보기 클릭 시 1회 증가 - 세션 중복 방지 탑재)

@@ -24,6 +24,7 @@ public class ReservationService {
     private final ScheduleRepository scheduleRepository;
     private final ReservationSeatsRepository reservationSeatsRepository;
     private final BookingSeatsRepository bookingSeatsRepository;
+    private final SeatRepository seatRepository;
     private final SeatRedisService seatRedisService;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -40,6 +41,13 @@ public class ReservationService {
 
         Schedule schedule = scheduleRepository.findById(reservationRequest.getScheduleId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회차(scheduleId)입니다."));
+
+        // ⚠️ 지난 공연(이미 지난 회차)에 대해 프론트엔드의 "예매하기" 버튼이
+        // 비활성화되지 않은 채로 남아있어도, 서버에서 한 번 더 최종 방어선으로 막아줍니다.
+        LocalDateTime showDateTime = LocalDateTime.of(schedule.getShowDate(), schedule.getShowTime());
+        if (showDateTime.isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("이미 종료된 회차는 예매할 수 없습니다.");
+        }
 
         Reservation reservation = new Reservation();
         reservation.setUser(user);
@@ -109,33 +117,33 @@ public class ReservationService {
     public Map<String, Object> checkSectionSoldOutStatus(Long scheduleId) {
         Map<String, Object> result = new HashMap<>();
 
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회차(scheduleId)입니다: " + scheduleId));
+        Long performanceId = schedule.getPerformance().getPerformanceId();
+
         List<BookingSeat> allSeats = bookingSeatsRepository.findByScheduleScheduleId(scheduleId);
 
-        // 1. 구역별로 좌석들을 그룹화
-        Map<String, List<BookingSeat>> sectionsMap = new HashMap<>();
+        // 1. 구역별로 "SELECTED(예매 확정)" 상태인 좌석 수만 카운트
+        //    (BookingSeat 테이블에는 실제로 예매 시도가 있었던 좌석만 존재하므로,
+        //     이 목록 자체를 구역의 전체 좌석으로 착각하면 안 됨!)
+        Map<String, Long> selectedCountBySection = new HashMap<>();
         for (BookingSeat seat : allSeats) {
-            String section = seat.getSectionName();
-            sectionsMap.computeIfAbsent(section, k -> new ArrayList<>()).add(seat);
+            if (seat.getStatus() == BookingStatus.SELECTED) {
+                selectedCountBySection.merge(seat.getSectionName(), 1L, Long::sum);
+            }
         }
 
         // 매진된 구역명들을 담을 리스트 생성
         List<String> soldOutSections = new ArrayList<>();
 
-        // 2. 모든 구역을 멈추지 않고 끝까지 돌면서 매진 여부 체크
-        for (Map.Entry<String, List<BookingSeat>> entry : sectionsMap.entrySet()) {
+        // 2. 각 구역의 "예매 확정 좌석 수"를 해당 구역의 "실제 총 좌석 수"와 비교해서 매진 여부 판단
+        for (Map.Entry<String, Long> entry : selectedCountBySection.entrySet()) {
             String sectionName = entry.getKey();
-            List<BookingSeat> seatsInSection = entry.getValue();
+            long selectedCount = entry.getValue();
 
-            boolean isSectionSoldOut = true;
-            for (BookingSeat seat : seatsInSection) {
-                if (seat.getStatus() != BookingStatus.SELECTED) {
-                    isSectionSoldOut = false;
-                    break;
-                }
-            }
+            long totalSeatsInSection = seatRepository.countByPerformancePerformanceIdAndSectionName(performanceId, sectionName);
 
-            // 매진된 구역이라면 리스트에 차곡차곡 추가 (바로 return하지 않음!)
-            if (isSectionSoldOut && !seatsInSection.isEmpty()) {
+            if (totalSeatsInSection > 0 && selectedCount >= totalSeatsInSection) {
                 soldOutSections.add(sectionName);
             }
         }

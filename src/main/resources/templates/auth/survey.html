@@ -25,38 +25,41 @@
     <div class="survey-card">
         <div class="q-block">
             <div class="q-title">Q1. 어떤 장르의 공연을 좋아하시나요? <span>(최대 2개)</span></div>
-            <div class="chip-group">
-                <button class="chip" onclick="selectChip(this, 'q1', 2)">콘서트</button>
-                <button class="chip" onclick="selectChip(this, 'q1', 2)">뮤지컬</button>
-                <button class="chip" onclick="selectChip(this, 'q1', 2)">연극</button>
-                <button class="chip" onclick="selectChip(this, 'q1', 2)">클래식</button>
-                <button class="chip" onclick="selectChip(this, 'q1', 2)">무용/전통</button>
+            <div class="chip-group" id="q1-group">
+                <button type="button" class="chip" data-value="콘서트" onclick="selectChip(this, 'q1', 2)">콘서트</button>
+                <button type="button" class="chip" data-value="뮤지컬" onclick="selectChip(this, 'q1', 2)">뮤지컬</button>
+                <button type="button" class="chip" data-value="클래식" onclick="selectChip(this, 'q1', 2)">클래식</button>
             </div>
         </div>
 
         <div class="q-block">
-            <div class="q-title">Q2. 공연을 볼 때 가장 중요하게 생각하는 요소는? <span>(최대 1개)</span></div>
-            <div class="chip-group">
-                <button class="chip" onclick="selectChip(this, 'q2', 1)">라인업/배우</button>
-                <button class="chip" onclick="selectChip(this, 'q2', 1)">스토리/작품성</button>
-                <button class="chip" onclick="selectChip(this, 'q2', 1)">티켓 가격</button>
-                <button class="chip" onclick="selectChip(this, 'q2', 1)">무대 연출/음악</button>
-                <button class="chip" onclick="selectChip(this, 'q2', 1)">관람 후기</button>
+            <div class="q-title">Q2. 어떤 분위기의 공연을 좋아하시나요? <span>(최대 2개)</span></div>
+            <div class="chip-group" id="q2-group">
+                <button type="button" class="chip" data-value="눈물폭발" onclick="selectChip(this, 'q2', 2)">눈물폭발</button>
+                <button type="button" class="chip" data-value="귀호강" onclick="selectChip(this, 'q2', 2)">귀호강</button>
+                <button type="button" class="chip" data-value="웅장한" onclick="selectChip(this, 'q2', 2)">웅장한</button>
+                <button type="button" class="chip" data-value="스트레스해소" onclick="selectChip(this, 'q2', 2)">스트레스해소</button>
+                <button type="button" class="chip" data-value="심장쫄깃" onclick="selectChip(this, 'q2', 2)">심장쫄깃</button>
+                <button type="button" class="chip" data-value="배꼽빠지는" onclick="selectChip(this, 'q2', 2)">배꼽빠지는</button>
+                <button type="button" class="chip" data-value="화려한볼거리" onclick="selectChip(this, 'q2', 2)">화려한볼거리</button>
+                <button type="button" class="chip" data-value="잔잔한위로" onclick="selectChip(this, 'q2', 2)">잔잔한위로</button>
+                <button type="button" class="chip" data-value="입문자추천" onclick="selectChip(this, 'q2', 2)">입문자추천</button>
             </div>
         </div>
 
         <div class="q-block">
             <div class="q-title">Q3. 주로 누구와 함께 관람하시나요? <span>(최대 1개)</span></div>
-            <div class="chip-group">
-                <button class="chip" onclick="selectChip(this, 'q3', 1)">혼자서 혼공!</button>
-                <button class="chip" onclick="selectChip(this, 'q3', 1)">연인과 함께</button>
-                <button class="chip" onclick="selectChip(this, 'q3', 1)">친구와 함께</button>
-                <button class="chip" onclick="selectChip(this, 'q3', 1)">가족과 함께</button>
+            <div class="chip-group" id="q3-group">
+                <button type="button" class="chip" data-value="혼자서" onclick="selectChip(this, 'q3', 1)">혼자서 혼공!</button>
+                <button type="button" class="chip" data-value="연인과 함께" onclick="selectChip(this, 'q3', 1)">연인과 함께</button>
+                <button type="button" class="chip" data-value="친구와 함께" onclick="selectChip(this, 'q3', 1)">친구와 함께</button>
+                <button type="button" class="chip" data-value="부모님과 함께" onclick="selectChip(this, 'q3', 1)">부모님과 함께</button>
+                <button type="button" class="chip" data-value="아이와 함께" onclick="selectChip(this, 'q3', 1)">아이와 함께</button>
             </div>
         </div>
 
         <div class="skip-row">
-            <button class="skip-link" th:onclick="|location.href='@{/login}'|">다음에 할게요 Skip</button>
+            <button class="skip-link" th:onclick="|location.href='@{/mypage}'|">다음에 할게요 Skip</button>
         </div>
     </div>
 
@@ -89,9 +92,34 @@
         document.getElementById('cta-btn').classList.toggle('ready', ready);
     }
 
-    function goResult() {
+    // ⚠️ 기존 버그: 이 함수가 선택값을 어디에도 저장하지 않고 바로 /login으로 이동만 시켜서,
+    // 회원가입 직후 설문에 성실히 답해도 그 응답이 전부 그냥 버려졌습니다.
+    // (그 결과 마이페이지에서 다시 설문을 하지 않는 한 취향 데이터가 전혀 없어
+    //  "취향 설정이 되어있지 않다"는 안내만 계속 보이고 추천 공연도 뜨지 않았습니다.)
+    async function goResult() {
         if (!document.getElementById('cta-btn').classList.contains('ready')) return;
-        location.href = /*[[@{/login}]]*/ '/login';
+
+        const payload = {
+            genres:    state.q1.map(b => b.dataset.value),
+            moods:     state.q2.map(b => b.dataset.value),
+            companion: state.q3.length > 0 ? state.q3[0].dataset.value : ''
+        };
+
+        try {
+            const res = await fetch('/survey', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const text = await res.text();
+            if (text !== 'SUCCESS') {
+                console.error('설문 저장 실패:', text);
+            }
+        } catch (err) {
+            console.error('설문 저장 중 오류:', err);
+        }
+
+        location.href = /*[[@{/mypage}]]*/ '/mypage';
     }
 </script>
 </body>

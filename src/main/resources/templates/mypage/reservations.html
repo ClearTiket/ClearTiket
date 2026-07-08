@@ -27,28 +27,9 @@
                             <th>상태</th>
                         </tr>
                         </thead>
-                        <tbody>
-                        <!-- 더미 데이터 3건 반복 -->
-                        <tr th:each="i : ${#numbers.sequence(1,3)}">
-                            <td style="color:#555577;font-size:13px;white-space:nowrap;">2026.04.10</td>
-                            <td>
-                                <div style="display:flex;gap:14px;align-items:flex-start;">
-                                    <div class="img-placeholder" style="width:68px;height:90px;flex-shrink:0;"></div>
-                                    <div>
-                                        <p style="font-weight:600;font-size:14px;margin-bottom:6px;">BLUE HOUR : 청춘이 빛나는 우리들의 시간</p>
-                                        <p style="font-size:13px;color:#9999BB;">2026.06.06 ~ 2026.06.06</p>
-                                        <p style="font-size:13px;color:#9999BB;">KSPO DOME</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td style="font-size:13px;color:#555577;">
-                                <p>예약번호 : C781234897</p>
-                                <p>관람일 : 2026.06.06 (토)</p>
-                            </td>
-                            <td>
-                                <p style="font-weight:600;font-size:14px;margin-bottom:8px;">예매완료</p>
-                                <a th:href="@{/mypage/reservation-detail}" class="btn btn-outline-gray btn-sm">취소</a>
-                            </td>
+                        <tbody id="reservation-list-body">
+                        <tr>
+                            <td colspan="4" style="text-align:center;color:#9999BB;padding:40px 0;">불러오는 중...</td>
                         </tr>
                         </tbody>
                     </table>
@@ -58,5 +39,86 @@
     </div>
 </main>
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
+
+<script>
+    const STATUS_LABEL = {
+        WAITING: "결제대기",
+        CONFIRMED: "예매완료",
+        CANCELED: "예매취소"
+    };
+
+    function formatDate(dateStr) {
+        if (!dateStr) return "-";
+        return dateStr.substring(0, 10).replace(/-/g, ".");
+    }
+
+    function formatDateWithDay(dateStr) {
+        if (!dateStr) return "정보 없음";
+        const d = new Date(dateStr);
+        const days = ["일", "월", "화", "수", "목", "금", "토"];
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}.${m}.${day} (${days[d.getDay()]})`;
+    }
+
+    async function loadMyReservations() {
+        const tbody = document.getElementById("reservation-list-body");
+        try {
+            const res = await fetch("/api/users/me/reservations");
+            if (res.status === 401) {
+                window.location.href = "/login";
+                return;
+            }
+            if (!res.ok) throw new Error("예매 내역 조회 실패");
+
+            const reservations = await res.json();
+
+            if (!reservations || reservations.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#9999BB;padding:40px 0;">예매/취소 내역이 없습니다.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = "";
+            reservations.forEach(r => {
+                const tr = document.createElement("tr");
+
+                const statusLabel = STATUS_LABEL[r.status] || r.status || "-";
+                const canCancel = r.status === "CONFIRMED" || r.status === "WAITING";
+
+                tr.innerHTML = `
+                    <td style="color:#555577;font-size:13px;white-space:nowrap;">${formatDate(r.reservationDate)}</td>
+                    <td>
+                        <div style="display:flex;gap:14px;align-items:flex-start;">
+                            ${r.posterImageUrl
+                                ? `<img src="${r.posterImageUrl}" style="width:68px;height:90px;object-fit:cover;border-radius:6px;flex-shrink:0;">`
+                                : `<div class="img-placeholder" style="width:68px;height:90px;flex-shrink:0;"></div>`}
+                            <div>
+                                <p style="font-weight:600;font-size:14px;margin-bottom:6px;">${r.performanceTitle || "공연 정보 없음"}</p>
+                                <p style="font-size:13px;color:#9999BB;">${formatDateWithDay(r.showDateTime)}</p>
+                                <p style="font-size:13px;color:#9999BB;">${r.venueName || "장소 정보 없음"}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-size:13px;color:#555577;">
+                        <p>예약번호 : ${r.reservationNumber || "-"}</p>
+                        <p>관람일 : ${formatDateWithDay(r.showDateTime)}</p>
+                    </td>
+                    <td>
+                        <p style="font-weight:600;font-size:14px;margin-bottom:8px;">${statusLabel}</p>
+                        <a href="/mypage/reservation-detail" class="btn btn-outline-gray btn-sm">${canCancel ? "취소" : "상세"}</a>
+                    </td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+        } catch (err) {
+            console.error("예매 내역 로드 에러:", err);
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:#e05252;padding:40px 0;">예매 내역을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</td></tr>`;
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadMyReservations);
+</script>
 </body>
 </html>

@@ -3,13 +3,19 @@ package com.clearticket.clearticket.service;
 import com.clearticket.clearticket.model.UserSession;
 import com.clearticket.clearticket.model.dto.RegisterRequestDto;
 import com.clearticket.clearticket.model.dto.SurveyRequestDto;
+import com.clearticket.clearticket.model.entity.Tag;
 import com.clearticket.clearticket.model.entity.User;
+import com.clearticket.clearticket.model.entity.UserTag;
+import com.clearticket.clearticket.repository.TagRepository;
 import com.clearticket.clearticket.repository.UserRepository;
+import com.clearticket.clearticket.repository.UserTagRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -18,6 +24,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final TagRepository tagRepository;
+    private final UserTagRepository userTagRepository;
 
     // ─────────────────────────────────────────────
     // 검증 정규식 (프론트 JS와 동일한 패턴)
@@ -159,6 +167,34 @@ public class UserService {
                 user.setPreferenceCompanion(dto.getCompanion());
             }
             userRepository.save(user);
+
+            // ⚠️ 기존에는 여기서 User의 텍스트 컬럼(preferenceGenre 등)에만 저장하고 끝났는데,
+            // 메인페이지 "추천 공연" 기능은 실제로는 user_tags 테이블(UserTag)을 조회합니다.
+            // 그런데 user_tags에 값을 넣는 코드가 애플리케이션 어디에도 없어서,
+            // 설문을 아무리 성실하게 응답해도 추천 결과는 항상 비어있을 수밖에 없었습니다.
+            // → 설문 답변(표시 텍스트)에 해당하는 실제 Tag를 찾아 user_tags를 새로 채워줍니다.
+            List<String> selectedDisplayNames = new ArrayList<>();
+            if (dto.getGenres() != null) selectedDisplayNames.addAll(dto.getGenres());
+            if (dto.getMoods() != null) selectedDisplayNames.addAll(dto.getMoods());
+            if (dto.getCompanion() != null && !dto.getCompanion().isBlank()) {
+                selectedDisplayNames.add(dto.getCompanion());
+            }
+
+            if (!selectedDisplayNames.isEmpty()) {
+                List<Tag> matchedTags = tagRepository.findByDisplayNameIn(selectedDisplayNames);
+
+                // 재설문 시 기존 취향 태그를 지우고 새로 반영 (중복 누적 방지)
+                userTagRepository.deleteAllByUserUserId(user.getUserId());
+
+                for (Tag tag : matchedTags) {
+                    UserTag userTag = UserTag.builder()
+                            .user(user)
+                            .tag(tag)
+                            .aiScore(1.0)
+                            .build();
+                    userTagRepository.save(userTag);
+                }
+            }
         });
     }
 }

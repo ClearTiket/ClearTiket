@@ -290,6 +290,18 @@
             const cardSlot = document.querySelector(".card-slot");
 
             cardSlot.replaceChildren();
+
+            // ⚠️ 기존에는 위 replaceChildren()이 무조건 실행되어 "예매 가능한 공연이 없습니다"
+            // 안내 문구까지 지워버렸고, 공연이 0건이면 forEach도 아무것도 추가하지 않아
+            // 결과적으로 안내 문구도 없이 텅 빈 박스만 보였습니다.
+            if (!Array.isArray(resultJson) || resultJson.length === 0) {
+                const noPerf = document.createElement("div");
+                noPerf.classList.add("no-performances");
+                noPerf.innerHTML = "<p>예매 가능한 공연이 없습니다.</p>";
+                cardSlot.appendChild(noPerf);
+                return;
+            }
+
             resultJson.forEach(item => {
                 const infoSubCard = document.createElement("a");
                 infoSubCard.classList.add("info-sub-card");
