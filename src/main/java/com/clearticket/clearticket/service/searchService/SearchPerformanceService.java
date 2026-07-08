@@ -108,7 +108,11 @@ public class SearchPerformanceService {
 
 
         // 오늘과 가까운 날짜일수록 가중치 부여
-        String todayStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        // ES에 색인된 start_date/end_date는 파이썬(elasticsearch-py)이 date 객체를 그대로 직렬화한
+        // "yyyy-MM-dd" 형식(strict_date_optional_time)이므로, 쿼리도 반드시 같은 포맷을 써야 한다.
+        // 기존 "yyyyMMdd" 포맷(예: 20260708)은 ES 기본 date 포맷과 맞지 않아
+        // 모든 샤드에서 날짜 파싱에 실패해 500(all shards failed) 에러가 발생했었음.
+        String todayStr = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE);
 
         // pivot()은 람다가 아니라 완성된 Time 객체를 직접 받음
         Time pivotTime = Time.of(t -> t.time(7, TimeUnit.Days));
@@ -131,15 +135,15 @@ public class SearchPerformanceService {
         // 필터 날짜의 범위에 공연 시작-종료 범위가 겹쳐져 있는(걸치는) 경우 검색
         List<Query> dateFilters = new ArrayList<>();
 
-        String startDateStr = filterDto.getStartDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String endDateStr = filterDto.getEndDate().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String startDateStr = filterDto.getStartDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
+        String endDateStr = filterDto.getEndDate().format(DateTimeFormatter.ISO_LOCAL_DATE);
 
         // 공연 시작 날짜 <= 필터 종료 날짜
         dateFilters.add(Query.of(q -> q.range(r -> r.date(d ->
-                        d.field("start_date").lte(endDateStr)))));
+                d.field("start_date").lte(endDateStr)))));
         // 공연 종료 날짜 >= 필터 시작 날짜
         dateFilters.add(Query.of(q -> q.range(r -> r.date(d ->
-                        d.field("end_date").gte(startDateStr)))));
+                d.field("end_date").gte(startDateStr)))));
 
         Query dateFilterQuery = Query.of(q -> q.bool(b -> b.filter(dateFilters)));
 

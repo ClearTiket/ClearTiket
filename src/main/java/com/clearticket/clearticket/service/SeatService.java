@@ -147,6 +147,11 @@ public class SeatService {
                     } else {
                         seat.setStatus("PENDING");
                     }
+                    // 이 좌석을 선점한 회원 ID를 함께 내려줘서, 프론트에서 "내가 이미 선택한 좌석"과
+                    // "다른 사람이 선점해서 진짜 막힌 좌석"을 구분할 수 있게 함
+                    if (booked.getUser() != null) {
+                        seat.setUserId(booked.getUser().getUserId());
+                    }
                 }
             }
         }

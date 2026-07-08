@@ -557,6 +557,12 @@
         console.warn(`scheduleId=${scheduleId} 에 대한 좌석 데이터가 없습니다.`);
       }
 
+      //  이전 단계(할인/등급 선택 등)에서 뒤로가기로 돌아온 경우를 대비해,
+      // 서버 기준으로 "이미 내가 선점(PENDING)해 둔 좌석"을 selectedSeatList에 복원한다.
+      // (기존에는 userId 구분 없이 PENDING/BOOKED이면 무조건 sold-out 처리해서,
+      //  뒤로가기 시 본인이 고른 좌석까지 예매 불가능한 것처럼 보이는 문제가 있었음)
+      restoreMySelectedSeats();
+
       // 이미 구역 보고 있던 상태였다면 화면 갱신
       if (currentActiveZone) {
         createSeatGrid(currentActiveZone, allSeats);
@@ -565,6 +571,38 @@
       console.error(err);
       alert(`좌석 정보를 불러오는 중 오류가 발생했습니다.\n${err.message}`);
     }
+  }
+
+  // [0-1-1] 서버 데이터 기준으로 "내가 이미 선점해 둔 좌석"을 selectedSeatList/사이드바에 복원
+  function restoreMySelectedSeats() {
+    const mySeats = allSeats.filter(s => {
+      const status = s.status ? s.status.toUpperCase() : "";
+      return s.userId != null && Number(s.userId) === currentUserId && status !== "AVAILABLE" && status !== "";
+    });
+
+    let restoredCount = 0;
+    mySeats.forEach(seat => {
+      const alreadyInList = selectedSeatList.some(item =>
+              item.sectionName === seat.sectionName &&
+              item.rowNum === seat.rowNum &&
+              item.seatNum === seat.seatNum
+      );
+      if (alreadyInList) return;
+
+      selectedSeatList.push({
+        seatId: seat.seatId || `${seat.sectionName}-${seat.rowNum}-${seat.seatNum}`,
+        sectionName: seat.sectionName,
+        rowNum: seat.rowNum,
+        seatNum: seat.seatNum,
+        seatGrade: seat.seatGrade,
+        price: seat.price,
+        code: `${seat.sectionName}-${seat.rowNum}${seat.seatNum}`,
+        label: `${seat.rowNum}열 ${seat.seatNum}번`
+      });
+      restoredCount++;
+    });
+
+    if (restoredCount > 0) updateSidebarSummary();
   }
 
   // [0-2] WebSocket(STOMP)으로 실시간 좌석 상태 구독
@@ -595,9 +633,9 @@
     seat.status = event.status;
 
     const seatElement = document.querySelector(
-            `.seat-circle[data-section="${seatData.sectionName}"]` +
-            `[data-row="${seatData.rowNum}"]` +
-            `[data-seat="${seatData.seatNum}"]`);
+            `.seat-circle[data-section="${event.sectionName}"]` +
+            `[data-row="${event.rowNum}"]` +
+            `[data-seat="${event.seatNum}"]`);
     if (!seatElement) return; // 현재 보고 있는 구역이 아니면 DOM에 없을 수 있음
 
     // DB/웹소켓에서 넘어오는 대문자 상태값 방어
@@ -653,12 +691,12 @@
     else if (zoneName === 'C') directionGuide = "C 구역 [ 오른쪽 사이드 ]";
     document.getElementById("selected-zone-title").innerText = directionGuide;
 
-    // ★ 구역 들어갈 때마다 최신 상태로 한번 더 동기화 (혹시 폴링 누락 대비)
+    //  구역 들어갈 때마다 최신 상태로 한번 더 동기화 (혹시 폴링 누락 대비)
     await loadSeats();
     createSeatGrid(zoneName, allSeats);
   }
 
-  // [5] 동적 좌석 격자 생성 (서버 데이터 기반, 변경 없음)
+  // [5] 동적 좌석 격자 생성 (서버 데이터 기반)
   function createSeatGrid(zoneName, seatList) {
     console.log("현재 구역:", zoneName);
     console.log("서버에서 넘어온 좌석 데이터 리스트:", seatList);
@@ -680,14 +718,19 @@
       seatElement.setAttribute("data-seat", seat.seatNum);
       seatElement.setAttribute("data-seat-id", seat.seatId);
 
-      // 💡 [수정] 자바스크립트가 status와 bookingStatus 둘 다 대문자로 변환해서 체크하도록 방어막을 칩니다.
+      //  [수정] 자바스크립트가 status와 bookingStatus 둘 다 대문자로 변환해서 체크하도록 방어막을 칩니다.
       const status1 = seat.status ? seat.status.toUpperCase() : "";
       const status2 = seat.bookingStatus ? seat.bookingStatus.toUpperCase() : "";
+      const isMine = seat.userId != null && Number(seat.userId) === currentUserId;
 
-      // 💡 둘 중 하나라도 SELECTED 또는 PENDING이면 무조건 회색 X로 차단!
-      if ( status1 === "BOOKED" || status1 === "SELECTED" || status1 === "PENDING" || status2 === "BOOKED"|| status2 === "SELECTED" || status2 === "PENDING"  ) {
+      //  다른 사람이 선점(PENDING)/예매(BOOKED)한 좌석만 회색 X로 차단.
+      //    내가(currentUserId) 이전에 선점해 둔 좌석은 "선택됨" 상태로 그대로 표시해서
+      //    할인/등급 선택 화면에서 뒤로가기로 돌아왔을 때도 계속 고를 수 있도록 함.
+      if (!isMine && (status1 === "BOOKED" || status1 === "SELECTED" || status1 === "PENDING" || status2 === "BOOKED"|| status2 === "SELECTED" || status2 === "PENDING")) {
         seatElement.classList.add("sold-out");
         seatElement.innerText = "X";
+      } else if (isMine && status1 !== "AVAILABLE" && status1 !== "") {
+        seatElement.classList.add("selected");
       }
 
       seatElement.onclick = function() {
@@ -698,7 +741,7 @@
     });
   }
 
-  // [6] 좌석 클릭 토글 — ★ 클릭 즉시 서버에 선점 요청 -> 성공해야 선택 확정 (동시클릭 충돌 방지)
+  // [6] 좌석 클릭 토글 —  클릭 즉시 서버에 선점 요청 -> 성공해야 선택 확정 (동시클릭 충돌 방지)
   async function toggleSeatSelection(seatElement, seatData) {
     if (seatElement.classList.contains("sold-out")) {
       alert("이미 예매가 완료된 좌석입니다.");
@@ -732,7 +775,7 @@
       return;
     }
 
-    // ★ 서버에 임시 선점 요청 -> 성공해야만 UI 선택 처리 (동시에 두 명이 누르는 경쟁 상황 방지)
+    //  서버에 임시 선점 요청 -> 성공해야만 UI 선택 처리 (동시에 두 명이 누르는 경쟁 상황 방지)
     try {
       const params = new URLSearchParams({
         sectionName: seatData.sectionName,
@@ -829,7 +872,7 @@
     submitBtn.classList.add("active");
   }
 
-  // [8] 전체 삭제 기능 — ★ 서버에도 일괄 해제 요청
+  // [8] 전체 삭제 기능 —  서버에도 일괄 해제 요청
   async function clearAllSeats() {
     if (selectedSeatList.length === 0) return;
 
