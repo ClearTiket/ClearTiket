@@ -178,7 +178,6 @@
 <script th:inline="javascript">
     const state = { q1: [], q2: [], q3: [] };
 
-    // 페이지 로드 시 이미 selected된 chip을 state에 등록
     document.querySelectorAll('#q1-group .chip.selected').forEach(b => state.q1.push(b));
     document.querySelectorAll('#q2-group .chip.selected').forEach(b => state.q2.push(b));
     document.querySelectorAll('#q3-group .chip.selected').forEach(b => state.q3.push(b));

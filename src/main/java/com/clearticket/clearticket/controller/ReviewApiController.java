@@ -5,7 +5,6 @@ import com.clearticket.clearticket.model.dto.review.ReviewResponse;
 import com.clearticket.clearticket.model.entity.Performance;
 import com.clearticket.clearticket.model.entity.Review;
 import com.clearticket.clearticket.model.entity.User;
-//import com.clearticket.clearticket.service.PerformanceService; // 팀원 서비스 임포트 복구
 import com.clearticket.clearticket.service.PerformanceService;
 import com.clearticket.clearticket.service.ReviewService;
 import jakarta.servlet.http.HttpSession;
@@ -25,7 +24,6 @@ public class ReviewApiController {
 
     private final ReviewService reviewService;
 
-    // 1. 관람후기 / 기대평 목록 조회 (Record 적용으로 가독성 극대화)
     public record ReviewWriteRequest(
             Long performanceId,
             Long userId,
@@ -35,10 +33,8 @@ public class ReviewApiController {
             Integer rating
     ) {}
 
-    // 2. 결과 응답용 통일 Record 정의
     public record ReviewResultResponse(String result, String message) {}
 
-    // [조회] 관람후기 / 기대평 목록 조회 (Record 적용)
     @GetMapping
     public ResponseEntity<ReviewResponse> getReviewList(
             @RequestParam("performanceId") Long performanceId,
@@ -54,17 +50,14 @@ public class ReviewApiController {
         return ResponseEntity.ok(new ReviewResponse(reviews, totalCount, averageRating));
     }
 
-    //  [등록] 관람후기 / 기대평 작성 저장
     @PostMapping("/write")
     public ResponseEntity<ReviewResultResponse> writeReview(@RequestBody ReviewWriteRequest request, HttpSession session ) {
 
-        // 세션에서 현재 로그인한 유저를 가져옵니다.
         UserSession loginUser = (UserSession) session.getAttribute("loginUser");
         if (loginUser == null) {
             return ResponseEntity.status(401).body(new ReviewResultResponse("FAIL", "로그인이 필요합니다."));
         }
 
-        // 변환기: 등록할 때도 문자열 ID를 진짜 숫자 PK로 매핑해 줍니다.
         Long realPerformanceId = request.performanceId();
 
         Review review = Review.builder()
@@ -72,7 +65,7 @@ public class ReviewApiController {
                 .content(request.content())
                 .type(request.type())
                 .rating(request.rating())
-                .performance(Performance.builder().performanceId(realPerformanceId).build()) // 숫자 PK 주입
+                .performance(Performance.builder().performanceId(realPerformanceId).build())
                 .user(User.builder().userId(Long.valueOf(loginUser.getId())).build())
                 .build();
 
@@ -93,9 +86,8 @@ public class ReviewApiController {
             HttpSession session) {
 
         // ⚠️ 기존에는 로그인 여부를 전혀 확인하지 않고, 요청 본문(request.userId())에 담긴 값을
-        // 그대로 "작성자 본인 확인"에 사용했습니다. 즉 로그인하지 않은 사용자도 본문에
-        // 작성자 userId만 알아내서 넣으면 수정이 가능한 심각한 인증 우회(IDOR) 문제였습니다.
-        // → 반드시 세션에 로그인된 사용자인지 확인하고, 그 세션의 userId만 신뢰합니다.
+        // 그대로 "작성자 본인 확인"에 사용했습니다. 로그인 안 해도 userId만 맞추면 남의 글을
+        // 수정할 수 있는 인증 우회(IDOR) 문제였습니다. → 세션 로그인 여부를 먼저 확인합니다.
         UserSession loginUser = (UserSession) session.getAttribute("loginUser");
         if (loginUser == null) {
             return ResponseEntity.status(401).body(new ReviewResultResponse("FAIL", "로그인이 필요합니다."));
@@ -121,8 +113,6 @@ public class ReviewApiController {
             @PathVariable("reviewId") Long reviewId,
             HttpSession session) {
 
-        // ⚠️ 위와 동일한 이유로, 쿼리파라미터로 넘어오는 userId를 더 이상 신뢰하지 않고
-        // 세션에 실제로 로그인된 사용자인지 먼저 확인합니다.
         UserSession loginUser = (UserSession) session.getAttribute("loginUser");
         if (loginUser == null) {
             return ResponseEntity.status(401).body("로그인이 필요합니다.");
@@ -137,31 +127,25 @@ public class ReviewApiController {
         }
     }
 
-    // [수정] 조회수(더보기 클릭 시 1회 증가 - 세션 중복 방지 탑재)
+    // [조회수] 더보기 클릭 시 1회 증가 - 세션 중복 방지
     @GetMapping("/{reviewId}")
     public ResponseEntity<?> getReviewDetail(
             @PathVariable("reviewId") Long reviewId,
             HttpSession session) {
 
-        // 1. 세션에서 이 유저가 읽은 후기 ID 목록(Set)을 꺼내옵니다.
         Set<Long> viewedReviews = (Set<Long>) session.getAttribute("viewedReviews");
 
-        // 2. 만약 세션에 목록이 처음이라 비어있다면 가방을 새로 생성해 줍니다.
         if (viewedReviews == null) {
             viewedReviews = new HashSet<>();
         }
 
         Review review;
 
-        // 3. 가방 안에 현재 후기 ID가 없다면? 처음 읽는 글이므로 조회수를 올립니다.
         if (!viewedReviews.contains(reviewId)) {
-            review = reviewService.getReviewDetail(reviewId); // 서비스 내의 incrementViews 작동
-
-            // 4. 읽은 목록에 새롭게 추가하고 세션을 동기화합니다.
+            review = reviewService.getReviewDetail(reviewId);
             viewedReviews.add(reviewId);
             session.setAttribute("viewedReviews", viewedReviews);
         } else {
-            // 5. 이미 가방에 ID가 들어있다면? 조회수 증가 없이 ACTIVE 상태인 데이터만 안전하게 필터링해 반환합니다.
             review = reviewService.getReview(reviewId);
         }
 

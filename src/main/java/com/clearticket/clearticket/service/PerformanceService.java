@@ -124,16 +124,12 @@ public class PerformanceService {
     }
 
     public Page<Performance> findRankingAllByGenre(String genre, Integer page) {
-        // TODO: 현재는 단순 장르 필터링만 -> 예매율 계산 + 정렬 로직 작성 필요
         return performanceRepository.findAllByGenre(genre, validPageable(page, 10));
     }
 
-    // ========================== OCR 데이터 추출 및 DB 저장=====================================
-    // 세로 8000px 이하 포스터 선별
     public boolean isImageValid(String imageUrl) {
         try {
             URL url = new URL(imageUrl);
-            // 이미지의 헤더 정보만 읽어와서 크기 확인 (전체 다운로드 아님!)
             BufferedImage bimg = ImageIO.read(url);
             if (bimg == null) return false;
 
@@ -145,12 +141,11 @@ public class PerformanceService {
             return false;
         }
     }
-    // JSON 파싱
+
     private String getSecondImageUrl(String jsonString) {
         if (jsonString == null || jsonString.isEmpty()) return null;
 
         try {
-            // 1. 불필요한 문자를 다 제거하고 URL만 찾습니다.
             String url = jsonString.replace("{", "").replace("}", "")
                     .replace("'styurl':", "").replace("'", "")
                     .trim();
@@ -161,34 +156,28 @@ public class PerformanceService {
             return null;
         }
     }
-    // 포스터 분석 로직 추가
+
     @Transactional
     public void analyzePoster(Long performanceId) {
-        entityManager.flush(); // 현재까지 바뀐 게 있다면 먼저 반영
-        entityManager.clear(); // 1차 캐시 초기화
+        entityManager.flush();
+        entityManager.clear();
 
         Performance p = performanceRepository.findById(performanceId)
                 .orElseThrow(() -> new IllegalArgumentException("공연 없음"));
 
         String targetUrl = getSecondImageUrl(p.getIntroImageUrl());
 
-        // 해상도 검증 로직 적용
         if (targetUrl == null || !isImageValid(targetUrl)) {
             System.out.println(">>> [INFO] 이 포스터는 해상도 제한을 초과하거나 유효하지 않아 건너뜁니다: " + performanceId);
-            return; // OCR API 횟수 아끼기 위해 중단
+            return;
         }
 
-        // 1. OCR 호출
         String rawJson = ocrService.callOcr(targetUrl);
-
-        // 2. 파싱 및 저장
         String extractedText = ocrService.extractTextFromOcr(rawJson);
 
-        // 유효한 텍스트가 있을 때만 저장 (불필요한 update 방지)
         if (extractedText != null && !extractedText.equals("텍스트 추출 실패")) {
             p.setExtractedText(extractedText);
 
-            // 3. GPT 3줄 요약 호출 및 저장
             String summaryText = aiSummaryService.getSummaryFromText(extractedText);
             p.setSummaryText(summaryText);
 
@@ -201,31 +190,25 @@ public class PerformanceService {
                     (updatedP != null ? updatedP.getSummaryText() : "NULL"));
         }
     }
-    // 포스터 OCR로 원본 저장
+
     @Transactional
     public String testOcrAndSave(Long performanceId) {
 
         Performance p = performanceRepository.findById(performanceId)
                 .orElseThrow(() -> new IllegalArgumentException("공연 없음"));
 
-        // 1. intro_image_url은 {'styurl': '...'} 형태의 JSON 문자열이므로 순수 URL만 추출
         String targetUrl = getSecondImageUrl(p.getIntroImageUrl());
         if (targetUrl == null || targetUrl.isBlank()) {
             return "유효한 이미지 URL을 찾을 수 없습니다. intro_image_url 값을 확인하세요.";
         }
 
-        // 2. OCR 호출
         String rawJson = ocrService.callOcr(targetUrl);
-
-        // 3. 텍스트 추출
         String extractedText = ocrService.extractTextFromOcr(rawJson);
         p.setExtractedText(extractedText);
 
-        // 4. GPT 3줄 요약
         String summaryText = aiSummaryService.getSummaryFromText(extractedText);
         p.setSummaryText(summaryText);
 
-        // 5. DB 저장
         performanceRepository.saveAndFlush(p);
 
         return "추출된 텍스트: " + extractedText + "\n\n3줄 요약: " + summaryText;

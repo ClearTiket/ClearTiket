@@ -35,7 +35,7 @@ public class AuthController {
 
     @GetMapping("/login")
     public String loginForm(HttpSession session, Model model) {
-        if (session.getAttribute("loginUser") != null) return "redirect:/mypage";
+        if (session.getAttribute("loginUser") != null) return "redirect:/";
         addLoginUser(session, model);
         return "auth/login";
     }
@@ -50,7 +50,7 @@ public class AuthController {
         return userService.login(email, password)
                 .map(userSession -> {
                     session.setAttribute("loginUser", userSession);
-                    return "redirect:/mypage";
+                    return "redirect:/";
                 })
                 .orElseGet(() -> {
                     model.addAttribute("error", "이메일 혹은 비밀번호가 일치하지 않습니다.");
@@ -68,7 +68,7 @@ public class AuthController {
 
     @GetMapping("/register")
     public String registerForm(HttpSession session, Model model) {
-        if (session.getAttribute("loginUser") != null) return "redirect:/mypage";
+        if (session.getAttribute("loginUser") != null) return "redirect:/";
         addLoginUser(session, model);
         return "auth/register";
     }
@@ -107,7 +107,7 @@ public class AuthController {
         if (loginUser == null) return "redirect:/login";
         model.addAttribute("loginUser", loginUser);
 
-       model.addAttribute("savedGenres", Collections.emptyList());
+        model.addAttribute("savedGenres", Collections.emptyList());
         model.addAttribute("savedMoods", Collections.emptyList());
         model.addAttribute("savedCompanion", "");
 

@@ -2,19 +2,25 @@ import psycopg2
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 
-from config.config import DB_CONFIG, ES_CONFIG
+#from config.config import DB_CONFIG, ES_CONFIG
 
 # 엘라스틱서치 클라이언트 연결
-es_url = f"http://{ES_CONFIG["host"]}:{ES_CONFIG["port"]}"
+#es_url = f"http://{ES_CONFIG["host"]}:{ES_CONFIG["port"]}"
+es_url = f"http://localhost:9200"
 es = Elasticsearch(es_url)
 
 # Postgres 연결
 pg_conn = psycopg2.connect(
-    host=DB_CONFIG["host"],
-    database=DB_CONFIG["database"],
-    user=DB_CONFIG["username"],
-    password=DB_CONFIG["password"],
-    port=DB_CONFIG["port"]
+    # host=DB_CONFIG["host"],
+    # database=DB_CONFIG["database"],
+    # user=DB_CONFIG["username"],
+    # password=DB_CONFIG["password"],
+    # port=DB_CONFIG["port"]
+    host="localhost",
+    port="5432",
+    dbname="clearticket",
+    user="postgres",
+    password="tjee1234"
 )
 pg_cursor = pg_conn.cursor()
 

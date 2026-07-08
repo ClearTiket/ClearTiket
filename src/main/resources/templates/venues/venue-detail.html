@@ -11,7 +11,6 @@
 </head>
 
 <style>
-    /* 기본 스타일 초기화 */
     body {
         font-family: 'Noto Sans KR', sans-serif;
         margin: 0;
@@ -20,31 +19,28 @@
         color: #333;
     }
 
-    /* 1. 메인 컨테이너 바깥 틀 (세로 배치 및 간격 25px) */
     .detail-container {
         width: 1200px;
-        margin: 40px auto; /* 상하 여백은 화면 맞춤용, 좌우는 가운데 정렬 */
+        margin: 40px auto;
         display: flex;
         flex-direction: column;
-        gap: 25px; /* 컨테이너간 간격 25px */
+        gap: 25px;
         box-sizing: border-box;
     }
 
-    /* 1. 공통 컨테이너 스타일 */
     .info-card {
         width: 1200px;
-        text-align: left;          /* 텍스트 좌측 정렬 */
-        border: 2px solid #3971E7; /* 테두리 2px #3971E7 */
-        border-radius: 25px;       /* 모서리 반경 25px */
+        text-align: left;
+        border: 2px solid #3971E7;
+        border-radius: 25px;
         box-sizing: border-box;
-        overflow: hidden;          /* 내부 요소가 모서리 반경을 삐져나가지 않도록 설정 */
+        overflow: hidden;
         background-color: #ffffff;
     }
 
-    /* 2. 첫 번째 컨테이너 규격 및 내부 스타일 (높이 200px) */
     .card-short {
         height: 200px;
-        padding: 30px 40px;        /* 내부 여백 */
+        padding: 30px 40px;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -62,32 +58,29 @@
         color: #555;
     }
 
-    /* 3, 4. 고정 헤더(높이 50px)를 가진 컨테이너의 제목 스타일 */
     .card-title-fixed {
         width: 100%;
-        height: 50px;              /* 조건: 높이 50px */
-        line-height: 50px;         /* 텍스트 수직 중앙 정렬 */
+        height: 50px;
+        line-height: 50px;
         margin: 0;
-        padding-left: 40px;        /* 좌측 정렬 여백 */
+        padding-left: 40px;
         font-size: 20px;
         color: #222;
-        background-color: #f8fafe; /* 타이틀 영역 시각적 구분을 위한 연한 배경 (선택사항) */
+        background-color: #f8fafe;
         border-bottom: 1px solid #e2e8f5;
         box-sizing: border-box;
     }
 
-    /* 3. 두 번째 컨테이너 규격 (높이 500px = 타이틀 50px + 이미지 공간 450px) */
     .card-medium {
         height: 500px;
         display: flex;
         flex-direction: column;
     }
 
-    /* 3. 이미지 공간 스타일 (높이 450px) */
     .map-space {
         width: 100%;
-        height: 450px;             /* 조건: 높이 450px */
-        background-color: #f1f5f9; /* 영역 확인용 회색 배경 */
+        height: 450px;
+        background-color: #f1f5f9;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -99,65 +92,54 @@
         font-size: 16px;
     }
 
-    /* 4. 세 번째 컨테이너 규격 (높이 1000px = 타이틀 50px + 빈 공간 950px) */
     .card-long {
         height: 1000px;
         display: flex;
         flex-direction: column;
     }
 
-    /* [기존 스타일 수정] 세 번째 컨테이너 내부 빈 공간 수정 */
     .card-slot-space {
         width: 100%;
-        flex: 1;                   /* 남은 전체 영역 차지 (약 950px) */
+        flex: 1;
         background-color: #ffffff;
         box-sizing: border-box;
 
-        /* 카드 슬롯을 중앙에 배치하기 위한 설정 */
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 25px 0;           /* 상하 여백 25px */
+        padding: 25px 0;
 
-        /* 카드가 많아져 950px을 넘길 경우 세로 스크롤 활성화 */
         overflow-y: auto;
     }
 
-    /* 1. 카드 슬롯 스타일 (너비 1150px, 높이 유동적, 카드간 간격 25px) */
     .card-slot {
         width: 1150px;
-        height: auto;              /* 조건: 카드 개수에 따라 유동적 */
+        height: auto;
         display: flex;
         flex-direction: column;
-        gap: 25px;                 /* 조건: 카드간 간격 25px */
+        gap: 25px;
         box-sizing: border-box;
     }
 
-    /* 2. 개별 카드 스타일 */
     .info-sub-card {
-        width: 1150px;             /* 조건: 너비 1150px */
-        height: 170px;             /* 조건: 높이 170px */
-        border: 1px solid #D9D9D9; /* 조건: 테두리 1px #D9D9D9 */
-        border-radius: 8px;        /* 조건: 모서리 반경 8px */
+        width: 1150px;
+        height: 170px;
+        border: 1px solid #D9D9D9;
+        border-radius: 8px;
         background-color: #ffffff;
         box-sizing: border-box;
 
-        /* 내부 이미지와 텍스트를 가로로 배치 */
         display: flex;
         align-items: center;
-        padding: 0 20px;           /* 카드 내부 좌우 여백 */
+        padding: 0 20px;
     }
 
-    /* 3. 카드 내부 좌측 이미지 공간 */
     .card-image-place {
-        width: 120px;              /* 조건: 너비 120px */
-        height: 160px;             /* 조건: 높이 160px */
-        background-color: #f1f5f9; /* 영역 식별용 임시 배경색 */
+        width: 120px;
+        height: 160px;
+        background-color: #f1f5f9;
         border-radius: 6px;
-        /*display: flex;*/
-        /*align-items: center;*/
-        /*justify-content: center;*/
-        flex-shrink: 0;            /* 카드가 줄어들어도 이미지 크기 고정 */
+        flex-shrink: 0;
         box-sizing: border-box;
     }
 
@@ -176,17 +158,15 @@
         line-height: 1.4;
     }
 
-    /* 4. 카드 내부 우측 텍스트 영역 */
     .card-content {
         flex: 1;
-        margin-left: 25px;         /* 이미지 영역과의 간격 */
-        text-align: left;          /* 조건: 텍스트 좌측 정렬 */
+        margin-left: 25px;
+        text-align: left;
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
 
-    /* 4. <h4> 제목 스타일 */
     .card-content h4 {
         margin: 0 0 10px 0;
         font-size: 18px;
@@ -194,7 +174,6 @@
         font-weight: 600;
     }
 
-    /* 4. 일반 설명 텍스트 스타일 */
     .card-desc {
         margin: 0;
         font-size: 15px;
@@ -214,42 +193,32 @@
 <body>
 <th:block th:replace="~{fragments/header :: header}"></th:block>
 
-    <main class="detail-container">
+<main class="detail-container">
 
-        <section class="info-card card-short">
-            <h3 class="card-title-auto" th:text="${venue.getName()}">OOO</h3>
-            <p class="info-text">주소: <span th:text="${venue.getAddress()}"></span></p>
-            <p class="info-text">전화번호: <span th:text="${venue.getTelnum()}"></span></p>
-            <p class="info-text">홈페이지 주소: <span th:text="${venue.getRelateurl()}"></span></p>
-        </section>
+    <section class="info-card card-short">
+        <h3 class="card-title-auto" th:text="${venue.getName()}">OOO</h3>
+        <p class="info-text">주소: <span th:text="${venue.getAddress()}"></span></p>
+        <p class="info-text">전화번호: <span th:text="${venue.getTelnum()}"></span></p>
+        <p class="info-text">홈페이지 주소: <span th:text="${venue.getRelateurl()}"></span></p>
+    </section>
 
-        <section class="info-card card-medium">
-            <h3 class="card-title-fixed">시설 위치</h3>
-            <div class="map-space"></div>
-<!--        <p class="placeholder-text">이미지를 넣을 수 있는 공간 (높이 450px)</p>-->
-        </section>
+    <section class="info-card card-medium">
+        <h3 class="card-title-fixed">시설 위치</h3>
+        <div class="map-space"></div>
+    </section>
 
-        <section class="info-card card-long">
-            <h3 class="card-title-fixed">예매 가능 공연</h3>
-            <div class="card-slot-space">
-                <div class="card-slot">
-                    <div class="no-performances">
-                        <p>예매 가능한 공연이 없습니다.</p>
-                    </div>
-<!--                    <div class="info-sub-card">-->
-<!--                        <div class="card-image-place">-->
-<!--                            <img src="" alt="...">-->
-<!--                        </div>-->
-<!--                        <div class="card-content">-->
-<!--                            <h4>Title 1</h4>-->
-<!--                            <p class="card-desc">설명 1</p>-->
-<!--                        </div>-->
-<!--                    </div>-->
+    <section class="info-card card-long">
+        <h3 class="card-title-fixed">예매 가능 공연</h3>
+        <div class="card-slot-space">
+            <div class="card-slot">
+                <div class="no-performances">
+                    <p>예매 가능한 공연이 없습니다.</p>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-    </main>
+</main>
 
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
 </body>
@@ -324,7 +293,7 @@
 
                 const desc = document.createElement("p");
                 desc.classList.add("card-desc");
-                desc.textContent = item.startDate + " ~ " + item.endDate;//"description";
+                desc.textContent = item.startDate + " ~ " + item.endDate;
 
                 textArea.appendChild(title);
                 textArea.appendChild(desc);

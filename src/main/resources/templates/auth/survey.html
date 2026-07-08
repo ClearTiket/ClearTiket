@@ -59,7 +59,7 @@
         </div>
 
         <div class="skip-row">
-            <button class="skip-link" th:onclick="|location.href='@{/mypage}'|">다음에 할게요 Skip</button>
+            <button class="skip-link" th:onclick="|location.href='@{/}'|">다음에 할게요 Skip</button>
         </div>
     </div>
 
@@ -87,15 +87,13 @@
     }
 
     function updateCta() {
-        // 보완: Q1, Q2, Q3 세 항목 모두 최소 한 개 이상 선택 시 버튼 활성화
+        // Q1, Q2, Q3 세 항목 모두 최소 한 개 이상 선택 시 버튼 활성화
         const ready = state.q1.length >= 1 && state.q2.length >= 1 && state.q3.length >= 1;
         document.getElementById('cta-btn').classList.toggle('ready', ready);
     }
 
     // ⚠️ 기존 버그: 이 함수가 선택값을 어디에도 저장하지 않고 바로 /login으로 이동만 시켜서,
     // 회원가입 직후 설문에 성실히 답해도 그 응답이 전부 그냥 버려졌습니다.
-    // (그 결과 마이페이지에서 다시 설문을 하지 않는 한 취향 데이터가 전혀 없어
-    //  "취향 설정이 되어있지 않다"는 안내만 계속 보이고 추천 공연도 뜨지 않았습니다.)
     async function goResult() {
         if (!document.getElementById('cta-btn').classList.contains('ready')) return;
 
@@ -119,7 +117,7 @@
             console.error('설문 저장 중 오류:', err);
         }
 
-        location.href = /*[[@{/mypage}]]*/ '/mypage';
+        location.href = /*[[@{/}]]*/ '/';
     }
 </script>
 </body>

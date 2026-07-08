@@ -12,15 +12,24 @@ import psycopg2.extras
 import torch
 from sentence_transformers import SentenceTransformer
 
-from config.config import DB_CONFIG
+#from config.config import DB_CONFIG
+
+# DB_CONN_CONFIG = dict(
+#     host=DB_CONFIG["host"],
+#     port=DB_CONFIG["port"],
+#     dbname=DB_CONFIG["database"],
+#     user=DB_CONFIG["username"],
+#     password=DB_CONFIG["password"]
+# )
 
 DB_CONN_CONFIG = dict(
-    host=DB_CONFIG["host"],
-    port=DB_CONFIG["port"],
-    dbname=DB_CONFIG["database"],
-    user=DB_CONFIG["username"],
-    password=DB_CONFIG["password"]
+    host="localhost",
+    port="5432",
+    dbname="clearticket",
+    user="postgres",
+    password="tjee1234"
 )
+
 MODEL_NAME = "jhgan/ko-sroberta-multitask" # 한국어 특화 모델
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BATCH_SIZE = 16 # 6GB VRAM 기준 안전한 배치 크기

@@ -27,17 +27,9 @@ public class UserService {
     private final TagRepository tagRepository;
     private final UserTagRepository userTagRepository;
 
-    // ─────────────────────────────────────────────
-    // 검증 정규식 (프론트 JS와 동일한 패턴)
-    // ─────────────────────────────────────────────
-
     private static final String EMAIL_REGEX    = "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$";
     private static final String PHONE_REGEX     = "^01[0-9]-\\d{3,4}-\\d{4}$";
     private static final String PASSWORD_REGEX  = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[\\W_]).{8,20}$";
-
-    // ─────────────────────────────────────────────
-    // 중복 확인
-    // ─────────────────────────────────────────────
 
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
@@ -47,19 +39,11 @@ public class UserService {
         return userRepository.existsByPhone(phone);
     }
 
-    // ─────────────────────────────────────────────
-    // 로그인
-    // ─────────────────────────────────────────────
-
     public Optional<UserSession> login(String email, String password) {
         return userRepository.findByEmail(email)
                 .filter(user -> passwordEncoder.matches(password, user.getPassword()))
                 .map(user -> new UserSession(String.valueOf(user.getUserId()), user.getName(), user.getEmail(), user.getPhone()));
     }
-
-    // ─────────────────────────────────────────────
-    // 회원가입
-    // ─────────────────────────────────────────────
 
     @Transactional
     public User register(RegisterRequestDto dto) {
@@ -96,30 +80,17 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    // ─────────────────────────────────────────────
-    // 이메일(아이디) 찾기
-    // ─────────────────────────────────────────────
-
-    /** 이름 + 생년월일로 유저 조회 */
     public Optional<User> findByNameAndBirthdate(String name, String birthdate) {
         return userRepository.findByNameAndBirthdate(name, birthdate);
     }
 
-    /** 전화번호로 유저 조회 */
     public Optional<User> findByPhone(String phone) {
         return userRepository.findByPhone(phone);
     }
 
-    /** 이메일로 유저 조회 (기존) */
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
     }
-
-    // ─────────────────────────────────────────────
-    // 비밀번호 찾기: 본인 확인
-    // verifyType: "name" → 이름 일치 확인
-    //             "phone" → 전화번호 일치 확인
-    // ─────────────────────────────────────────────
 
     public boolean verifyUserForPasswordReset(String email, String verifyType, String verifyValue) {
         Optional<User> userOpt = userRepository.findByEmail(email);
@@ -133,10 +104,6 @@ public class UserService {
         };
     }
 
-    // ─────────────────────────────────────────────
-    // 비밀번호 재설정
-    // ─────────────────────────────────────────────
-
     @Transactional
     public void resetPassword(String email, String newPassword) {
         User user = userRepository.findByEmail(email)
@@ -149,10 +116,6 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
-
-    // ─────────────────────────────────────────────
-    // 설문 저장
-    // ─────────────────────────────────────────────
 
     @Transactional
     public void saveSurvey(String email, SurveyRequestDto dto) {
