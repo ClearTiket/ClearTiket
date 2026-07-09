@@ -80,7 +80,7 @@ public class AutocorrectSearchService {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void syncPostgresToElasticsearch() {
-        log.info("🚀 [통합 동기화] PostgreSQL (performances + venues) -> 엘라스틱서치 복사를 시작합니다...");
+        log.info("[통합 동기화] PostgreSQL (performances + venues) -> 엘라스틱서치 복사를 시작합니다...");
 
         String sql = "SELECT p.performance_id, p.title, p.genre, p.region, p.status, " +
                 "to_char(p.start_date, 'YYYY-MM-DD') as start_date, " +
@@ -130,7 +130,7 @@ public class AutocorrectSearchService {
                 return;
             }
 
-            log.info("📦 조인된 총 {}개의 데이터를 엘라스틱서치로 전송합니다...", dbData.size());
+            log.info("조인된 총 {}개의 데이터를 엘라스틱서치로 전송합니다...", dbData.size());
 
             elasticsearchOperations.save(dbData);
 
@@ -148,7 +148,7 @@ public class AutocorrectSearchService {
      * (공연장 검색 화면에서 사용하는 SearchVenueService가 조회하는 인덱스)
      */
     public void syncVenuesToElasticsearch() {
-        log.info("🚀 [공연장 동기화] PostgreSQL (venues) -> 엘라스틱서치 복사를 시작합니다...");
+        log.info("[공연장 동기화] PostgreSQL (venues) -> 엘라스틱서치 복사를 시작합니다...");
 
         try {
             List<Venue> venues = venueRepository.findAll();
