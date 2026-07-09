@@ -171,7 +171,7 @@
                                 <input type="tel" class="field-input" id="phone-field" th:value="${loginUser.phone}"
                                        placeholder="010-0000-0000" maxlength="13" oninput="formatPhone(this); validatePhone();">
                             </div>
-                            <button class="btn btn-outline-gray btn-sm" id="phone-btn" onclick="toggleEdit('phone')">수정</button>
+                            <button class="btn btn-outline-gray btn-sm" id="phone-btn" onclick="handlePhoneButtonClick()">수정</button>
                         </div>
                         <p id="phone-error" class="error-msg" style="display:none;">올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)</p>
 
@@ -245,10 +245,6 @@
                                 <span style="font-weight:400; font-size:11px; color:#9999BB;">최대 2개</span>
                             </span>
                             <div class="survey-chip-group" id="pref-q1">
-                                <!--
-                                    th:classappend: DB에 저장된 genres 목록에 해당 값이 있으면 'selected' 추가
-                                    survey가 null(설문 미완료)이면 아무것도 선택 안 됨
-                                -->
                                 <button type="button" class="s-chip"
                                         th:classappend="${survey != null and survey.genres != null and survey.genres.contains('콘서트')} ? ' selected' : ''"
                                         data-value="콘서트" onclick="toggleSurvey(this,'pref-q1',2)">콘서트</button>
@@ -347,15 +343,6 @@
         const btn   = document.getElementById(field + '-btn');
         const isEditing = input.style.display !== 'none';
 
-        // 전화번호는 '완료'를 누르는 시점(=편집을 닫는 시점)에 정규식 검증 통과해야만 닫히도록 함
-        if (field === 'phone' && isEditing) {
-            const f = document.getElementById('phone-field');
-            if (f.value && !validatePhone()) {
-                showToast('전화번호 형식을 확인해 주세요. (예: 010-1234-5678)', true);
-                return;
-            }
-        }
-
         view.style.display  = isEditing ? '' : 'none';
         input.style.display = isEditing ? 'none' : '';
         if (isEditing) {
@@ -367,6 +354,32 @@
             btn.textContent = '완료';
             btn.classList.replace('btn-outline-gray','btn-primary');
         }
+    }
+
+    /*
+     * 전화번호 행의 '수정/완료' 버튼 전용 핸들러.
+     * 기존에는 '완료'를 눌러도 toggleEdit()만 호출되어 화면 텍스트만 바뀌고
+     * 실제 저장 API(PUT /api/users/me/profile)는 호출되지 않아, 페이지 맨 아래의
+     * 별도 '저장하기' 버튼을 또 눌러야만 DB에 반영되는 문제가 있었다.
+     * 이제는 '완료'를 누르는 즉시 저장까지 한 번에 처리한다.
+     */
+    function handlePhoneButtonClick() {
+        const input = document.getElementById('phone-input');
+        const isEditing = input.style.display !== 'none';
+
+        if (!isEditing) {
+            toggleEdit('phone');
+            document.getElementById('phone-field').focus();
+            return;
+        }
+
+        const f = document.getElementById('phone-field');
+        if (f.value && !validatePhone()) {
+            showToast('전화번호 형식을 확인해 주세요. (예: 010-1234-5678)', true);
+            return;
+        }
+
+        saveProfile();
     }
 
     function togglePw(id) {
@@ -400,11 +413,6 @@
     }
 
     /* ── 기본 정보 저장 (전화번호만 실제로 변경 가능) ─── */
-    /*
-     * 이름/이메일은 변경 불가이므로 세션에 있는 현재 값을 그대로 함께 보내고,
-     * 전화번호만 실제 수정 대상으로 취급한다.
-     * 백엔드: PUT /api/users/me/profile (MypageApiController.updateMyProfile)
-     */
     const currentName  = /*[[${loginUser.name}]]*/ '';
     const currentEmail = /*[[${loginUser.email}]]*/ '';
 
@@ -443,10 +451,6 @@
     }
 
     /* ── 취향 칩 선택 ───────────────────────────────── */
-    /*
-     * 페이지 로드 시 Thymeleaf가 'selected' 클래스를 심어놓은 버튼을
-     * surveyState에 등록해서 JS 상태와 일치시킴
-     */
     const surveyState = {};
 
     function initSurveyState() {
@@ -474,15 +478,7 @@
     }
 
     /* ── 취향 저장 (AJAX POST → /survey) ─────── */
-    /*
-     * 실제 저장 처리는 mypage 쪽이 아니라 AuthController의
-     *   @PostMapping("/survey")
-     *   @ResponseBody
-     *   public String saveSurvey(@RequestBody SurveyRequestDto dto, HttpSession session)
-     * 에서 이루어지며, 응답은 JSON이 아니라 "SUCCESS"/"FAIL" 문자열이다.
-     */
     function saveSurvey() {
-        // 선택된 칩의 data-value 수집
         const genres    = surveyState['pref-q1']?.map(b => b.dataset.value) ?? [];
         const moods     = surveyState['pref-q2']?.map(b => b.dataset.value) ?? [];
         const companion = surveyState['pref-q3']?.[0]?.dataset.value ?? null;
@@ -494,7 +490,6 @@
 
         const payload = { genres, moods, companion };
 
-        // CSRF 토큰 가져오기 (Thymeleaf가 meta 태그로 심어준 경우)
         const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
         const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 

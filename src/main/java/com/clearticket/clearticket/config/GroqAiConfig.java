@@ -17,7 +17,7 @@ public class GroqAiConfig {
     @Bean
     public OpenAiChatModel openAiChatModel() {
         if (this.apiKey == null || this.apiKey.isEmpty()) {
-            throw new IllegalStateException("❌ [ClearTicket 에러] config.yml 파일에서 'groq.api-key'를 읽어오지 못했습니다.");
+            throw new IllegalStateException("[ClearTicket 에러] config.yml 파일에서 'groq.api-key'를 읽어오지 못했습니다.");
         }
 
         OpenAiApi openAiApi = OpenAiApi.builder()

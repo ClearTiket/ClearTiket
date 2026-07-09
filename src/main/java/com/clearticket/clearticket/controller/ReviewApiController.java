@@ -85,7 +85,7 @@ public class ReviewApiController {
             @RequestBody ReviewWriteRequest request,
             HttpSession session) {
 
-        // ⚠️ 기존에는 로그인 여부를 전혀 확인하지 않고, 요청 본문(request.userId())에 담긴 값을
+        // 기존에는 로그인 여부를 전혀 확인하지 않고, 요청 본문(request.userId())에 담긴 값을
         // 그대로 "작성자 본인 확인"에 사용했습니다. 로그인 안 해도 userId만 맞추면 남의 글을
         // 수정할 수 있는 인증 우회(IDOR) 문제였습니다. → 세션 로그인 여부를 먼저 확인합니다.
         UserSession loginUser = (UserSession) session.getAttribute("loginUser");

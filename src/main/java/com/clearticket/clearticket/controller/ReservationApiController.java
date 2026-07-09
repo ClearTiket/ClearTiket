@@ -1,9 +1,11 @@
 package com.clearticket.clearticket.controller;
 
 //import com.clearticket.clearticket.model.entity.Reservation;
+import com.clearticket.clearticket.model.UserSession;
 import com.clearticket.clearticket.model.dto.*;
 import com.clearticket.clearticket.service.PaymentService;
 import com.clearticket.clearticket.service.ReservationService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +24,21 @@ public class ReservationApiController {
 
     @PostMapping
     public ResponseEntity<?> createReservation(
-            @RequestBody ReservationRequestDto requestDto) {
+            @RequestBody ReservationRequestDto requestDto,
+            HttpSession session) {
+
+        // 화면(버튼 클릭, 페이지 진입)에서는 로그인 여부를 체크하고 있었지만,
+        // 이 API 자체는 세션을 확인하지 않아 로그인 없이도 직접 호출하면 예매가 생성될 수 있었다.
+        // 세션의 로그인 사용자와 요청받은 userId가 일치하는지까지 검증해 다른 사람 명의로
+        // 예매가 생성되는 것도 함께 막는다.
+        UserSession loginUser = (UserSession) session.getAttribute("loginUser");
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+        if (requestDto.getUserId() == null || !loginUser.getId().equals(String.valueOf(requestDto.getUserId()))) {
+            return ResponseEntity.status(403).body("본인 명의로만 예매할 수 있습니다.");
+        }
+
         try {
             ReservationResponseDto response = reservationService.createReservation(requestDto);
             return ResponseEntity.ok(response);

@@ -92,7 +92,7 @@
         document.getElementById('cta-btn').classList.toggle('ready', ready);
     }
 
-    // ⚠️ 기존 버그: 이 함수가 선택값을 어디에도 저장하지 않고 바로 /login으로 이동만 시켜서,
+    // 기존 버그: 이 함수가 선택값을 어디에도 저장하지 않고 바로 /login으로 이동만 시켜서,
     // 회원가입 직후 설문에 성실히 답해도 그 응답이 전부 그냥 버려졌습니다.
     async function goResult() {
         if (!document.getElementById('cta-btn').classList.contains('ready')) return;

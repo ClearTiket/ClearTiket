@@ -39,7 +39,7 @@ public class TicketNotificationApiController {
     public void broadcastSoldOut(@RequestParam("performanceId") Long performanceId,
                                  @RequestParam("section") String section) {
 
-        log.info("✅ 실시간 매진 알림 발송 - 공연 ID: {}, 구역: {}", performanceId, section);
+        log.info("실시간 매진 알림 발송 - 공연 ID: {}, 구역: {}", performanceId, section);
 
         Map<String, Object> messagePayload = new HashMap<>();
         messagePayload.put("performanceId", performanceId);
@@ -51,6 +51,6 @@ public class TicketNotificationApiController {
 
         messagingTemplate.convertAndSend(destination, (Object) messagePayload);
 
-        log.info("✅ 실시간 매진 알림 브로드캐스팅 완료: {}", destination);
+        log.info("실시간 매진 알림 브로드캐스팅 완료: {}", destination);
     }
 }

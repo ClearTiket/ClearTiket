@@ -71,14 +71,14 @@ public class GroqChatbotService {
                     Map<?, ?> message = (Map<?, ?>) firstChoice.get("message");
                     if (message != null && message.get("content") != null) {
                         String aiResponse = message.get("content").toString();
-                        log.info("✅ Groq AI 답변 생성 완료");
+                        log.info("Groq AI 답변 생성 완료");
                         return aiResponse;
                     }
                 }
             }
             return "추천 답변을 가져오는 데 실패했습니다.";
         } catch (Exception e) {
-            log.error("❌ Groq AI 직접 통신 중 에러 발생: ", e);
+            log.error("Groq AI 직접 통신 중 에러 발생: ", e);
             return "죄송합니다. 현재 실시간 추천 서비스 서버가 혼잡합니다. 잠시 후 다시 시도해 주세요.";
         }
     }

@@ -70,7 +70,8 @@ public class PerformanceService {
     }
 
     public Page<Performance> findAll(Integer page, Integer pageSize) {
-        return performanceRepository.findAll(validPageable(page, pageSize));
+        // 공연일이 이미 지난(종료일 < 오늘) 공연은 메인 목록에 노출되지 않도록 필터링
+        return performanceRepository.findAllByEndDateGreaterThanEqual(LocalDate.now(), validPageable(page, pageSize));
     }
     public Page<Performance> findAll(int page) {
         return findAll(page, defaultPageSize);
@@ -120,11 +121,13 @@ public class PerformanceService {
             default -> regions.add(region);
         }
 
-        return performanceRepository.findAllByRegionIn(regions, validPageable(page));
+        // 공연일이 이미 지난 공연은 지역별 목록에 노출되지 않도록 필터링
+        return performanceRepository.findAllByRegionInAndEndDateGreaterThanEqual(regions, LocalDate.now(), validPageable(page));
     }
 
     public Page<Performance> findRankingAllByGenre(String genre, Integer page) {
-        return performanceRepository.findAllByGenre(genre, validPageable(page, 10));
+        // 공연일이 이미 지난 공연은 랭킹 목록에 노출되지 않도록 필터링
+        return performanceRepository.findAllByGenreAndEndDateGreaterThanEqual(genre, LocalDate.now(), validPageable(page, 10));
     }
 
     public boolean isImageValid(String imageUrl) {
@@ -250,7 +253,7 @@ public class PerformanceService {
                 .map(id -> Query.of(q -> q.term(t -> t.field("tags_with").value(id).boost(1.0f))))
                 .collect(Collectors.toList());
 
-        // ⚠️ 기존 버그: 장르 태그가 하나도 없으면(genreQueries가 비어있으면) must + minimumShouldMatch("1")
+        // 기존 버그: 장르 태그가 하나도 없으면(genreQueries가 비어있으면) must + minimumShouldMatch("1")
         // 조건이 "0개 중 1개는 반드시 일치해야 함"이 되어 절대 만족될 수 없었고,
         // 그 결과 로그인해서 취향(분위기/동행)만 설정한 회원은 추천 목록이 항상 빈 배열로만 나왔습니다.
         // → 장르 태그가 있을 때만 genre must 절을 추가하도록 수정.

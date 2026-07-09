@@ -131,7 +131,7 @@ public class UserService {
             }
             userRepository.save(user);
 
-            // ⚠️ 기존에는 여기서 User의 텍스트 컬럼(preferenceGenre 등)에만 저장하고 끝났는데,
+            // 기존에는 여기서 User의 텍스트 컬럼(preferenceGenre 등)에만 저장하고 끝났는데,
             // 메인페이지 "추천 공연" 기능은 실제로는 user_tags 테이블(UserTag)을 조회합니다.
             // 그런데 user_tags에 값을 넣는 코드가 애플리케이션 어디에도 없어서,
             // 설문을 아무리 성실하게 응답해도 추천 결과는 항상 비어있을 수밖에 없었습니다.

@@ -126,7 +126,7 @@ public class AutocorrectSearchService {
             });
 
             if (dbData.isEmpty()) {
-                log.warn("⚠️ PostgreSQL DB에 가져올 데이터가 없습니다.");
+                log.warn("PostgreSQL DB에 가져올 데이터가 없습니다.");
                 return;
             }
 
@@ -134,10 +134,10 @@ public class AutocorrectSearchService {
 
             elasticsearchOperations.save(dbData);
 
-            log.info("✅ [동기화 완료] 4대 필드가 포함된 데이터가 performances 방에 세팅되었습니다!");
+            log.info("[동기화 완료] 4대 필드가 포함된 데이터가 performances 방에 세팅되었습니다!");
 
         } catch (Exception e) {
-            log.error("❌ 데이터 조인 및 복사 중 에러 발생: ", e);
+            log.error("데이터 조인 및 복사 중 에러 발생: ", e);
         }
 
         syncVenuesToElasticsearch();
@@ -154,7 +154,7 @@ public class AutocorrectSearchService {
             List<Venue> venues = venueRepository.findAll();
 
             if (venues.isEmpty()) {
-                log.warn("⚠️ PostgreSQL DB에 가져올 공연장 데이터가 없습니다.");
+                log.warn("PostgreSQL DB에 가져올 공연장 데이터가 없습니다.");
                 return;
             }
 
@@ -173,9 +173,9 @@ public class AutocorrectSearchService {
 
             elasticsearchOperations.save(docs);
 
-            log.info("✅ [공연장 동기화 완료] 총 {}개의 공연장 데이터가 venues 인덱스에 세팅되었습니다!", docs.size());
+            log.info("[공연장 동기화 완료] 총 {}개의 공연장 데이터가 venues 인덱스에 세팅되었습니다!", docs.size());
         } catch (Exception e) {
-            log.error("❌ 공연장 데이터 동기화 중 에러 발생: ", e);
+            log.error("공연장 데이터 동기화 중 에러 발생: ", e);
         }
     }
 
@@ -211,7 +211,7 @@ public class AutocorrectSearchService {
                     .collect(Collectors.toList());
 
         } catch (Exception e) {
-            log.error("❌ Suggestion API 실행 중 에러 발생: ", e);
+            log.error("Suggestion API 실행 중 에러 발생: ", e);
             return new ArrayList<>();
         }
     }

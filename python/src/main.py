@@ -77,7 +77,7 @@ def is_docker_running():
         return False
 
 def main():
-    # 🌟 터미널에서 --afterdate 옵션을 줄 수 있도록 설정
+    # 터미널에서 --afterdate 옵션을 줄 수 있도록 설정
     # 실행 예시: python main.py --afterdate 2026-06-15
     # parser = argparse.ArgumentParser(description="공연 데이터 동기화 파이프라인")
     # parser.add_argument("--afterdate", type=str, default=None, help="이 날짜 이후로 변경된 데이터만 수집 (YYYY-MM-DD)")

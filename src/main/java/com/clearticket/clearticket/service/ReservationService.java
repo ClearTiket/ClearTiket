@@ -36,7 +36,7 @@ public class ReservationService {
         Schedule schedule = scheduleRepository.findById(reservationRequest.getScheduleId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회차(scheduleId)입니다."));
 
-        // ⚠️ 지난 공연(이미 지난 회차)에 대해 프론트엔드의 "예매하기" 버튼이
+        // 지난 공연(이미 지난 회차)에 대해 프론트엔드의 "예매하기" 버튼이
         // 비활성화되지 않은 채로 남아있어도, 서버에서 한 번 더 최종 방어선으로 막아줍니다.
         LocalDateTime showDateTime = LocalDateTime.of(schedule.getShowDate(), schedule.getShowTime());
         if (showDateTime.isBefore(LocalDateTime.now())) {
