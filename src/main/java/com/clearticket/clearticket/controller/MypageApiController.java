@@ -179,6 +179,14 @@ public class MypageApiController {
 
         try {
             myPageService.updateUserProfile(userId, requestDto);
+
+            // 세션의 UserSession에도 새 전화번호를 반영해, 재로그인 없이 화면에 즉시 표시되도록 함
+            UserSession loginUser = (UserSession) session.getAttribute("loginUser");
+            if (loginUser != null && requestDto.getPhone() != null && !requestDto.getPhone().isBlank()) {
+                loginUser.setPhone(requestDto.getPhone());
+                session.setAttribute("loginUser", loginUser);
+            }
+
             return ResponseEntity.ok("회원 정보가 성공적으로 수정되었습니다.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("수정에 실패했습니다: " + e.getMessage());

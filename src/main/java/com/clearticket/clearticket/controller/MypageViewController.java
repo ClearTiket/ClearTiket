@@ -2,6 +2,7 @@ package com.clearticket.clearticket.controller;
 
 import com.clearticket.clearticket.model.UserSession;
 import com.clearticket.clearticket.model.dto.MyPageAddressResponseDto;
+import com.clearticket.clearticket.model.dto.SurveyRequestDto;
 import com.clearticket.clearticket.model.entity.User;
 import com.clearticket.clearticket.repository.UserRepository;
 import com.clearticket.clearticket.service.MyPageService;
@@ -54,7 +55,7 @@ public class MypageViewController {
 
     @GetMapping("/reservation-detail")
     public String reservationDetail(@org.springframework.web.bind.annotation.RequestParam(value = "reservationId", required = false) Long reservationId,
-                                     HttpSession session, Model model) {
+                                    HttpSession session, Model model) {
         if (!checkLogin(session, model)) return "redirect:/login";
         model.addAttribute("reservationId", reservationId);
         return "mypage/reservation-detail";
@@ -69,6 +70,22 @@ public class MypageViewController {
     @GetMapping("/profile")
     public String profile(HttpSession session, Model model) {
         if (!checkLogin(session, model)) return "redirect:/login";
+
+        UserSession loginUser = getLoginUser(session);
+        Long userId = Long.parseLong(loginUser.getId());
+
+        // profile.html은 survey.genres / survey.moods / survey.companion 형태로 참조하므로
+        // survey 페이지와 동일하게 DB에서 저장된 취향값을 조회해 SurveyRequestDto로 담아 전달한다.
+        userRepository.findById(userId).ifPresent(user -> {
+            SurveyRequestDto survey = new SurveyRequestDto();
+            survey.setGenres((user.getPreferenceGenre() != null && !user.getPreferenceGenre().isBlank())
+                    ? Arrays.asList(user.getPreferenceGenre().split(",")) : Collections.emptyList());
+            survey.setMoods((user.getPreferenceMood() != null && !user.getPreferenceMood().isBlank())
+                    ? Arrays.asList(user.getPreferenceMood().split(",")) : Collections.emptyList());
+            survey.setCompanion(user.getPreferenceCompanion());
+            model.addAttribute("survey", survey);
+        });
+
         return "mypage/profile";
     }
 
@@ -142,7 +159,7 @@ public class MypageViewController {
         UserSession loginUser = getLoginUser(session);
         Long userId = Long.parseLong(loginUser.getId());
 
-        // 2. 기존 마이페이지 배송지 조회 로직 그대로 재활용 🎯
+        // 2. 기존 마이페이지 배송지 조회
         List<MyPageAddressResponseDto> addressList = myPageService.getAddressList(userId);
         model.addAttribute("addressList", addressList);
 

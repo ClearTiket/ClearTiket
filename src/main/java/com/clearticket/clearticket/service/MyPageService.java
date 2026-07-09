@@ -426,7 +426,7 @@ public class MyPageService {
                 user.getUserId(),
                 user.getEmail(),
                 user.getName(),
-                user.getAddress(),
+                user.getEmail(),
                 user.getPhone()
         );
     }
@@ -467,6 +467,8 @@ public class MyPageService {
      * @param userId 로그인한 회원
      * @param requestDto 화면에서 수정요청한 데이터
      */
+    private static final String PHONE_REGEX = "^01[0-9]-\\d{3,4}-\\d{4}$";
+
     @Transactional
     public void updateUserProfile(Long userId, MyPageProfileUpdateRequestDto requestDto) {
         Optional<User> optionalUser = userRepository.findById(userId);
@@ -477,9 +479,15 @@ public class MyPageService {
 
         User user = optionalUser.get();
 
-        user.setName(requestDto.getName());
-        user.setEmail(requestDto.getEmail());
-        user.setPhone(requestDto.getPhone());
+        // 이메일(아이디)과 이름은 가입 시 확정되는 값으로 이 화면에서 변경할 수 없다.
+        // 요청에 값이 와도 무시하고, 전화번호만 정규식 검증 후 갱신한다.
+        String phone = requestDto.getPhone();
+        if (phone != null && !phone.isBlank()) {
+            if (!phone.matches(PHONE_REGEX)) {
+                throw new IllegalArgumentException("올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)");
+            }
+            user.setPhone(phone);
+        }
     }
 
     /**

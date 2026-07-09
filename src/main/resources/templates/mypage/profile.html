@@ -159,37 +159,25 @@
 
                         <div class="field-row">
                             <span class="field-label">이름</span>
-                            <div id="name-view" class="field-value" th:text="${loginUser.name}"></div>
-                            <div id="name-input" class="field-input-wrap" style="display:none;">
-                                <input type="text" class="field-input" id="name-field" th:value="${loginUser.name}">
-                            </div>
-                            <button class="btn btn-outline-gray btn-sm" id="name-btn" onclick="toggleEdit('name')">수정</button>
+                            <span class="field-readonly" th:text="${loginUser.name}"></span>
+                            <div></div>
                         </div>
 
                         <div class="field-row">
                             <span class="field-label">전화번호</span>
-                            <div id="phone-view" class="field-value">-</div>
+                            <div id="phone-view" class="field-value"
+                                 th:text="${loginUser.phone != null and !#strings.isEmpty(loginUser.phone)} ? ${loginUser.phone} : '등록된 번호가 없습니다.'"></div>
                             <div id="phone-input" class="field-input-wrap" style="display:none;">
-                                <input type="tel" class="field-input" id="phone-field" placeholder="010-0000-0000" oninput="formatPhone(this)">
+                                <input type="tel" class="field-input" id="phone-field" th:value="${loginUser.phone}"
+                                       placeholder="010-0000-0000" maxlength="13" oninput="formatPhone(this); validatePhone();">
                             </div>
                             <button class="btn btn-outline-gray btn-sm" id="phone-btn" onclick="toggleEdit('phone')">수정</button>
                         </div>
+                        <p id="phone-error" class="error-msg" style="display:none;">올바른 전화번호 형식이 아닙니다. (예: 010-1234-5678)</p>
 
-                        <div class="field-row">
-                            <span class="field-label">이메일 변경</span>
-                            <div id="email-view" class="field-value" th:text="${loginUser.email}"></div>
-                            <div id="email-input" class="email-edit-wrap" style="display:none;">
-                                <div class="email-edit-row">
-                                    <input type="email" class="field-input" id="email-field" th:value="${loginUser.email}">
-                                    <button class="btn btn-primary btn-sm" type="button" onclick="alert('인증번호 발송 (데모)')">인증번호 발송</button>
-                                </div>
-                                <div class="email-edit-row">
-                                    <input type="text" class="field-input" placeholder="인증번호 6자리" style="max-width:160px;">
-                                    <button class="btn btn-secondary btn-sm" type="button" onclick="alert('인증 완료 (데모)')">확인</button>
-                                </div>
-                            </div>
-                            <button class="btn btn-outline-gray btn-sm" id="email-btn" onclick="toggleEdit('email')">수정</button>
-                        </div>
+                        <p class="field-readonly" style="font-size:12px; padding:6px 0 0;">
+                            이메일(아이디)과 이름은 변경할 수 없습니다.
+                        </p>
 
                     </div>
                 </div>
@@ -339,7 +327,7 @@
                     <button type="button" class="withdraw-link"
                             onclick="if(confirm('정말 탈퇴하시겠습니까?')) alert('탈퇴 처리 (데모)')">회원탈퇴</button>
                     <button type="button" class="btn btn-outline-gray" onclick="history.back()">취소</button>
-                    <button type="button" class="btn btn-primary" onclick="alert('기본정보가 저장되었습니다.')">저장하기</button>
+                    <button type="button" class="btn btn-primary" onclick="saveProfile()">저장하기</button>
                 </div>
 
             </div>
@@ -358,11 +346,21 @@
         const input = document.getElementById(field + '-input');
         const btn   = document.getElementById(field + '-btn');
         const isEditing = input.style.display !== 'none';
+
+        // 전화번호는 '완료'를 누르는 시점(=편집을 닫는 시점)에 정규식 검증 통과해야만 닫히도록 함
+        if (field === 'phone' && isEditing) {
+            const f = document.getElementById('phone-field');
+            if (f.value && !validatePhone()) {
+                showToast('전화번호 형식을 확인해 주세요. (예: 010-1234-5678)', true);
+                return;
+            }
+        }
+
         view.style.display  = isEditing ? '' : 'none';
         input.style.display = isEditing ? 'none' : '';
         if (isEditing) {
             const f = document.getElementById(field + '-field');
-            if (f) view.textContent = f.value;
+            if (f) view.textContent = f.value || '등록된 번호가 없습니다.';
             btn.textContent = '수정';
             btn.classList.replace('btn-primary','btn-outline-gray');
         } else {
@@ -389,6 +387,59 @@
         if (v.length <= 3)      el.value = v;
         else if (v.length <= 7) el.value = v.slice(0,3) + '-' + v.slice(3);
         else                    el.value = v.slice(0,3) + '-' + v.slice(3,7) + '-' + v.slice(7,11);
+    }
+
+    /* 백엔드 UserService의 PHONE_REGEX(^01[0-9]-\d{3,4}-\d{4}$)와 동일하게 맞춤 */
+    const PHONE_REGEX = /^01[0-9]-\d{3,4}-\d{4}$/;
+
+    function validatePhone() {
+        const v = document.getElementById('phone-field').value;
+        const ok = PHONE_REGEX.test(v);
+        document.getElementById('phone-error').style.display = (!ok && v) ? 'block' : 'none';
+        return ok;
+    }
+
+    /* ── 기본 정보 저장 (전화번호만 실제로 변경 가능) ─── */
+    /*
+     * 이름/이메일은 변경 불가이므로 세션에 있는 현재 값을 그대로 함께 보내고,
+     * 전화번호만 실제 수정 대상으로 취급한다.
+     * 백엔드: PUT /api/users/me/profile (MypageApiController.updateMyProfile)
+     */
+    const currentName  = /*[[${loginUser.name}]]*/ '';
+    const currentEmail = /*[[${loginUser.email}]]*/ '';
+
+    function saveProfile() {
+        const phoneInputVisible = document.getElementById('phone-input').style.display !== 'none';
+        const phoneValue = phoneInputVisible
+            ? document.getElementById('phone-field').value
+            : document.getElementById('phone-view').textContent.trim();
+        const phone = (phoneValue === '등록된 번호가 없습니다.') ? '' : phoneValue;
+
+        if (phone && !PHONE_REGEX.test(phone)) {
+            showToast('전화번호 형식이 올바르지 않습니다. (예: 010-1234-5678)', true);
+            return;
+        }
+
+        const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+        const headers = { 'Content-Type': 'application/json' };
+        if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+
+        fetch('/api/users/me/profile', {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({ name: currentName, email: currentEmail, phone })
+        })
+            .then(res => {
+                if (!res.ok) throw new Error('저장 실패');
+                return res.text();
+            })
+            .then(() => {
+                showToast('기본정보가 저장되었습니다.');
+                document.getElementById('phone-view').textContent = phone || '등록된 번호가 없습니다.';
+                if (phoneInputVisible) toggleEdit('phone');
+            })
+            .catch(() => showToast('저장에 실패했습니다. 다시 시도해 주세요.', true));
     }
 
     /* ── 취향 칩 선택 ───────────────────────────────── */
@@ -422,16 +473,13 @@
         }
     }
 
-    /* ── 취향 저장 (AJAX POST → /mypage/survey) ─────── */
+    /* ── 취향 저장 (AJAX POST → /survey) ─────── */
     /*
-     * 백엔드 컨트롤러 예시:
-     *   @PostMapping("/mypage/survey")
+     * 실제 저장 처리는 mypage 쪽이 아니라 AuthController의
+     *   @PostMapping("/survey")
      *   @ResponseBody
-     *   public ResponseEntity<?> updateSurvey(@RequestBody SurveyRequestDto dto,
-     *                                          @SessionAttribute("loginUser") User user) {
-     *       surveyService.saveOrUpdate(user.getId(), dto);
-     *       return ResponseEntity.ok(Map.of("message","저장 완료"));
-     *   }
+     *   public String saveSurvey(@RequestBody SurveyRequestDto dto, HttpSession session)
+     * 에서 이루어지며, 응답은 JSON이 아니라 "SUCCESS"/"FAIL" 문자열이다.
      */
     function saveSurvey() {
         // 선택된 칩의 data-value 수집
@@ -453,16 +501,19 @@
         const headers = { 'Content-Type': 'application/json' };
         if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
 
-        fetch(/*[[@{/mypage/survey}]]*/ '/mypage/survey', {
+        fetch(/*[[@{/survey}]]*/ '/survey', {
             method: 'POST',
             headers,
             body: JSON.stringify(payload)
         })
             .then(res => {
                 if (!res.ok) throw new Error('서버 오류');
-                return res.json();
+                return res.text();
             })
-            .then(() => showToast('취향 설정이 저장되었습니다.'))
+            .then(text => {
+                if (text === 'SUCCESS') showToast('취향 설정이 저장되었습니다.');
+                else showToast('저장에 실패했습니다. 다시 시도해 주세요.', true);
+            })
             .catch(() => showToast('저장에 실패했습니다. 다시 시도해 주세요.', true));
     }
 
