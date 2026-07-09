@@ -105,7 +105,7 @@
                                 </div>
                                 <span class="badge badge-blue" style="font-size:12px;padding:5px 12px;">신청중</span>
                                 <button class="btn btn-outline-gray btn-sm"
-                                        onclick="if(confirm('신청을 취소하시겠습니까?')) alert('취소되었습니다.')">
+                                        th:attr="onclick=|cancelWaiting(${item.waitingId})|">
                                     신청취소
                                 </button>
                             </div>
@@ -213,6 +213,28 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-' + name).classList.add('active');
         btn.classList.add('active');
+    }
+
+    async function cancelWaiting(waitingId) {
+        if (!confirm('신청을 취소하시겠습니까?')) return;
+
+        try {
+            const res = await fetch(`/api/users/me/waitings/${waitingId}/cancel`, { method: 'POST' });
+            if (res.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            if (!res.ok) {
+                const msg = await res.text();
+                alert(msg || '취소 처리에 실패했습니다.');
+                return;
+            }
+            alert('예매대기가 취소되었습니다.');
+            window.location.reload();
+        } catch (err) {
+            console.error('예매대기 취소 에러:', err);
+            alert('취소 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.');
+        }
     }
 </script>
 </body>

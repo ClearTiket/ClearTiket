@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
-<body>
+<body th:attr="data-reservation-id=${reservationId}">
 <th:block th:replace="~{fragments/header :: header}"></th:block>
 <main>
     <div class="page-wrap fade-in">
@@ -16,134 +16,8 @@
         <div class="mypage-layout">
             <th:block th:replace="~{fragments/mypage-sidebar :: sidebar('reservations')}"></th:block>
 
-            <div class="main-content">
-                <!-- 공연 기본 정보 -->
-                <div class="card" style="margin-bottom:24px;">
-                    <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
-                        <div class="img-placeholder" style="width:100px;height:130px;flex-shrink:0;"></div>
-                        <div style="flex:1;">
-                            <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;">BLUE HOUR : 청춘이 빛나는 우리들의 시간</h2>
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;">
-                                <dl class="info-grid">
-                                    <dt>예약번호</dt><dd>C12345678</dd>
-                                    <dt>예매일시</dt><dd>2026.04.10</dd>
-                                    <dt>관람일시</dt><dd>2026.06.06 (토) 17:00</dd>
-                                    <dt>매수</dt><dd>1매</dd>
-                                </dl>
-                                <dl class="info-grid">
-                                    <dt>공연장</dt><dd>KSPO DOME</dd>
-                                    <dt>예매자</dt><dd>OOO</dd>
-                                    <dt>취소가능</dt><dd>2026.06.05 (금) 11:59 까지</dd>
-                                    <dt>상태</dt><dd><span class="badge badge-blue">예매완료</span></dd>
-                                </dl>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 티켓 수령 방법 -->
-                <div class="card" style="margin-bottom:24px;">
-                    <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">티켓수령방법</h3>
-                    <dl class="info-grid" style="gap:10px 0;">
-                        <dt>수령방법</dt><dd>배송</dd>
-                        <dt>받으시는분</dt><dd>OOO</dd>
-                        <dt>휴대폰번호</dt><dd>010-1234-5678</dd>
-                        <dt>주소</dt><dd>서울특별시 OO구 OO동</dd>
-                        <dt>송장번호</dt>
-                        <dd>
-                            123456789456132
-                            <button class="btn btn-secondary btn-sm" style="margin-left:8px;">배송추적</button>
-                        </dd>
-                    </dl>
-                </div>
-
-                <!-- 결제 내역 -->
-                <div class="card" style="margin-bottom:24px;">
-                    <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">결제내역</h3>
-                    <table class="fee-table">
-                        <tr><td>티켓금액</td><td>154,000</td></tr>
-                        <tr><td>결제수수료</td><td>4,000</td></tr>
-                        <tr><td>쿠폰할인</td><td>0</td></tr>
-                        <tr><td style="color:#4B6EF5;font-weight:700;">총금액</td><td style="color:#4B6EF5;font-size:16px;">158,000</td></tr>
-                    </table>
-                </div>
-
-                <!-- 좌석 정보 -->
-                <div class="card" style="margin-bottom:24px;">
-                    <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">좌석정보</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="data-table" style="min-width:600px;">
-                            <thead>
-                            <tr>
-                                <th>예매번호</th><th>좌석등급</th><th>좌석번호</th><th>가격</th><th>취소여부</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>C123456789</td>
-                                <td>R석</td>
-                                <td>2층 205구역 N열 1</td>
-                                <td>158,000</td>
-                                <td>
-                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
-                                        <input type="checkbox" id="cancel_check" onchange="toggleCancel(this)" style="width:16px;height:16px;accent-color:#4B6EF5;">
-                                        취소 가능
-                                    </label>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <p id="cancel_hint" style="font-size:13px;color:#9999BB;margin-top:8px;display:none;">→ 체크해야 넘어감</p>
-                    <div style="text-align:center;margin-top:16px;padding:14px;background:#EEF1FF;border-radius:10px;">
-                        <p style="font-weight:700;font-size:15px;">
-                            총 결제금액 158,000 - 취소 수수료 12,400 = <span style="color:#4B6EF5;font-size:17px;">145,600</span>
-                        </p>
-                    </div>
-                </div>
-
-                <!-- 취소 수수료 안내 -->
-                <div class="card" style="margin-bottom:28px;">
-                    <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">취소 수수료안내</h3>
-                    <div style="overflow-x:auto;">
-                        <table class="cancel-fee-table" style="min-width:600px;">
-                            <thead>
-                            <tr>
-                                <th>취소기간</th>
-                                <th>이후기간</th>
-                                <th>예매 후 9일 ~ 관람일 10일이내</th>
-                                <th>관람일 9일 전 ~ 7일전</th>
-                                <th>관람일 6일 전 ~ 4일전</th>
-                                <th>관람일 7일 전 ~ 1일전</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>취소 일</td>
-                                <td>2026.06.19 ~ 2026.06.26</td>
-                                <td>2026.06.27 ~ 2026.07.03</td>
-                                <td>2026.07.04 ~ 2026.07.06</td>
-                                <td>2026.07.07 ~ 2026.07.10</td>
-                                <td>2026.07.11 ~ 2026.07.12</td>
-                            </tr>
-                            <tr>
-                                <td>취소 수수료</td>
-                                <td style="color:#38A169;">없음</td>
-                                <td>장당 4000원 (티켓금액의 10% 한도)</td>
-                                <td>티켓금액의 10%</td>
-                                <td>티켓금액의 30%</td>
-                                <td>티켓금액의 30%</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- 버튼 -->
-                <div style="display:flex;gap:12px;justify-content:center;">
-                    <a th:href="@{/mypage/reservations}" class="btn btn-outline-gray" style="min-width:140px;">이전화면</a>
-                    <a th:href="@{/mypage/cancel-complete}" class="btn btn-primary" id="cancel_btn" style="min-width:140px;pointer-events:none;opacity:.5;">취소하기</a>
-                </div>
+            <div class="main-content" id="detail-root">
+                <div class="card" style="text-align:center;color:#9999BB;padding:60px 0;">불러오는 중...</div>
             </div>
         </div>
     </div>
@@ -151,15 +25,181 @@
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
 
 <script>
-    function toggleCancel(cb) {
-        document.getElementById('cancel_hint').style.display = cb.checked ? 'block' : 'none';
-        const btn = document.getElementById('cancel_btn');
-        btn.style.pointerEvents = cb.checked ? 'auto' : 'none';
-        btn.style.opacity = cb.checked ? '1' : '0.5';
+    const STATUS_LABEL = { WAITING: "결제대기", CONFIRMED: "예매완료", CANCELED: "예매취소" };
+    const reservationId = document.body.dataset.reservationId;
+
+    function formatDate(dateStr) {
+        if (!dateStr) return "-";
+        return dateStr.substring(0, 10).replace(/-/g, ".");
     }
-    document.getElementById('cancel_btn').addEventListener('click', function(e) {
-        if (!confirm('정말 취소하시겠습니까?')) e.preventDefault();
-    });
+
+    function formatDateWithDay(dateStr) {
+        if (!dateStr) return "정보 없음";
+        const d = new Date(dateStr);
+        const days = ["일", "월", "화", "수", "목", "금", "토"];
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}.${m}.${day} (${days[d.getDay()]})`;
+    }
+
+    function renderError(message) {
+        document.getElementById("detail-root").innerHTML = `
+            <div class="card" style="text-align:center;color:#e05252;padding:60px 20px;">
+                ${message}<br><br>
+                <a href="/mypage/reservations" class="btn btn-outline-gray btn-sm">예매 내역으로 돌아가기</a>
+            </div>`;
+    }
+
+    function renderDetail(d) {
+        const statusLabel = STATUS_LABEL[d.status] || d.status || "-";
+        const seatRows = (d.seats || []).map(s => `
+            <tr>
+                <td>${d.reservationNumber || "-"}</td>
+                <td>${s.seatGrade || "-"}</td>
+                <td>${s.sectionName || ""}구역 ${s.rowNum || ""}열 ${s.seatNum != null ? s.seatNum : ""}번</td>
+                <td>${(s.price || 0).toLocaleString()}</td>
+            </tr>
+        `).join("") || `<tr><td colspan="4" style="text-align:center;color:#9999BB;">좌석 정보가 없습니다.</td></tr>`;
+
+        const cancelSection = d.canCancel ? `
+            <div style="text-align:center;margin-top:16px;padding:14px;background:#EEF1FF;border-radius:10px;">
+                <p style="font-weight:700;font-size:15px;">
+                    총 결제금액 ${d.totalPrice.toLocaleString()} - 취소 수수료 ${d.cancelFeeAmount.toLocaleString()} =
+                    <span style="color:#4B6EF5;font-size:17px;">${d.refundAmount.toLocaleString()}</span>
+                </p>
+                <p style="font-size:13px;color:#6b7280;margin-top:6px;">${d.cancelDeadlineText || ""}</p>
+            </div>
+        ` : `
+            <div style="text-align:center;margin-top:16px;padding:14px;background:#F3F4F6;border-radius:10px;color:#9999BB;font-size:14px;">
+                ${d.status === "CANCELED" ? "이미 취소된 예매입니다." : (d.cancelDeadlineText || "현재는 취소가 불가능한 예매입니다.")}
+            </div>
+        `;
+
+        const shippingBlock = (d.ticketType === "배송" || d.recipientName) ? `
+            <div class="card" style="margin-bottom:24px;">
+                <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">티켓수령방법</h3>
+                <dl class="info-grid" style="gap:10px 0;">
+                    <dt>수령방법</dt><dd>${d.ticketType || "-"}</dd>
+                    <dt>받으시는분</dt><dd>${d.recipientName || "-"}</dd>
+                    <dt>휴대폰번호</dt><dd>${d.recipientPhone || "-"}</dd>
+                    <dt>주소</dt><dd>${d.shippingAddress || "-"}</dd>
+                </dl>
+            </div>
+        ` : "";
+
+        document.getElementById("detail-root").innerHTML = `
+            <div class="card" style="margin-bottom:24px;">
+                <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+                    ${d.posterImageUrl
+                ? `<img src="${d.posterImageUrl}" style="width:100px;height:130px;object-fit:cover;border-radius:8px;flex-shrink:0;">`
+                : `<div class="img-placeholder" style="width:100px;height:130px;flex-shrink:0;"></div>`}
+                    <div style="flex:1;">
+                        <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;">${d.performanceTitle || "공연 정보 없음"}</h2>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 32px;">
+                            <dl class="info-grid">
+                                <dt>예약번호</dt><dd>${d.reservationNumber || "-"}</dd>
+                                <dt>예매일시</dt><dd>${formatDate(d.reservationDate)}</dd>
+                                <dt>관람일시</dt><dd>${formatDateWithDay(d.showDateTime)}</dd>
+                                <dt>매수</dt><dd>${(d.seats || []).length}매</dd>
+                            </dl>
+                            <dl class="info-grid">
+                                <dt>공연장</dt><dd>${d.venueName || "-"}</dd>
+                                <dt>상태</dt><dd><span class="badge badge-blue">${statusLabel}</span></dd>
+                                <dt>취소안내</dt><dd style="font-size:13px;">${d.cancelDeadlineText || "-"}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            ${shippingBlock}
+
+            <div class="card" style="margin-bottom:24px;">
+                <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">결제내역</h3>
+                <table class="fee-table">
+                    <tr><td>티켓금액</td><td>${d.ticketPriceSum.toLocaleString()}</td></tr>
+                    <tr><td>결제수수료</td><td>${d.shippingFee.toLocaleString()}</td></tr>
+                    <tr><td>쿠폰할인</td><td>${d.discountAmount.toLocaleString()}</td></tr>
+                    <tr><td style="color:#4B6EF5;font-weight:700;">총금액</td><td style="color:#4B6EF5;font-size:16px;">${d.totalPrice.toLocaleString()}</td></tr>
+                </table>
+            </div>
+
+            <div class="card" style="margin-bottom:24px;">
+                <h3 style="font-size:16px;font-weight:700;margin-bottom:16px;">좌석정보</h3>
+                <div style="overflow-x:auto;">
+                    <table class="data-table" style="min-width:600px;">
+                        <thead>
+                        <tr><th>예매번호</th><th>좌석등급</th><th>좌석번호</th><th>가격</th></tr>
+                        </thead>
+                        <tbody>${seatRows}</tbody>
+                    </table>
+                </div>
+                ${cancelSection}
+            </div>
+
+            <div style="display:flex;gap:12px;justify-content:center;">
+                <a href="/mypage/reservations" class="btn btn-outline-gray" style="min-width:140px;">이전화면</a>
+                <button id="cancel_btn" class="btn btn-primary" style="min-width:140px;" ${d.canCancel ? "" : "disabled"}>취소하기</button>
+            </div>
+        `;
+
+        const cancelBtn = document.getElementById("cancel_btn");
+        if (!d.canCancel && cancelBtn) {
+            cancelBtn.style.opacity = "0.5";
+            cancelBtn.style.cursor = "not-allowed";
+        }
+        if (cancelBtn && d.canCancel) {
+            cancelBtn.addEventListener("click", doCancel);
+        }
+    }
+
+    async function doCancel() {
+        if (!confirm("정말 취소하시겠습니까? 취소 수수료가 발생할 수 있습니다.")) return;
+
+        try {
+            const res = await fetch(`/api/users/me/reservations/${reservationId}/cancel`, { method: "POST" });
+            if (res.status === 401) {
+                window.location.href = "/login";
+                return;
+            }
+            if (!res.ok) {
+                const msg = await res.text();
+                alert(msg || "취소 처리에 실패했습니다.");
+                return;
+            }
+            window.location.href = "/mypage/cancel-complete";
+        } catch (err) {
+            console.error("예매 취소 에러:", err);
+            alert("취소 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+        }
+    }
+
+    async function loadDetail() {
+        if (!reservationId || reservationId === "null" || reservationId === "undefined") {
+            renderError("잘못된 접근입니다. 예매 내역에서 다시 시도해 주세요.");
+            return;
+        }
+        try {
+            const res = await fetch(`/api/users/me/reservations/${reservationId}`);
+            if (res.status === 401) {
+                window.location.href = "/login";
+                return;
+            }
+            if (!res.ok) {
+                const msg = await res.text();
+                renderError(msg || "예매 상세 정보를 불러오지 못했습니다.");
+                return;
+            }
+            const detail = await res.json();
+            renderDetail(detail);
+        } catch (err) {
+            console.error("예매 상세 로드 에러:", err);
+            renderError("예매 상세 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", loadDetail);
 </script>
 </body>
 </html>

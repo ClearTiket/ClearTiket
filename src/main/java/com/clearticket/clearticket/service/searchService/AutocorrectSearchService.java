@@ -2,6 +2,9 @@ package com.clearticket.clearticket.service.searchService;
 
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import com.clearticket.clearticket.model.document.PerformanceDocument;
+import com.clearticket.clearticket.model.document.VenueDocument;
+import com.clearticket.clearticket.model.entity.Venue;
+import com.clearticket.clearticket.repository.VenueRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -11,6 +14,7 @@ import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.geo.GeoPoint;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +29,7 @@ public class AutocorrectSearchService {
 
     private final ElasticsearchOperations elasticsearchOperations;
     private final JdbcTemplate jdbcTemplate;
+    private final VenueRepository venueRepository;
 
     /**
      * 4가지 필드(공연명, 배우, 장르, 공연장명) 통합 오타 교정 검색
@@ -133,6 +138,44 @@ public class AutocorrectSearchService {
 
         } catch (Exception e) {
             log.error("❌ 데이터 조인 및 복사 중 에러 발생: ", e);
+        }
+
+        syncVenuesToElasticsearch();
+    }
+
+    /**
+     * PostgreSQL의 공연장(venues) 테이블을 엘라스틱서치 'venues' 인덱스로 동기화
+     * (공연장 검색 화면에서 사용하는 SearchVenueService가 조회하는 인덱스)
+     */
+    public void syncVenuesToElasticsearch() {
+        log.info("🚀 [공연장 동기화] PostgreSQL (venues) -> 엘라스틱서치 복사를 시작합니다...");
+
+        try {
+            List<Venue> venues = venueRepository.findAll();
+
+            if (venues.isEmpty()) {
+                log.warn("⚠️ PostgreSQL DB에 가져올 공연장 데이터가 없습니다.");
+                return;
+            }
+
+            List<VenueDocument> docs = venues.stream().map(v -> {
+                VenueDocument doc = new VenueDocument();
+                doc.setVenueId(v.getVenueId());
+                doc.setName(v.getName());
+                doc.setAddress(v.getAddress());
+                doc.setRegion(v.getRegion());
+                doc.setLocation(new GeoPoint(v.getLat(), v.getLon()));
+                doc.setTelnum(v.getTelnum());
+                doc.setRelateurl(v.getRelateurl());
+                doc.setCapacity(v.getCapacity());
+                return doc;
+            }).collect(Collectors.toList());
+
+            elasticsearchOperations.save(docs);
+
+            log.info("✅ [공연장 동기화 완료] 총 {}개의 공연장 데이터가 venues 인덱스에 세팅되었습니다!", docs.size());
+        } catch (Exception e) {
+            log.error("❌ 공연장 데이터 동기화 중 에러 발생: ", e);
         }
     }
 

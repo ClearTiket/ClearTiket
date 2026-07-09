@@ -6,11 +6,13 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
+import org.springframework.data.elasticsearch.annotations.Setting;
 import org.springframework.data.elasticsearch.core.geo.GeoPoint;
 
 @Getter
 @Setter
 @Document(indexName = "venues")
+@Setting(settingPath = "elasticsearch/performance-settings.json")
 public class VenueDocument {
 
     @Id

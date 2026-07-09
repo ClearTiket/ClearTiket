@@ -38,6 +38,7 @@ public class Waiting {
     private LocalDateTime createdAt;
 
     public void changeStatus(WaitingStatus waitingStatus) {
+        this.status = waitingStatus;
     }
 }
 

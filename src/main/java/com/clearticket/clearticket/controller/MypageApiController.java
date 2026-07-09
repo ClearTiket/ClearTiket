@@ -62,6 +62,46 @@ public class MypageApiController {
     }
 
     /**
+     * 예매 상세 정보 조회 (마이페이지 예매/취소 내역 상세 화면)
+     * @param reservationId 조회할 예매 ID
+     * @param session 현재 요청의 HTTP 세션
+     * @return 예매 상세 DTO, 미로그인 시 401, 본인 소유가 아니거나 없는 예매면 400 에러 반환
+     */
+    @GetMapping("/reservations/{reservation_id}")
+    public ResponseEntity<?> getMyReservationDetail(@PathVariable("reservation_id") Long reservationId, HttpSession session) {
+        Long loginUser = getLoginUserId(session);
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        try {
+            return ResponseEntity.ok(myPageService.getReservationDetail(reservationId, loginUser));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * 예매 취소 실행 (실제 상태 변경 + 좌석 반환)
+     * @param reservationId 취소할 예매 ID
+     * @param session 현재 요청의 HTTP 세션
+     * @return 취소 처리 결과(환불 예정 금액 포함) DTO, 실패 시 에러 메시지 반환
+     */
+    @PostMapping("/reservations/{reservation_id}/cancel")
+    public ResponseEntity<?> cancelMyReservation(@PathVariable("reservation_id") Long reservationId, HttpSession session) {
+        Long loginUser = getLoginUserId(session);
+        if (loginUser == null) {
+            return ResponseEntity.status(401).body("로그인이 필요합니다.");
+        }
+
+        try {
+            return ResponseEntity.ok(myPageService.cancelReservation(reservationId, loginUser));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
      * 내 예매대기 목록 조회
      * 사용자가 신청해 둔 모든 예매 대기 리스트 조회
      * @param session 현재 요청의 HTTP 세션

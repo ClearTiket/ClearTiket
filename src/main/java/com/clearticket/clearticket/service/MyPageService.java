@@ -22,6 +22,8 @@ public class MyPageService {
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
     private final CouponRepository couponRepository;
+    private final BookingSeatsRepository bookingSeatsRepository;
+    private final org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
 
     /**
      * 사용자 통계 및 취향분석 조회
@@ -180,7 +182,9 @@ public class MyPageService {
                 waiting.getWaitingId(),
                 performance != null ? performance.getTitle() : "공연 정보 없음",
                 performance != null ? performance.getPosterUrl() : null,
+                performance != null && performance.getVenue() != null ? performance.getVenue().getName() : "장소 정보 없음",
                 showDateTime,
+                waiting.getCreatedAt(),
                 seatInfo,
                 waitingOrder,
                 waiting.getStatus() != null ? waiting.getStatus().name() : null
@@ -203,6 +207,173 @@ public class MyPageService {
         }
 
         return result;
+    }
+
+
+    /**
+     * 마이페이지 예매 상세 정보 조회 (본인 소유 검증 포함)
+     * @param reservationId 조회할 예매 ID
+     * @param userId 로그인한 사용자의 고유 ID (권한 검증용)
+     */
+    @Transactional(readOnly = true)
+    public MyPageReservationDetailResponseDto getReservationDetail(Long reservationId, Long userId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예매 내역입니다. ID: " + reservationId));
+
+        if (!reservation.getUser().getUserId().equals(userId)) {
+            throw new IllegalStateException("본인의 예매 내역만 조회할 수 있습니다.");
+        }
+
+        return buildDetailDto(reservation);
+    }
+
+    /**
+     * 예매 취소 실행 (본인 소유 검증 + 취소 수수료 계산 + 선점 좌석 반환)
+     * @param reservationId 취소할 예매 ID
+     * @param userId 로그인한 사용자의 고유 ID (권한 검증용)
+     * @return 취소 처리 이후의 최종 상태 DTO (환불 예정 금액 포함)
+     */
+    @Transactional
+    public MyPageReservationDetailResponseDto cancelReservation(Long reservationId, Long userId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 예매 내역입니다. ID: " + reservationId));
+
+        if (!reservation.getUser().getUserId().equals(userId)) {
+            throw new IllegalStateException("본인의 예매 내역만 취소할 수 있습니다.");
+        }
+
+        if (reservation.getStatus() == ReservationStatus.CANCELED) {
+            throw new IllegalStateException("이미 취소된 예매 내역입니다.");
+        }
+
+        Schedule schedule = reservation.getSchedule();
+        if (schedule != null && schedule.getShowDate() != null && schedule.getShowTime() != null) {
+            LocalDateTime showDateTime = LocalDateTime.of(schedule.getShowDate(), schedule.getShowTime());
+            if (!showDateTime.isAfter(LocalDateTime.now())) {
+                throw new IllegalStateException("이미 관람일이 지난 예매는 취소할 수 없습니다.");
+            }
+        }
+
+        // 1. 예매 상태를 취소로 변경
+        reservation.changeStatus(ReservationStatus.CANCELED);
+
+        // 2. 선점(예매 확정)되어 있던 실물 좌석을 다시 예매 가능한 상태로 반환
+        if (schedule != null) {
+            for (ReservationSeat rs : reservation.getReservationSeats()) {
+                bookingSeatsRepository.searchByScheduleAndSeat(
+                        schedule.getScheduleId(),
+                        rs.getSectionName(),
+                        rs.getRowNum(),
+                        rs.getSeatNum()
+                ).ifPresent(bookingSeatsRepository::delete);
+
+                messagingTemplate.convertAndSend(
+                        "/topic/seats/" + schedule.getScheduleId(),
+                        new com.clearticket.clearticket.model.dto.seat.SeatStatusEvent(
+                                rs.getSectionName(), rs.getRowNum(), rs.getSeatNum(), "AVAILABLE")
+                );
+            }
+        }
+
+        return buildDetailDto(reservation);
+    }
+
+    /**
+     * Reservation 엔티티 -> 마이페이지 예매 상세 DTO 변환 (취소 수수료 계산 포함)
+     */
+    private MyPageReservationDetailResponseDto buildDetailDto(Reservation reservation) {
+        Schedule schedule = reservation.getSchedule();
+        Performance performance = (schedule != null) ? schedule.getPerformance() : null;
+
+        LocalDateTime showDateTime = null;
+        if (schedule != null && schedule.getShowDate() != null && schedule.getShowTime() != null) {
+            showDateTime = LocalDateTime.of(schedule.getShowDate(), schedule.getShowTime());
+        }
+
+        List<ReservationSeat> reservationSeats = reservation.getReservationSeats();
+        List<MyPageReservationSeatDto> seatDtos = new ArrayList<>();
+        int ticketPriceSum = 0;
+        for (ReservationSeat rs : reservationSeats) {
+            seatDtos.add(new MyPageReservationSeatDto(
+                    rs.getResSeatId(), rs.getSectionName(), rs.getRowNum(),
+                    rs.getSeatNum(), rs.getSeatGrade(), rs.getPrice()));
+            ticketPriceSum += (rs.getPrice() != null ? rs.getPrice() : 0);
+        }
+
+        int discountAmount = 0;
+        if (reservation.getUsedCoupon() != null) {
+            String type = String.valueOf(reservation.getUsedCoupon().getDiscountType());
+            int val = reservation.getUsedCoupon().getDiscountValue();
+            if ("PERCENT".equals(type)) {
+                discountAmount = (int) Math.floor(ticketPriceSum * (val / 100.0));
+            } else if ("AMOUNT".equals(type)) {
+                discountAmount = val;
+            }
+        }
+
+        boolean isCancelableStatus = reservation.getStatus() == ReservationStatus.CONFIRMED
+                || reservation.getStatus() == ReservationStatus.WAITING;
+
+        long daysBeforeShow = Long.MAX_VALUE;
+        if (showDateTime != null) {
+            daysBeforeShow = ChronoUnit.DAYS.between(LocalDate.now(), showDateTime.toLocalDate());
+        }
+
+        boolean showAlreadyPassed = showDateTime != null && !showDateTime.isAfter(LocalDateTime.now());
+        boolean canCancel = isCancelableStatus && !showAlreadyPassed;
+
+        int feeRatePercent;
+        String deadlineText;
+        if (daysBeforeShow >= 10) {
+            feeRatePercent = 0;
+            deadlineText = "관람일 10일 전까지 수수료 없이 취소 가능합니다.";
+        } else if (daysBeforeShow >= 7) {
+            feeRatePercent = 10;
+            deadlineText = "관람일 9일 전 ~ 7일 전: 장당 4,000원(티켓금액의 10% 한도)";
+        } else if (daysBeforeShow >= 4) {
+            feeRatePercent = 10;
+            deadlineText = "관람일 6일 전 ~ 4일 전: 티켓금액의 10%";
+        } else if (daysBeforeShow >= 1) {
+            feeRatePercent = 30;
+            deadlineText = "관람일 3일 전 ~ 1일 전: 티켓금액의 30%";
+        } else {
+            feeRatePercent = 100;
+            deadlineText = "관람일 당일 이후에는 취소가 불가능합니다.";
+            canCancel = false;
+        }
+
+        int cancelFeeAmount = (int) Math.floor(ticketPriceSum * (feeRatePercent / 100.0));
+        int totalPrice = reservation.getTotalPrice();
+        int refundAmount = Math.max(0, totalPrice - cancelFeeAmount);
+
+        if (reservation.getStatus() == ReservationStatus.CANCELED) {
+            canCancel = false;
+        }
+
+        return new MyPageReservationDetailResponseDto(
+                reservation.getReservationId(),
+                reservation.getReservationNumber(),
+                reservation.getCreatedAt(),
+                performance != null ? performance.getTitle() : "공연 정보 없음",
+                performance != null ? performance.getPosterUrl() : null,
+                performance != null && performance.getVenue() != null ? performance.getVenue().getName() : "장소 정보 없음",
+                showDateTime,
+                reservation.getStatus() != null ? reservation.getStatus().name() : null,
+                reservation.getTicketType(),
+                reservation.getRecipientName(),
+                reservation.getRecipientPhone(),
+                reservation.getShippingAddress(),
+                seatDtos,
+                ticketPriceSum,
+                reservation.getShippingFee(),
+                discountAmount,
+                totalPrice,
+                canCancel,
+                deadlineText,
+                feeRatePercent,
+                cancelFeeAmount,
+                refundAmount
+        );
     }
 
 

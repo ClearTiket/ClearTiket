@@ -53,8 +53,10 @@ public class MypageViewController {
     }
 
     @GetMapping("/reservation-detail")
-    public String reservationDetail(HttpSession session, Model model) {
+    public String reservationDetail(@org.springframework.web.bind.annotation.RequestParam(value = "reservationId", required = false) Long reservationId,
+                                     HttpSession session, Model model) {
         if (!checkLogin(session, model)) return "redirect:/login";
+        model.addAttribute("reservationId", reservationId);
         return "mypage/reservation-detail";
     }
 
@@ -159,6 +161,44 @@ public class MypageViewController {
     @GetMapping("/waitlist")
     public String waitlist(HttpSession session, Model model) {
         if (!checkLogin(session, model)) return "redirect:/login";
+
+        UserSession loginUser = getLoginUser(session);
+        Long userId = Long.parseLong(loginUser.getId());
+
+        List<com.clearticket.clearticket.model.dto.MyPageWaitingResponseDto> waitings = myPageService.getMyWaitings(userId);
+
+        java.time.format.DateTimeFormatter dateFmt = java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd(E) HH:mm", java.util.Locale.KOREAN);
+        java.time.format.DateTimeFormatter applyFmt = java.time.format.DateTimeFormatter.ofPattern("yyyy.MM.dd(E) HH:mm", java.util.Locale.KOREAN);
+
+        List<Map<String, Object>> pendingList = new java.util.ArrayList<>();
+        List<Map<String, Object>> confirmedList = new java.util.ArrayList<>();
+        List<Map<String, Object>> cancelledList = new java.util.ArrayList<>();
+
+        for (com.clearticket.clearticket.model.dto.MyPageWaitingResponseDto w : waitings) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("waitingId", w.getWaitingId());
+            item.put("title", w.getPerformanceTitle());
+            item.put("posterUrl", w.getPosterImageUrl());
+            item.put("venue", w.getVenueName());
+            item.put("performanceDate", w.getShowDateTime() != null ? w.getShowDateTime().format(dateFmt) : "정보 없음");
+            item.put("applyDate", w.getAppliedAt() != null ? w.getAppliedAt().format(applyFmt) : "-");
+            item.put("seat", w.getSeatInfo());
+            item.put("rank", w.getWaitingOrder() + "번째");
+
+            String status = w.getStatus();
+            if ("WAITING".equals(status)) {
+                pendingList.add(item);
+            } else if ("NOTIFIED".equals(status) || "COMPLETED".equals(status)) {
+                confirmedList.add(item);
+            } else {
+                cancelledList.add(item);
+            }
+        }
+
+        model.addAttribute("pendingList", pendingList);
+        model.addAttribute("confirmedList", confirmedList);
+        model.addAttribute("cancelledList", cancelledList);
+
         return "mypage/waitlist";
     }
 }

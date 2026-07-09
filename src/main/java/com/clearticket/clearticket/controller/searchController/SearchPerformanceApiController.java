@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Slf4j
@@ -62,7 +61,9 @@ public class SearchPerformanceApiController {
     public ResponseEntity<List<PerformanceDocument>> performanceSearch(
             @RequestParam String keyword,
             @RequestBody SearchPerformanceFilterDto filterDto) {
-        System.out.println(filterDto.getStartDate().format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+        log.info("[재검색] 키워드='{}', startDate={}, endDate={}, regions={}, statuses={}",
+                keyword, filterDto.getStartDate(), filterDto.getEndDate(),
+                filterDto.getRegions(), filterDto.getStatuses());
         return ResponseEntity.ok(searchPerformanceService.searchPerformances(keyword, filterDto));
     }
 

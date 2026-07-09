@@ -9,11 +9,9 @@ import java.util.List;
 @Getter
 public class SearchPerformanceFilterDto {
 
-    private static final List<String> DEFAULT_GENRE = List.of("클래식", "뮤지컬", "콘서트");
-    private static final List<Integer> DEFAULT_VIBE = List.of(201, 202, 203, 204, 205, 206, 207, 208, 209);
-    private static final List<Integer> DEFAULT_WITH = List.of(301, 302, 303, 304, 305);
+    // 판매 상태만 프론트에서 실제로 "기본 선택"된 토글(공연중/공연예정)이 있으므로
+    // 값이 안 넘어왔을 때(=구버전 클라이언트 등 방어 목적)만 기본값을 채운다.
     private static final List<PerformanceStatus> DEFAULT_STATUS = List.of(PerformanceStatus.ON_SALE, PerformanceStatus.PREPARING);
-    private static final List<String> DEFAULT_REGION = List.of("서울특별시", "인천광역시", "경기도", "강원특별자치도", "대전광역시", "충청북도", "충청남도", "세종특별자치시", "광주광역시", "전북특별자치도", "전라남도", "부산광역시", "대구광역시", "울산광역시", "경상북도", "경상남도", "제주특별자치도", "해외");
 
     private List<String> tagsGenre;
     private List<Integer> tagsVibe;
@@ -27,26 +25,27 @@ public class SearchPerformanceFilterDto {
         this(null, null, null, null, null, null, null);
     }
 
-    private <T> List<T> getDefaultListIfEmpty(List<T> list, List<T> defaultValue) {
-        return (list == null || list.isEmpty()) ? new ArrayList<>(defaultValue) : list;
+    private <T> List<T> emptyIfNull(List<T> list) {
+        return list == null ? new ArrayList<>() : list;
     }
 
+    // 버그 수정: 리스트가 비어있으면 "기본값으로 채우기"가 아니라 "필터를 아예 걸지 않기"로 처리.
+    // 실제 필터 스킵 여부는 SearchPerformanceService에서 리스트가 비어있는지 보고 판단한다.
     public SearchPerformanceFilterDto(List<String> tagsGenre, List<Integer> tagsVibe, List<Integer> tagsWith, List<PerformanceStatus> statuses, List<String> regions, LocalDate startDate, LocalDate endDate) {
-        this.tagsGenre = getDefaultListIfEmpty(tagsGenre, DEFAULT_GENRE);
-        this.tagsVibe = getDefaultListIfEmpty(tagsVibe, DEFAULT_VIBE);
-        this.tagsWith = getDefaultListIfEmpty(tagsWith, DEFAULT_WITH);
-        this.statuses = getDefaultListIfEmpty(statuses, DEFAULT_STATUS);
-        this.regions = getDefaultListIfEmpty(regions, DEFAULT_REGION);
-        this.startDate = startDate == null ? LocalDate.now() : startDate;
-        this.endDate = endDate == null ? LocalDate.of(LocalDate.now().getYear(), 12, 31) : endDate;
+        this.tagsGenre = emptyIfNull(tagsGenre);
+        this.tagsVibe = emptyIfNull(tagsVibe);
+        this.tagsWith = emptyIfNull(tagsWith);
+        this.statuses = (statuses == null || statuses.isEmpty()) ? new ArrayList<>(DEFAULT_STATUS) : statuses;
+        this.regions = emptyIfNull(regions);
+        this.startDate = startDate;
+        this.endDate = endDate;
     }
 
-    // Jackson이 이 setter들을 통해 값을 채우되, 빈 배열이면 그대로 두지 않고 기본값으로 치환
-    public void setTagsGenre(List<String> tagsGenre) { this.tagsGenre = getDefaultListIfEmpty(tagsGenre, DEFAULT_GENRE); }
-    public void setTagsVibe(List<Integer> tagsVibe) { this.tagsVibe = getDefaultListIfEmpty(tagsVibe, DEFAULT_VIBE); }
-    public void setTagsWith(List<Integer> tagsWith) { this.tagsWith = getDefaultListIfEmpty(tagsWith, DEFAULT_WITH); }
-    public void setStatuses(List<PerformanceStatus> statuses) { this.statuses = getDefaultListIfEmpty(statuses, DEFAULT_STATUS); }
-    public void setRegions(List<String> regions) { this.regions = getDefaultListIfEmpty(regions, DEFAULT_REGION); }
-    public void setStartDate(LocalDate startDate) { this.startDate = startDate == null ? LocalDate.now() : startDate; }
-    public void setEndDate(LocalDate endDate) { this.endDate = endDate == null ? LocalDate.of(LocalDate.now().getYear(), 12, 31) : endDate; }
+    public void setTagsGenre(List<String> tagsGenre) { this.tagsGenre = emptyIfNull(tagsGenre); }
+    public void setTagsVibe(List<Integer> tagsVibe) { this.tagsVibe = emptyIfNull(tagsVibe); }
+    public void setTagsWith(List<Integer> tagsWith) { this.tagsWith = emptyIfNull(tagsWith); }
+    public void setStatuses(List<PerformanceStatus> statuses) { this.statuses = (statuses == null || statuses.isEmpty()) ? new ArrayList<>(DEFAULT_STATUS) : statuses; }
+    public void setRegions(List<String> regions) { this.regions = emptyIfNull(regions); }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
 }

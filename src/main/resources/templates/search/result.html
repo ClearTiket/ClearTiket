@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <title>클리어티켓 - 검색 결과</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 
     <!-- date picker cdn -->
@@ -16,8 +16,12 @@
 </head>
 
 <script>
-    let startDate;
-    let endDate;
+    // 사용자가 날짜 선택기를 실제로 조작하기 전에는 null로 유지한다.
+    // (예전 버그: 여기가 항상 "오늘"/"오늘+13일"로 채워져 있어서,
+    //  재검색 버튼만 눌러도 그 좁은 날짜 범위 밖의 공연은 결과에서 전부 사라졌었음)
+    let startDate = null;
+    let endDate = null;
+    let dateRangeSelected = false; // 사용자가 날짜를 실제로 골랐는지 여부
 
     function dateFormatter(date) {
         const y = date.getFullYear();
@@ -43,9 +47,7 @@
         const nwDay = nextWeek.getDate();
         const nextWeekStr = nwYear + '/' + nwMonth + '/' + nwDay;
 
-        startDate = dateFormatter(today);
-        endDate = dateFormatter(nextWeek);
-
+        // 달력 UI 자체의 초기 표시값(placeholder)일 뿐, 아직 필터에는 반영하지 않는다.
         $('.date-picker').daterangepicker({
             "autoApply": true,
             "locale": {
@@ -89,142 +91,187 @@
             "opens": "center"
         }, function(start, end, label) {
             console.log('New date range selected: ' + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD') + ' (predefined range: ' + label + ')');
+            // 사용자가 달력에서 실제로 날짜를 선택한 순간에만 값을 채우고 플래그를 켠다.
             startDate = dateFormatter(start._d);
             endDate = dateFormatter(end._d);
+            dateRangeSelected = true;
         });
     });
 </script>
 
 <style>
-    /* 기본 스타일 초기화 */
+    /* ===== 디자인 토큰 ===== */
+    :root {
+        --primary: #4154FF;
+        --primary-hover: #3443CC;
+        --primary-soft: #EEF0FF;
+        --primary-soft-hover: #E1E5FF;
+        --text-strong: #16181D;
+        --text-body: #4B4F58;
+        --text-muted: #8A8F98;
+        --border-soft: #E7E9F0;
+        --surface: #ffffff;
+        --surface-muted: #F7F8FC;
+        --radius-lg: 16px;
+        --radius-md: 12px;
+        --radius-sm: 999px;
+        --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+        --shadow-card-hover: 0 12px 24px -8px rgba(65, 84, 255, 0.18), 0 4px 8px rgba(16, 24, 40, 0.04);
+        --transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; }
+
     body {
         font-family: 'Noto Sans KR', sans-serif;
         margin: 0;
         padding: 0;
-        background-color: #ffffff;
+        background-color: var(--surface-muted);
+        color: var(--text-body);
     }
 
-    /* 1, 5. 전체 레이아웃 (너비 1200px, 사이드바와 메인 사이 간격 25px) */
+    /* 전체 레이아웃 */
     .content-wrapper {
-        width: 1200px;
-        margin: 40px auto;
+        max-width: 1200px;
+        margin: 40px auto 80px;
         display: flex;
-        gap: 25px; /* 조건: 간격 25px */
-        box-sizing: border-box;
-        flex-direction: row;
+        gap: 28px;
         align-items: flex-start;
+        padding: 0 20px;
     }
 
-    /* 2, 3. 좌측 사이드바 스타일 (너비 300px) */
+    /* 좌측 필터 사이드바 */
     .filter-sidebar {
         width: 300px;
         flex-shrink: 0;
         box-sizing: border-box;
 
-        border: 2px solid #4154FF;  /* 테두리 2px, #4154FF */
-        border-radius: 10px;        /* 모서리 반경 10px */
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-lg);
 
-        /* [디자인 보완] 테두리 추가에 따른 내부 여백 설정 */
-        padding: 20px;
-        background-color: #ffffff;
+        padding: 24px;
+        background-color: var(--surface);
+        box-shadow: var(--shadow-card);
+        position: sticky;
+        top: 24px;
     }
 
-    /* 사이드바 내부 첫 번째 섹션의 상단 패딩 조절 (시각적 균형용) */
     .filter-sidebar .filter-section:first-child {
         padding-top: 0;
     }
 
     .filter-section {
-        padding: 10px 0;
+        padding: 14px 0;
     }
 
     .filter-sidebar h5 {
-        font-size: 16px;
-        color: #333;
-        margin: 0 0 15px 0;
-        font-weight: 600;
+        font-size: 14px;
+        letter-spacing: 0.2px;
+        color: var(--text-strong);
+        margin: 0 0 12px 0;
+        font-weight: 700;
     }
 
-    /* 사이드바 구분선 */
     .filter-sidebar hr {
         border: none;
-        border-top: 1px solid #eef2f8;
-        margin: 15px 0;
+        border-top: 1px solid var(--border-soft);
+        margin: 4px 0;
     }
 
-    /* 4. 필터링 토글 버튼 그룹 */
+    /* 필터 토글 버튼 그룹 */
     .toggle-group {
         display: flex;
-        flex-wrap: wrap; /* 넘칠 경우 다음 줄 표시 */
-        gap: 8px;        /* 버튼 간 간격 */
+        flex-wrap: wrap;
+        gap: 8px;
     }
 
     .toggle-btn {
-        width: auto;                /* 조건: 내부 텍스트에 따라 유동적 */
-        height: 35px;               /* 조건: 높이 35px */
-        border: 1px solid #4076FF;  /* 조건: 테두리 1px #4076FF */
-        border-radius: 25px;        /* 조건: 모서리 반경 25px */
-        background-color: #ffffff;
-        color: #4076FF;
-        padding: 0 16px;
-        font-size: 14px;
+        width: auto;
+        height: 34px;
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-sm);
+        background-color: var(--surface-muted);
+        color: var(--text-body);
+        padding: 0 14px;
+        font-size: 13px;
         font-weight: 500;
         cursor: pointer;
-        transition: all 0.2s ease;
-        box-sizing: border-box;
+        transition: background-color var(--transition), color var(--transition), border-color var(--transition), transform var(--transition);
     }
 
-    /* 토글 선택된 상태 스타일 */
+    .toggle-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+        background-color: var(--primary-soft);
+    }
+
+    .toggle-btn:active {
+        transform: scale(0.97);
+    }
+
     .toggle-btn.active {
-        background-color: #6E96EA;  /* 조건: 배경색 #6E96EA */
-        border-color: #6E96EA;
+        background-color: var(--primary);
+        border-color: var(--primary);
         color: #ffffff;
+        box-shadow: 0 4px 10px -2px rgba(65, 84, 255, 0.45);
     }
 
     .date-picker {
-        width: 200px;
-        font-size: 1rem;
+        width: 100%;
+        font-size: 14px;
         line-height: 1.5;
-        color: #495057;
-        background-color: #fff;
-        background-clip: padding-box;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        padding: 6px;
+        color: var(--text-body);
+        background-color: var(--surface);
+        border: 1px solid var(--border-soft);
+        border-radius: var(--radius-md);
+        padding: 10px 12px;
+        cursor: pointer;
+        transition: border-color var(--transition);
+    }
+
+    .date-picker:hover,
+    .date-picker:focus {
+        border-color: var(--primary);
+        outline: none;
     }
 
     .filter-section.re-search-section {
         display: flex;
-        justify-content: flex-end;
+        justify-content: stretch;
+        padding-top: 20px;
     }
 
     .re-search {
-        width: 120px;
-        height: 50px;
-        border: 1px solid #4154FF;
-        border-radius: 8px;
-        background-color: #4154FF;
+        width: 100%;
+        height: 48px;
+        border: none;
+        border-radius: var(--radius-md);
+        background-color: var(--primary);
         color: #ffffff;
-        padding: 0 16px;
-        font-size: 18px;
-        font-weight: 500;
+        font-size: 15px;
+        font-weight: 700;
         cursor: pointer;
+        transition: background-color var(--transition), transform var(--transition);
+        box-shadow: 0 6px 16px -4px rgba(65, 84, 255, 0.5);
     }
 
     .re-search:hover {
-        background-color: #3443CC;
-        border-color: #3443CC;
+        background-color: var(--primary-hover);
     }
 
-    /* 5. 우측 메인 콘텐츠 영역 (자동 너비 계산: 1200 - 300 - 25 = 875px) */
+    .re-search:active {
+        transform: translateY(1px);
+    }
+
+    /* 우측 메인 콘텐츠 영역 */
     .main-content {
         flex: 1;
+        min-width: 0;
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
     }
 
-    /* 6. 최상단 우측 정렬 바 (높이 30px) */
     .sort-bar {
         height: 30px;
         display: flex;
@@ -236,42 +283,98 @@
 
     .sort-btn {
         height: 30px;
-        border: none; /* 조건: 테두리 없음 */
+        border: none;
         background: none;
         font-size: 14px;
-        color: #888;
+        color: var(--text-muted);
         cursor: pointer;
         padding: 0;
         font-weight: 500;
     }
 
     .sort-btn.active {
-        color: #333;
+        color: var(--text-strong);
         font-weight: 700;
     }
 
-    /* 7, 10. 메인 카드 그리드 틀 (세로 간격 24px, 가로 균등) */
+    /* "혹시 ~ 라고 입력하신건가요?" 힌트 배너 */
+    #search-hint {
+        display: none;
+        padding: 14px 20px;
+        background: linear-gradient(90deg, var(--primary-soft), #F5F7FF);
+        color: var(--primary-hover);
+        margin: 0 0 20px 0;
+        border-radius: var(--radius-md);
+        font-size: 14.5px;
+        font-weight: 500;
+        border-left: 4px solid var(--primary);
+    }
+
+    #search-hint strong {
+        color: var(--primary);
+        font-weight: 700;
+    }
+
+    /* 검색 결과 없음 안내 */
+    .empty-state {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 100px 20px;
+        color: var(--text-muted);
+        border: 1px dashed var(--border-soft);
+        border-radius: var(--radius-lg);
+        background-color: var(--surface);
+    }
+
+    .empty-state .empty-emoji {
+        font-size: 40px;
+        margin-bottom: 4px;
+    }
+
+    .empty-state .empty-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-strong);
+    }
+
+    .empty-state .empty-desc {
+        font-size: 13.5px;
+        color: var(--text-muted);
+    }
+
+    /* 카드 그리드 */
     .card-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr); /* 1줄에 3개 */
-        row-gap: 24px;                          /* 조건: 세로 간격 24px */
-        column-gap: 24px;                       /* 가로 균등 배치를 위한 동일 간격 설정 */
+        grid-template-columns: repeat(3, 1fr);
+        row-gap: 28px;
+        column-gap: 24px;
         width: 100%;
     }
 
-    /* 8, 9. 개별 상품 카드 스타일 */
+    /* 개별 상품 카드 */
     .prod-card {
-        height: 350px;              /* 조건: 높이 350px */
-        border: 1px solid #D9D9D9;  /* 조건: 테두리 1px #D9D9D9 */
-        padding: 16px;              /* 조건: 내부 padding 16px */
+        height: 350px;
+        border: 1px solid var(--border-soft);
+        padding: 14px;
         box-sizing: border-box;
         display: flex;
         flex-direction: column;
-        background-color: #ffffff;
-        border-radius: 8px;         /* 자연스러운 카드 마감을 위한 반경(선택) */
+        background-color: var(--surface);
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        box-shadow: var(--shadow-card);
+        transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
     }
 
-    /* 9. 카드 내부 상단 이미지 영역 스케일러 */
+    .prod-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-card-hover);
+        border-color: #D6DBFF;
+    }
+
     .card-img-wrapper {
         width: 100%;
         display: flex;
@@ -279,30 +382,30 @@
         margin-bottom: 12px;
     }
 
-    /* 고정 높이 350px 내에서 텍스트 공간을 확보하며 3:4 비율을 채우는 최적 크기 계산 */
     .card-img-placeholder {
-        height: 220px;              /* 카드 높이 한계에 맞춘 가로세로 유지용 베이스 */
-        aspect-ratio: 3 / 4;        /* 조건: 가로 3, 세로 4의 비율 */
-        background-color: #f1f5f9;  /* 임시 회색 배경 */
-        color: #94a3b8;
+        height: 220px;
+        aspect-ratio: 3 / 4;
+        background-color: #EEF1F6;
+        color: #A5ABB8;
         font-size: 14px;
         font-weight: 600;
-        /*display: flex;*/
-        /*align-items: center;*/
-        /*justify-content: center;*/
-        border-radius: 4px;
+        border-radius: 8px;
         width: auto;
+        overflow: hidden;
     }
 
-    /* 2. [새로 추가] 부모 틀을 꽉 채우는 실제 이미지 스타일 */
     .card-img-placeholder img {
         width: 100%;
         height: 100%;
-        object-fit: cover;          /* 핵심: 이미지 비율을 유지하면서 공백 없이 꽉 채움 */
+        object-fit: cover;
         display: block;
+        transition: transform 320ms ease;
     }
 
-    /* 9. 하단 설명을 위한 텍스트 영역 (좌측 정렬 기본) */
+    .prod-card:hover .card-img-placeholder img {
+        transform: scale(1.04);
+    }
+
     .card-text-area {
         flex: 1;
         display: flex;
@@ -313,22 +416,17 @@
 
     .prod-title {
         margin: 0 0 6px 0;
-        font-size: 16px;
-        color: #222;
-        font-weight: 600;
+        font-size: 15.5px;
+        color: var(--text-strong);
+        font-weight: 700;
+        line-height: 1.35;
 
-        /*white-space: nowrap;*/
-        /*overflow: hidden;*/
-        /*text-overflow: ellipsis; !* 제목 길어지면 말줄임 *!*/
-
-        /* 1. 한 줄 강제 속성(nowrap)을 지우고, 단어 단위 줄바꿈 허용 */
         white-space: normal;
-        word-break: break-all;     /* 영문 텍스트나 공백 없는 긴 문자열도 카드 밖으로 안 터지게 깨뜨려줌 */
+        word-break: break-all;
         overflow-wrap: break-word;
 
-        /* 2. 고정 높이(350px) 카드를 위한 안전장치: 최대 2줄까지 줄바꿈 허용 */
         display: -webkit-box;
-        -webkit-line-clamp: 2;     /* 텍스트가 길면 2줄까지 아래로 내려가고, 3줄째부터 ... 처리 */
+        -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
     }
@@ -336,144 +434,140 @@
     .prod-desc {
         margin: 0;
         font-size: 13px;
-        color: #666;
+        color: var(--text-muted);
         line-height: 1.4;
         display: -webkit-box;
-        -webkit-line-clamp: 2; /* 설명문 최대 2줄 표시 후 말줄임 */
+        -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+    }
+
+    @media (max-width: 1000px) {
+        .content-wrapper { flex-direction: column; }
+        .filter-sidebar { width: 100%; position: static; }
+        .card-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 560px) {
+        .card-grid { grid-template-columns: 1fr; }
     }
 </style>
 
 <body>
 <th:block th:replace="~{fragments/header :: header}"></th:block>
 
-    <main class="content-wrapper">
+<main class="content-wrapper">
 
-        <aside class="filter-sidebar">
-            <section class="filter-section">
-                <h5>장르</h5>
-                <div class="toggle-group genre">
-                    <button class="toggle-btn" data-filter="tagsGenre" data-tag="뮤지컬">뮤지컬</button>
-                    <button class="toggle-btn" data-filter="tagsGenre" data-tag="콘서트">콘서트</button>
-                    <button class="toggle-btn" data-filter="tagsGenre" data-tag="클래식">클래식</button>
-                </div>
-            </section>
-            <hr>
-
-            <section class="filter-section">
-                <h5>지역</h5>
-                <div class="toggle-group region">
-                    <button class="toggle-btn" data-filter="regions" data-tag="서울특별시">서울</button>
-                    <button class="toggle-btn" data-filter="regions" data-tag="인천광역시,경기도">경기</button>
-                    <button class="toggle-btn" data-filter="regions" data-tag="강원특별자치도">강원</button>
-                    <button class="toggle-btn" data-filter="regions" data-tag="대전광역시,충청북도,충청남도,세종특별자치시">충청</button>
-                    <button class="toggle-btn" data-filter="regions" data-tag="광주광역시,전북특별자치도,전라남도">전라</button>
-                    <button class="toggle-btn" data-filter="regions" data-tag="부산광역시,대구광역시,울산광역시,경상북도,경상남도">경상</button>
-                    <button class="toggle-btn" data-filter="regions" data-tag="제주특별자치도">제주</button>
-                    <button class="toggle-btn" data-filter="regions" data-tag="해외">해외</button>
-                </div>
-            </section>
-            <hr>
-
-            <section class="filter-section">
-                <h5>판매 상태</h5>
-                <div class="toggle-group status">
-                    <button class="toggle-btn" data-filter="statuses" data-tag="CLOSED">판매 종료</button>
-                    <button class="toggle-btn active" data-filter="statuses" data-tag="ON_SALE">공연중</button>
-                    <button class="toggle-btn active" data-filter="statuses" data-tag="PREPARING">공연 예정</button>
-                </div>
-            </section>
-            <hr>
-
-            <section class="filter-section">
-                <h5>분위기</h5>
-                <div class="toggle-group vibe">
-                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="201">눈물폭발</button>
-                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="202">귀호강</button>
-                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="203">웅장한</button>
-                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="204">스트레스해소</button>
-                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="205">심장쫄깃</button>
-                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="206">배꼽빠지는</button>
-                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="207">화려한볼거리</button>
-                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="208">잔잔한위로</button>
-                    <button class="toggle-btn" data-filter="tagsVibe" data-tag="209">입문자추천</button>
-                </div>
-            </section>
-            <hr>
-
-            <section class="filter-section">
-                <h5>동행</h5>
-                <div class="toggle-group with">
-                    <button class="toggle-btn" data-filter="tagsWith" data-tag="301">혼자</button>
-                    <button class="toggle-btn" data-filter="tagsWith" data-tag="302">연인과</button>
-                    <button class="toggle-btn" data-filter="tagsWith" data-tag="303">부모님과</button>
-                    <button class="toggle-btn" data-filter="tagsWith" data-tag="304">친구와</button>
-                    <button class="toggle-btn" data-filter="tagsWith" data-tag="305">아이와</button>
-                </div>
-            </section>
-            <hr>
-
-            <section class="filter-section">
-                <h5>날짜 선택</h5>
-                <input type="text" class="date-picker" value="" readonly>
-            </section>
-            <hr>
-
-            <section class="filter-section re-search-section">
-                <button class="re-search">재검색</button>
-            </section>
-        </aside>
-
-        <div class="main-content">
-
-<!--            <div class="sort-bar">-->
-<!--                <button class="sort-btn active">판매량</button>-->
-<!--                <button class="sort-btn">예매율</button>-->
-<!--                <button class="sort-btn">가까운 날짜</button>-->
-<!--            </div>-->
-            <div id="search-hint" style="display: none; padding: 12px 20px; background-color: #f0f7ff; color: #0066cc; margin: 15px 0; border-radius: 8px; font-size: 15px; border-left: 5px solid #0066cc;"></div>
-            <div class="card-grid">
-
-<!--                <div class="prod-card">-->
-<!--                    <div class="card-img-wrapper">-->
-<!--                        <div class="card-img-placeholder">-->
-<!--                            <img src="" alt="...">-->
-<!--                        </div>-->
-<!--                    </div>-->
-<!--                    <div class="card-text-area">-->
-<!--                        <h4 class="prod-title">title</h4>-->
-<!--                        <p class="prod-desc">description</p>-->
-<!--                    </div>-->
-<!--                </div>-->
-
+    <aside class="filter-sidebar">
+        <section class="filter-section">
+            <h5>장르</h5>
+            <div class="toggle-group genre">
+                <button class="toggle-btn" data-filter="tagsGenre" data-tag="뮤지컬">뮤지컬</button>
+                <button class="toggle-btn" data-filter="tagsGenre" data-tag="콘서트">콘서트</button>
+                <button class="toggle-btn" data-filter="tagsGenre" data-tag="클래식">클래식</button>
             </div>
-        </div>
+        </section>
+        <hr>
 
-    </main>
+        <section class="filter-section">
+            <h5>지역</h5>
+            <div class="toggle-group region">
+                <button class="toggle-btn" data-filter="regions" data-tag="서울특별시">서울</button>
+                <button class="toggle-btn" data-filter="regions" data-tag="인천광역시,경기도">경기</button>
+                <button class="toggle-btn" data-filter="regions" data-tag="강원특별자치도">강원</button>
+                <button class="toggle-btn" data-filter="regions" data-tag="대전광역시,충청북도,충청남도,세종특별자치시">충청</button>
+                <button class="toggle-btn" data-filter="regions" data-tag="광주광역시,전북특별자치도,전라남도">전라</button>
+                <button class="toggle-btn" data-filter="regions" data-tag="부산광역시,대구광역시,울산광역시,경상북도,경상남도">경상</button>
+                <button class="toggle-btn" data-filter="regions" data-tag="제주특별자치도">제주</button>
+                <button class="toggle-btn" data-filter="regions" data-tag="해외">해외</button>
+            </div>
+        </section>
+        <hr>
+
+        <section class="filter-section">
+            <h5>판매 상태</h5>
+            <div class="toggle-group status">
+                <button class="toggle-btn" data-filter="statuses" data-tag="CLOSED">판매 종료</button>
+                <button class="toggle-btn active" data-filter="statuses" data-tag="ON_SALE">공연중</button>
+                <button class="toggle-btn active" data-filter="statuses" data-tag="PREPARING">공연 예정</button>
+            </div>
+        </section>
+        <hr>
+
+        <section class="filter-section">
+            <h5>분위기</h5>
+            <div class="toggle-group vibe">
+                <button class="toggle-btn" data-filter="tagsVibe" data-tag="201">눈물폭발</button>
+                <button class="toggle-btn" data-filter="tagsVibe" data-tag="202">귀호강</button>
+                <button class="toggle-btn" data-filter="tagsVibe" data-tag="203">웅장한</button>
+                <button class="toggle-btn" data-filter="tagsVibe" data-tag="204">스트레스해소</button>
+                <button class="toggle-btn" data-filter="tagsVibe" data-tag="205">심장쫄깃</button>
+                <button class="toggle-btn" data-filter="tagsVibe" data-tag="206">배꼽빠지는</button>
+                <button class="toggle-btn" data-filter="tagsVibe" data-tag="207">화려한볼거리</button>
+                <button class="toggle-btn" data-filter="tagsVibe" data-tag="208">잔잔한위로</button>
+                <button class="toggle-btn" data-filter="tagsVibe" data-tag="209">입문자추천</button>
+            </div>
+        </section>
+        <hr>
+
+        <section class="filter-section">
+            <h5>동행</h5>
+            <div class="toggle-group with">
+                <button class="toggle-btn" data-filter="tagsWith" data-tag="301">혼자</button>
+                <button class="toggle-btn" data-filter="tagsWith" data-tag="302">연인과</button>
+                <button class="toggle-btn" data-filter="tagsWith" data-tag="303">부모님과</button>
+                <button class="toggle-btn" data-filter="tagsWith" data-tag="304">친구와</button>
+                <button class="toggle-btn" data-filter="tagsWith" data-tag="305">아이와</button>
+            </div>
+        </section>
+        <hr>
+
+        <section class="filter-section">
+            <h5>날짜 선택</h5>
+            <input type="text" class="date-picker" value="" readonly>
+        </section>
+        <hr>
+
+        <section class="filter-section re-search-section">
+            <button class="re-search">재검색</button>
+        </section>
+    </aside>
+
+    <div class="main-content">
+
+        <!--            <div class="sort-bar">-->
+        <!--                <button class="sort-btn active">판매량</button>-->
+        <!--                <button class="sort-btn">예매율</button>-->
+        <!--                <button class="sort-btn">가까운 날짜</button>-->
+        <!--            </div>-->
+        <div id="search-hint"></div>
+        <div class="card-grid"></div>
+        <div class="empty-state">
+            <div class="empty-emoji">??</div>
+            <div class="empty-title">검색 결과가 없어요</div>
+            <div class="empty-desc">다른 검색어나 필터 조건으로 다시 시도해보세요.</div>
+        </div>
+    </div>
+
+</main>
 
 <th:block th:replace="~{fragments/footer :: footer}"></th:block>
 </body>
 
 <script>
-    // document.querySelectorAll('.toggle-btn').forEach(btn => {
-    //     btn.addEventListener('click', function() {
-    //         this.classList.toggle('active');
-    //     });
-    // });
-
-    // document.querySelectorAll('.sort-btn').forEach(btn => {
-    //     btn.addEventListener('click', function() {
-    //         document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-    //         this.classList.add('active');
-    //     });
-    // });
-
     async function createCards(resultJson) {
         // card-grid 요소 선택
         const cardGrid = document.querySelector('.card-grid');
+        const emptyState = document.querySelector('.empty-state');
         cardGrid.replaceChildren();
-        // console.log(resultJson);
+
+        // 결과가 없으면 빈 상태 안내를 보여준다.
+        if (!resultJson || resultJson.length === 0) {
+            emptyState.style.display = 'flex';
+            return;
+        }
+        emptyState.style.display = 'none';
+
         // 데이터 반복 처리
         resultJson.forEach(item => {
             // prod-card 생성
@@ -519,7 +613,15 @@
         });
     }
 
-    async function getSearchData(keyword) {
+    // 버그 수정: 예전에는 이 함수의 파라미터로만 최신 검색어를 받고,
+    // 바깥 스코프의 전역 `keyword` 변수는 절대 갱신하지 않았다.
+    // 그래서 헤더 검색창으로 새 검색어를 입력해도 "재검색" 버튼을 누르면
+    // 여전히 "맨 처음 페이지에 들어왔을 때의 검색어"로 재검색되는 문제가 있었다.
+    // 이제 검색이 실행될 때마다 전역 keyword를 같이 갱신한다.
+    async function getSearchData(kw) {
+        keyword = kw;
+        document.querySelector(".search-wrap input").value = keyword;
+
         try {
             const fetchUrl = "/api/search/performance?keyword=" + encodeURIComponent(keyword);
             const response = await fetch(fetchUrl, {
@@ -535,7 +637,7 @@
             const hintArea = document.getElementById('search-hint');
             if (hintArea) {
                 if (correctedKeyword && correctedKeyword !== keyword) {
-                    hintArea.innerHTML = `💡 혹시 <strong>"${correctedKeyword}"</strong>라고 입력하신건가요?`;
+                    hintArea.innerHTML = `?? 혹시 <strong>"${correctedKeyword}"</strong>라고 입력하신건가요?`;
                     hintArea.style.display = 'block';
                 } else {
                     hintArea.style.display = 'none';
@@ -549,9 +651,11 @@
         }
     }
 
-    async function postSearchData(keyword, jsonData) {
+    async function postSearchData(kw, jsonData) {
         try {
-            const fetchUrl = "/api/search/performance?keyword=" + keyword;
+            // 버그 수정: keyword를 그대로 문자열 이어붙이기 하면 공백/특수문자(&, # 등)가
+            // 포함된 검색어에서 쿼리스트링이 깨졌다. GET 쪽과 동일하게 인코딩한다.
+            const fetchUrl = "/api/search/performance?keyword=" + encodeURIComponent(kw);
             const response = await fetch(fetchUrl, {
                 method: 'POST',
                 headers: {
@@ -571,14 +675,11 @@
 
     // 페이지 처음 로드되었을 때 URL 파라미터 읽어서 검색 실행
     const urlParams = new URLSearchParams(window.location.search);
-    let keyword = urlParams.get('keyword');
+    let keyword = urlParams.get('keyword') || '';
     if (keyword) {
         if (keyword.includes('%')) {
             keyword = decodeURIComponent(keyword);
         }
-
-        document.querySelector(".search-wrap input").value = keyword;
-
         getSearchData(keyword);
     }
 
@@ -594,18 +695,14 @@
         }
     });
 
-    window.getSearchData = getSearchData;
-
-    document.querySelector('.search-wrap input').value = keyword;
-
     const filterData = {
         "tagsGenre": [],
         "tagsVibe": [],
         "tagsWith": [],
         "statuses": ["ON_SALE", "PREPARING"],
         "regions": [],
-        "startDate": "",
-        "endDate": ""
+        "startDate": null,
+        "endDate": null
     }
 
     document.querySelectorAll(".toggle-btn").forEach(btn => {
@@ -622,10 +719,11 @@
     });
 
     document.querySelector(".re-search").addEventListener('click', () => {
-        filterData["startDate"] = startDate;
-        filterData["endDate"] = endDate;
-        console.log(startDate);
-        console.log(endDate);
+        // 사용자가 날짜 선택기를 실제로 조작했을 때만 날짜를 필터에 실어 보낸다.
+        // 그렇지 않으면 null로 보내서, 서버 쪽에서 날짜 조건 없이 검색하도록 한다.
+        filterData["startDate"] = dateRangeSelected ? startDate : null;
+        filterData["endDate"] = dateRangeSelected ? endDate : null;
+        // 재검색 시점에도 항상 "현재의" keyword(헤더에서 갱신됐을 수 있는 값)를 사용한다.
         postSearchData(keyword, filterData);
     });
 
