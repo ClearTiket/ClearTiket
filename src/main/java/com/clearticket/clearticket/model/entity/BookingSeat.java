@@ -45,4 +45,3 @@ public class BookingSeat {
     private LocalDateTime createdAt;
 
 }
-
