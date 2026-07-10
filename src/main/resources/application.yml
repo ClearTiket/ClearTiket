@@ -71,7 +71,6 @@ spring:
         - "classpath:sql/performances_20260622.sql"
         - "classpath:sql/schedules_20260622.sql"
         - "classpath:sql/data.sql"
-        - "classpath:sql/data.sql"
         - "classpath:sql/rankings_20260622.sql"
 lemonsqueezy:
   api-key: ${LEMON_SQUEEZY_API_KEY}

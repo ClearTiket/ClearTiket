@@ -16,4 +16,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     List<LocalDate> findDistinctDatesByPerformanceId(@Param("performanceId") Long performanceId);
 
     List<Schedule> findByPerformance_PerformanceIdAndShowDateOrderByRoundNumberAsc(Long performanceId, LocalDate showDate);
+
+    // 실시간 매진 알림 위젯용: 특정 공연의 "가장 가까운 다가오는 회차" 하나를 조회
+    java.util.Optional<Schedule> findFirstByPerformance_PerformanceIdAndShowDateGreaterThanEqualOrderByShowDateAscShowTimeAsc(
+            Long performanceId, LocalDate today);
 }

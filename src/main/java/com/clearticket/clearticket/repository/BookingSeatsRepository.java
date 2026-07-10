@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +14,9 @@ import java.util.Optional;
 public interface BookingSeatsRepository extends JpaRepository<BookingSeat, Long> {
 
     List<BookingSeat> findByScheduleScheduleId(Long scheduleId);
+
+    // 실시간 매진 알림 위젯용: 특정 회차에 임시 선점(홀드)된 좌석 수
+    long countByScheduleScheduleId(Long scheduleId);
 
     boolean existsByScheduleScheduleIdAndSectionNameAndRowNumAndSeatNumAndCreatedAtAfter(
             Long scheduleId,

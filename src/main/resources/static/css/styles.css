@@ -1124,3 +1124,192 @@ ul, ol {
         padding: 24px 22px;
     }
 }
+
+/* ===================================================
+   실시간 매진 알림 위젯 (Sold-out / Live booking alert)
+   =================================================== */
+.soldout-alert-widget {
+    position: fixed;
+    left: 24px;
+    bottom: 32px;
+    z-index: 9999;
+    width: 280px;
+    pointer-events: none;
+}
+
+.soldout-alert-card {
+    position: relative;
+    pointer-events: auto;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 16px 18px;
+    opacity: 0;
+    transform: translateX(-24px);
+    transition: opacity .4s ease, transform .4s ease, box-shadow .2s ease;
+}
+
+.soldout-alert-card.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.soldout-alert-card.clickable {
+    cursor: pointer;
+}
+
+.soldout-alert-card.clickable:hover {
+    box-shadow: 0 6px 28px rgba(75, 110, 245, .18);
+}
+
+.soldout-alert-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.soldout-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--error);
+    flex-shrink: 0;
+    animation: soldout-pulse 1.6s infinite;
+}
+
+@keyframes soldout-pulse {
+    0%   { box-shadow: 0 0 0 0 rgba(229, 62, 62, .5); }
+    70%  { box-shadow: 0 0 0 7px rgba(229, 62, 62, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(229, 62, 62, 0); }
+}
+
+.soldout-alert-label {
+    flex: 1;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: .2px;
+}
+
+.soldout-alert-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.soldout-alert-sep {
+    font-size: 11px;
+    color: var(--border);
+}
+
+.soldout-alert-hide-today {
+    border: none;
+    background: none;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 0;
+    white-space: nowrap;
+}
+
+.soldout-alert-hide-today:hover {
+    color: var(--text-sub);
+    text-decoration: underline;
+}
+
+.soldout-alert-close {
+    border: none;
+    background: none;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px;
+}
+
+.soldout-alert-close:hover {
+    color: var(--text-sub);
+}
+
+.soldout-alert-body {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.soldout-alert-thumb {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: var(--primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    overflow: hidden;
+}
+
+.soldout-alert-thumb img {
+    width: 68%;
+    height: 68%;
+    object-fit: contain;
+}
+
+.soldout-alert-info {
+    min-width: 0;
+}
+
+.soldout-alert-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.soldout-alert-venue {
+    font-size: 12px;
+    color: var(--text-sub);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.soldout-alert-progress {
+    margin-top: 14px;
+    height: 6px;
+    border-radius: 4px;
+    background: var(--primary-light);
+    overflow: hidden;
+}
+
+.soldout-alert-progress-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--error));
+    transition: width .6s ease;
+}
+
+.soldout-alert-remain {
+    margin-top: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--error);
+    text-align: right;
+}
+
+@media (max-width: 480px) {
+    .soldout-alert-widget {
+        left: 12px;
+        right: 12px;
+        bottom: 16px;
+        width: auto;
+    }
+}

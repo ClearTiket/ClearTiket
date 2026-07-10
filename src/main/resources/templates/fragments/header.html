@@ -51,6 +51,34 @@
         </div>
     </nav>
 
+    <!-- 실시간 매진 알림 위젯 -->
+    <div id="soldOutAlertWidget" class="soldout-alert-widget" aria-live="polite">
+        <div class="soldout-alert-card" id="soldOutAlertCard" role="button" tabindex="0">
+            <div class="soldout-alert-top">
+                <span class="soldout-live-dot"></span>
+                <span class="soldout-alert-label">실시간 예매 현황</span>
+                <div class="soldout-alert-controls">
+                    <button type="button" class="soldout-alert-hide-today" id="soldOutHideToday">오늘 그만보기</button>
+                    <span class="soldout-alert-sep">|</span>
+                    <button type="button" class="soldout-alert-close" id="soldOutAlertClose" aria-label="알림 닫기">&times;</button>
+                </div>
+            </div>
+            <div class="soldout-alert-body">
+                <div class="soldout-alert-thumb" id="soldOutThumb">
+                    <img th:src="@{/images/logo.png}" alt="클리어티켓" />
+                </div>
+                <div class="soldout-alert-info">
+                    <p class="soldout-alert-title" id="soldOutTitle">-</p>
+                    <p class="soldout-alert-venue" id="soldOutVenue">-</p>
+                </div>
+            </div>
+            <div class="soldout-alert-progress">
+                <div class="soldout-alert-progress-bar" id="soldOutProgressBar"></div>
+            </div>
+            <p class="soldout-alert-remain" id="soldOutRemain">잔여 -석</p>
+        </div>
+    </div>
+
     <script th:inline="javascript">
 
         const searchKeywordInput = document.querySelector(".search-wrap").children[0];
@@ -205,6 +233,138 @@
             }
         });
 
+    </script>
+
+    <script>
+        (function () {
+            var HIDE_TODAY_KEY = 'soldoutAlertHiddenUntil';
+
+            var hiddenUntil = Number(localStorage.getItem(HIDE_TODAY_KEY) || 0);
+            if (Date.now() < hiddenUntil) return; // "오늘 그만보기"로 설정한 기간이면 아예 렌더링하지 않음
+
+            var POLL_INTERVAL_MS = 15000;   // 서버에서 최신 잔여석을 다시 받아오는 주기
+            var ROTATE_INTERVAL_MS = 5000;  // 화면에 보여줄 공연을 바꾸는 주기
+
+            // 서버 응답이 아직 없거나 실패했을 때 보여줄 기본값 (더미 데이터, 클릭 이동은 되지 않음)
+            var alerts = [
+                { title: '2026 아이유 콘서트 : HEREDITARY', venueName: '올림픽공원 KSPO DOME', totalSeats: 300, remainingSeats: 87, performanceId: null },
+                { title: '뮤지컬 <라이온킹>',                venueName: '샤롯데씨어터',        totalSeats: 300, remainingSeats: 23, performanceId: null },
+                { title: '2026 서울재즈페스티벌',            venueName: '올림픽공원 잔디마당',  totalSeats: 300, remainingSeats: 140, performanceId: null }
+            ];
+
+            var currentIndex = 0;
+
+            var widget = document.getElementById('soldOutAlertWidget');
+            var card = document.getElementById('soldOutAlertCard');
+            var thumbEl = document.getElementById('soldOutThumb');
+            var titleEl = document.getElementById('soldOutTitle');
+            var venueEl = document.getElementById('soldOutVenue');
+            var remainEl = document.getElementById('soldOutRemain');
+            var progressBar = document.getElementById('soldOutProgressBar');
+            var closeBtn = document.getElementById('soldOutAlertClose');
+            var hideTodayBtn = document.getElementById('soldOutHideToday');
+
+            function renderAlert(alert) {
+                titleEl.textContent = alert.title;
+                titleEl.setAttribute('title', alert.title);
+                venueEl.textContent = alert.venueName || '';
+                remainEl.textContent = '잔여 ' + alert.remainingSeats.toLocaleString() + '석';
+                var soldPercent = Math.min(100, Math.round(((alert.totalSeats - alert.remainingSeats) / alert.totalSeats) * 100));
+                progressBar.style.width = soldPercent + '%';
+
+                // 실제 회차 정보가 있는 알림만 클릭해서 공연 상세 페이지로 이동 가능
+                if (alert.performanceId) {
+                    card.classList.add('clickable');
+                    card.dataset.performanceId = alert.performanceId;
+                } else {
+                    card.classList.remove('clickable');
+                    delete card.dataset.performanceId;
+                }
+            }
+
+            function hashCode(str) {
+                var hash = 0;
+                for (var i = 0; i < str.length; i++) {
+                    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                    hash |= 0;
+                }
+                return hash;
+            }
+
+            function showNext() {
+                if (!alerts.length) return;
+
+                var alert = alerts[currentIndex];
+
+                card.classList.remove('show');
+                setTimeout(function () {
+                    renderAlert(alert);
+                    card.classList.add('show');
+                }, 300);
+
+                currentIndex = (currentIndex + 1) % alerts.length;
+            }
+
+            // 실제 DB(예매/좌석 선점 현황) 기준 잔여석을 가져온다.
+            // 실패하면 위에서 정의한 더미 데이터로 계속 동작한다.
+            function fetchLiveAlerts() {
+                fetch('/api/seats/live-alerts?limit=5')
+                    .then(function (res) {
+                        if (!res.ok) throw new Error('live-alerts request failed');
+                        return res.json();
+                    })
+                    .then(function (data) {
+                        if (Array.isArray(data) && data.length > 0) {
+                            alerts = data;
+                            if (currentIndex >= alerts.length) currentIndex = 0;
+                        }
+                    })
+                    .catch(function () {
+                        // 네트워크/서버 오류 시 조용히 무시하고 기존(또는 더미) 데이터 유지
+                    });
+            }
+
+            fetchLiveAlerts();
+            showNext();
+
+            var rotateTimer = setInterval(showNext, ROTATE_INTERVAL_MS);
+            var pollTimer = setInterval(fetchLiveAlerts, POLL_INTERVAL_MS);
+
+            function stopWidget() {
+                clearInterval(rotateTimer);
+                clearInterval(pollTimer);
+                widget.style.display = 'none';
+            }
+
+            // 카드를 클릭하면 해당 공연의 상세 페이지로 이동 (로그인 불필요, 여기서 회차/좌석은 직접 선택)
+            card.addEventListener('click', function () {
+                var performanceId = card.dataset.performanceId;
+                if (performanceId) {
+                    window.location.href = '/venue/' + performanceId + '/detail';
+                }
+            });
+            card.addEventListener('keydown', function (e) {
+                if ((e.key === 'Enter' || e.key === ' ') && card.dataset.performanceId) {
+                    e.preventDefault();
+                    card.click();
+                }
+            });
+
+            // X: 지금만 닫기 (새로고침/다른 페이지로 이동하면 다시 나타남)
+            closeBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                stopWidget();
+            });
+
+            // 오늘 그만보기: 자정까지 다시 뜨지 않도록 저장
+            hideTodayBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var endOfToday = new Date();
+                endOfToday.setHours(23, 59, 59, 999);
+                localStorage.setItem(HIDE_TODAY_KEY, String(endOfToday.getTime()));
+                stopWidget();
+            });
+        })();
     </script>
 </header>
 </body>

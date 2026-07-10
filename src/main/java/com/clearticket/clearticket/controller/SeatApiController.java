@@ -26,6 +26,15 @@ public class SeatApiController {
         }
     }
 
+    // 실시간 매진 알림 위젯용: 판매중인 공연들의 잔여석 현황
+    @GetMapping("/live-alerts")
+    public ResponseEntity<List<com.clearticket.clearticket.model.dto.seat.LiveSeatAlertResponse>> getLiveAlerts(
+            @RequestParam(value = "limit", defaultValue = "5") int limit) {
+
+        int safeLimit = Math.max(1, Math.min(limit, 20));
+        return ResponseEntity.ok(seatService.getLiveSoldOutAlerts(safeLimit));
+    }
+
     @PostMapping("/book")
     public ResponseEntity<String> bookSeat(
             @RequestParam String sectionName,

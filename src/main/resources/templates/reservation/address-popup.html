@@ -13,7 +13,7 @@
             font-family: 'Noto Sans KR', sans-serif;
             width: 100%;
             margin: 0;
-            overflow-x: hidden; /* 가로 스크롤 방지 */
+            overflow-x: hidden;
             box-sizing: border-box;
         }
 
@@ -205,7 +205,7 @@
         </div>
         <div class="f-row">
             <label>전화번호 *</label>
-            <input type="tel" id="new-phone" placeholder="010-0000-0000">
+            <input type="tel" id="new-phone" placeholder="010-0000-0000" maxlength="13" oninput="formatPhone(this)">
         </div>
         <div class="f-row">
             <label>주소 *</label>
@@ -252,6 +252,16 @@
         const form = document.getElementById('addAddrForm');
         const shouldShow = show !== undefined ? show : (form.style.display !== 'block');
         form.style.display = shouldShow ? 'block' : 'none';
+    }
+
+    // 숫자만 남기고 자동으로 하이픈을 넣어, DB 컬럼(recipientPhone varchar(13)) 길이를
+    // 넘기지 않도록 함. (기존에는 형식 제한이 없어 010-1111-222222222 같은 값도 입력이 되어
+    // "character varying(13)... 너무 긴 자료를 담으려고 합니다" DB 오류가 발생했음)
+    function formatPhone(el) {
+        let v = el.value.replace(/\D/g, '');
+        if (v.length <= 3) el.value = v;
+        else if (v.length <= 7) el.value = v.slice(0, 3) + '-' + v.slice(3);
+        else el.value = v.slice(0, 3) + '-' + v.slice(3, 7) + '-' + v.slice(7, 11);
     }
 
     function openPostcode() {

@@ -1,21 +1,22 @@
 package com.clearticket.clearticket.service;
 
+import com.clearticket.clearticket.model.dto.seat.LiveSeatAlertResponse;
 import com.clearticket.clearticket.model.dto.seat.SeatResponse;
 import com.clearticket.clearticket.model.dto.seat.SeatStatusEvent;
-import com.clearticket.clearticket.model.entity.BookingSeat;
-import com.clearticket.clearticket.model.entity.Schedule;
-import com.clearticket.clearticket.model.entity.User;
-import com.clearticket.clearticket.repository.ScheduleRepository;
-import com.clearticket.clearticket.repository.UserRepository;
-import com.clearticket.clearticket.repository.BookingSeatsRepository;
+import com.clearticket.clearticket.model.entity.*;
+import com.clearticket.clearticket.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Limit;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +24,8 @@ public class SeatService {
 
     private final SeatGeneratorService seatGenerator;
     private final BookingSeatsRepository bookingSeatsRepository;
+    private final ReservationSeatsRepository reservationSeatsRepository;
+    private final PerformanceRepository performanceRepository;
     private final UserRepository userRepository;
     private final ScheduleRepository scheduleRepository;
     private final SimpMessagingTemplate messagingTemplate;
@@ -157,5 +160,51 @@ public class SeatService {
         }
 
         return allSeats;
+    }
+
+    /**
+     * 실시간 매진 알림 위젯용 데이터.
+     * 판매중(ON_SALE)인 공연들 중, 가장 가까운 회차를 기준으로
+     * "임시 선점 + 예매 확정" 좌석 수를 빼서 실제 잔여석을 계산해 내려준다.
+     */
+    @Transactional(readOnly = true)
+    public List<LiveSeatAlertResponse> getLiveSoldOutAlerts(int limit) {
+        int totalSeats = seatGenerator.generateSeats().size();
+        LocalDate today = LocalDate.now();
+
+        // 후보를 넉넉히 가져와서(요청한 개수의 4배), 다가오는 회차가 없는 공연은 걸러낸다.
+        List<Performance> candidates =
+                performanceRepository.findAllByStatusIs(PerformanceStatus.ON_SALE, Limit.of(Math.max(limit * 4, 20)));
+
+        List<LiveSeatAlertResponse> result = new ArrayList<>();
+
+        for (Performance performance : candidates) {
+            if (result.size() >= limit) break;
+
+            Optional<Schedule> nextSchedule = scheduleRepository
+                    .findFirstByPerformance_PerformanceIdAndShowDateGreaterThanEqualOrderByShowDateAscShowTimeAsc(
+                            performance.getPerformanceId(), today);
+
+            if (nextSchedule.isEmpty()) continue;
+
+            Schedule schedule = nextSchedule.get();
+
+            long heldSeats = bookingSeatsRepository.countByScheduleScheduleId(schedule.getScheduleId());
+            long confirmedSeats = reservationSeatsRepository.countActiveByScheduleId(schedule.getScheduleId());
+
+            int remaining = (int) Math.max(0, totalSeats - heldSeats - confirmedSeats);
+
+            result.add(LiveSeatAlertResponse.builder()
+                    .performanceId(performance.getPerformanceId())
+                    .scheduleId(schedule.getScheduleId())
+                    .title(performance.getTitle())
+                    .venueName(performance.getVenue() != null ? performance.getVenue().getName() : "")
+                    .posterUrl(performance.getPosterUrl())
+                    .totalSeats(totalSeats)
+                    .remainingSeats(remaining)
+                    .build());
+        }
+
+        return result;
     }
 }
