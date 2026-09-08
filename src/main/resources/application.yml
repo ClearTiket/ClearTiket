@@ -89,7 +89,7 @@ naver:
 # 포스터 원문(OCR) 3줄 요약에 사용할 AI 공급자. gemini선택.
 ai:
   summary:
-    provider: ${ai.summary.provider:openai}
+    provider: ${ai.summary.provider:gemini}
 
 gemini:
   api-key: ${gemini.api-key:}
