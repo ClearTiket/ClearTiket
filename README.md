@@ -9,6 +9,18 @@
 AI 기반 공연 정보 요약, 검색 교정, 맞춤 공연 추천, 실시간 좌석 동기화를 통해 
 사용자 중심의 편리한 공연 예매 플랫폼을 구현하는 것을 목표로 했습니다.
 
+## 🛠 기술 스택
+
+| 구분 | 사용 기술 |
+|------|-----------|
+| Frontend | HTML, CSS, JavaScript |
+| Backend | Java, Spring Boot |
+| Database | PostgreSQL |
+| Data / AI | Python, Elasticsearch, Gemini 2.5 Flash, NAVER CLOVA OCR |
+| Infra | Docker (docker-compose로 Elasticsearch, Kibana 실행) |
+| Design / Collaboration | Figma, GitHub, ERDcloud |
+
+
 ## 📊 주요 성과
 
 ![성과](https://img.shields.io/badge/시간단축-약50%25-4CAF50?style=flat-square)
