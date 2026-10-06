@@ -16,8 +16,8 @@ AI 기반 공연 정보 요약, 검색 교정, 맞춤 공연 추천, 실시간 �
 | Frontend | HTML, CSS, JavaScript |
 | Backend | Java, Spring Boot |
 | Database | PostgreSQL |
-| Data / AI | Python, Elasticsearch, Gemini 2.5 Flash, NAVER CLOVA OCR |
-| Infra | Docker (docker-compose로 Elasticsearch, Kibana 실행) |
+| Data / AI | Gemini 2.5 Flash, NAVER CLOVA OCR |
+| Infra | Docker (팀원이 구성한 docker-compose로 개발 환경 실행) |
 | Design / Collaboration | Figma, GitHub, ERDcloud |
 
 
